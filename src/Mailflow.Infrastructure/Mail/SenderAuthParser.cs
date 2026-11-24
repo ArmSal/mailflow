@@ -21,6 +21,10 @@ public static partial class SenderAuthParser
             if (fromDomain.Length == 0 || authenticationResultsHeaders is not { Count: > 0 } || authenticationResultsHeaders[0] is not { } header)
                 return SenderVerification.Unknown;
 
+            // The header value reaches us already decoded (RFC 2047 encoded words are expanded), so what we parse could differ
+            // from the raw bytes. Real verdicts are plain ASCII: refuse anything else instead of guessing.
+            if (header.Any(c => c > 127) || header.Contains("=?", StringComparison.Ordinal)) return SenderVerification.Unknown;
+
             // MimeKit's RFC 8601 parser understands quoted strings, escapes and comments. A hand-written split on ';'
             // can be fooled by values copied from the message (e.g. a quoted envelope sender) into seeing fake clauses.
             if (!AuthenticationResults.TryParse(System.Text.Encoding.UTF8.GetBytes(header), out var parsed)) return SenderVerification.Unknown;
@@ -37,8 +41,9 @@ public static partial class SenderAuthParser
 
                 if (method == "dmarc")
                 {
-                    // header.from, when present, must be the From domain we are judging.
-                    if (props.TryGetValue("header.from", out var hf) && !Aligned(DomainOf(hf), fromDomain)) continue;
+                    // A dmarc verdict only counts when it names the From domain we are judging. A missing header.from, or one
+                    // we rejected as not a plain domain, must never count: fail closed.
+                    if (!props.TryGetValue("header.from", out var hf) || !Aligned(DomainOf(hf), fromDomain)) continue;
                     if (result == "pass") dmarcPass = true;
                     else if (result == "fail") dmarcFail = true;
                 }

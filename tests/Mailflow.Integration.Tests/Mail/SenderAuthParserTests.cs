@@ -44,6 +44,17 @@ public class SenderAuthParserTests
         Assert.Equal(SenderVerification.Fail, P("mx; dkim=pass reason=\"(\" header.d=supplier.example; dmarc=fail header.from=supplier.example"));
     [Fact] public void Malformed_header_is_never_a_pass() =>
         Assert.NotEqual(SenderVerification.Pass, P("mx; dkim=pass header.d=supplier.example reason=\"(\"; dkim=pass header.d=supplier.example \""));
+    // A dmarc pass only counts when it names the From domain: an unusable or missing header.from must fail closed.
+    [Fact] public void Dmarc_pass_with_an_unusable_header_from_is_not_a_pass() =>
+        Assert.Equal(SenderVerification.Unknown, P("mx; dmarc=pass header.from=\"supplier.example attacker.example\""));
+    [Fact] public void Dmarc_pass_without_header_from_is_not_a_pass() =>
+        Assert.Equal(SenderVerification.Unknown, P("mx; dmarc=pass"));
+    [Fact] public void Dmarc_pass_with_unusable_header_from_does_not_beat_an_aligned_dkim_fail() =>
+        Assert.Equal(SenderVerification.Fail, P("mx; dmarc=pass header.from=\"a b\"; dkim=fail header.d=supplier.example"));
+    [Fact] public void Encoded_words_in_the_header_fail_closed() =>
+        Assert.Equal(SenderVerification.Unknown, P("mx; dkim=pass header.d=supplier.example header.b==?utf-8?q?abc?="));
+    [Fact] public void Non_ascii_text_in_the_header_fails_closed() =>
+        Assert.Equal(SenderVerification.Unknown, P("mx; dkim=pass header.d=supplier.example (café)"));
     [Fact] public void Domain_value_with_extra_text_is_not_trusted() =>
         Assert.Equal(SenderVerification.Unknown, P("mx; dkim=pass header.d=\"supplier.example attacker.example\""));
 
