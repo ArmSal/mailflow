@@ -496,6 +496,8 @@ Détails complets : [Docs/Parallel-Development-Plan.md](Docs/Parallel-Developmen
 
 ## 18. Contribuer
 
+Pour savoir **où modifier le code** (ajouter un fournisseur, une condition, une action, un backend d'impression ou de stockage), lisez [CONTRIBUTING.md](CONTRIBUTING.md).
+
 1. Ouvrez une *issue* pour discuter du changement.
 2. Créez une branche (`feature/<sujet>`).
 3. Respectez les couches : `Domain` ne dépend de rien, `Application` définit les interfaces, `Infrastructure` les implémente.

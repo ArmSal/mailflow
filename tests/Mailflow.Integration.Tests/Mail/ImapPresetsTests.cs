@@ -22,8 +22,16 @@ public class ImapPresetsTests
     [Fact]
     public void Custom_preset_has_empty_host()
     {
-        var p = Assert.Single(ImapPresets.All, x => x.Name == "IMAP personnalise");
+        var p = Assert.Single(ImapPresets.All, x => x.Name == "IMAP personnalisé");
         Assert.Equal("", p.Host);
+    }
+
+    [Fact]
+    public void Dashboard_dropdown_offers_exactly_the_providers_of_the_single_list()
+    {
+        var shown = Mailflow.Web.Pages.Mailboxes.ProviderPresets.All;
+        Assert.Equal(ImapPresets.All.Select(p => (p.Name, p.Host, p.Port, p.UseSsl)),
+                     shown.Select(p => (p.Label, p.Host, p.Port, p.UseSsl)));
     }
 
     [Fact]
