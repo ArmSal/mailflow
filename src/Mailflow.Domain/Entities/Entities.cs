@@ -21,6 +21,9 @@ public class Mailbox
     public bool UseSsl { get; set; } = true;
     public string Username { get; set; } = "";
     public string EncryptedPassword { get; set; } = "";
+    public AuthMethod AuthMethod { get; set; } = AuthMethod.Password;
+    /// <summary>Encrypted OAuth token cache (never the plain refresh token); only used when AuthMethod is MicrosoftOAuth.</summary>
+    public string? EncryptedOAuthCache { get; set; }
     public string InboxFolder { get; set; } = "INBOX";
     public int CheckIntervalMinutes { get; set; } = 5;
     public int LookbackDays { get; set; } = 3;
