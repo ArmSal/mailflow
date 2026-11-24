@@ -42,7 +42,7 @@ public sealed class Fixture : IDisposable
     public IPdfTextReader Pdf = Substitute.For<IPdfTextReader>();
     public IDocumentStore Store = Substitute.For<IDocumentStore>();
     public IPrinterService Printer = Substitute.For<IPrinterService>();
-    public ISecretStore Secrets = Substitute.For<ISecretStore>();
+    public IMailboxConnectionFactory Connections = Substitute.For<IMailboxConnectionFactory>();
     public IClock Clock = Substitute.For<IClock>();
     public Mailbox Mailbox;
     public MessagePipeline Pipeline;
@@ -55,7 +55,8 @@ public sealed class Fixture : IDisposable
         Db = new TestDb(new DbContextOptionsBuilder<TestDb>().UseSqlite(_conn).Options);
         Db.Database.EnsureCreated();
         Clock.UtcNow.Returns(Now);
-        Secrets.Unprotect(Arg.Any<string>()).Returns("p");
+        Connections.CreateAsync(Arg.Any<Mailbox>(), Arg.Any<CancellationToken>())
+            .Returns(ci => Conn with { Host = ci.Arg<Mailbox>().Host == "" ? Conn.Host : ci.Arg<Mailbox>().Host });
         Pdf.ReadText(Arg.Any<byte[]>(), Arg.Any<int>()).Returns("");
         Store.SaveAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(ci => new StoredDocument("C:/docs/" + ci.ArgAt<string>(3), Convert.ToHexString(ci.ArgAt<byte[]>(0) ?? []), false));
@@ -81,7 +82,7 @@ public sealed class Fixture : IDisposable
         Db.SaveChanges();
 
         Pipeline = new MessagePipeline(Db, Mail, Pdf, Store, Printer, Clock, new RuleEngine());
-        Processor = new MailboxProcessor(Db, Mail, Secrets, Pipeline, Clock);
+        Processor = new MailboxProcessor(Db, Mail, Connections, Pipeline, Clock);
     }
 
     public static MailMessage Msg(string id = "m1", string subject = "Facture 1", string from = "compta@fournisseur.fr",

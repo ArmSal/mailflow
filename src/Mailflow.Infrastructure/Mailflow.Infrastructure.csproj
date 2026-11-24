@@ -14,8 +14,13 @@
     <PackageReference Include="Microsoft.Extensions.Options" Version="10.*" />
     <PackageReference Include="PdfPig" Version="0.1.*" />
     <PackageReference Include="MailKit" Version="4.*" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.*" />
     <PackageReference Include="System.Drawing.Common" Version="10.*" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Mailflow.Integration.Tests" />
   </ItemGroup>
 
   <PropertyGroup>
