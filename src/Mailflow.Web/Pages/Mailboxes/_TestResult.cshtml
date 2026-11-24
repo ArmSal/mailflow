@@ -12,6 +12,10 @@
         }
     </div>
 }
+else if (ViewData["Hint"] is string hint)
+{
+    <div class="alert alert-danger" role="alert"><span class="alert-title">Échec de la connexion</span>@hint<span class="small d-block mt-1">@Model.Error</span></div>
+}
 else
 {
     <div class="alert alert-danger" role="alert"><span class="alert-title">Échec de la connexion</span>@Model.Error</div>

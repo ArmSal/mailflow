@@ -24,3 +24,13 @@
 .row-actions .btn { white-space: nowrap; }
 .text-nowrap-cell { white-space: nowrap; }
 .test-result .alert:empty { display: none; }
+.ms-panel { border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius, 8px); padding: var(--sp-3); display: grid; gap: var(--sp-2); }
+.ms-panel-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); }
+.ms-panel-title { font-size: var(--fs-md, 1rem); margin: 0; }
+.ms-code-box { display: grid; gap: var(--sp-2); }
+.ms-code-intro { margin: 0; }
+.ms-code { font-family: var(--font-mono); font-size: 2rem; font-weight: 700; letter-spacing: .25em; padding: var(--sp-2) var(--sp-3); background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; text-align: center; user-select: all; }
+.ms-url { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin: 0; }
+.ms-url-text { font-family: var(--font-mono); user-select: all; word-break: break-all; }
+.ms-actions { display: flex; gap: var(--sp-2); }
+.cell-badges { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin-top: var(--sp-1); }

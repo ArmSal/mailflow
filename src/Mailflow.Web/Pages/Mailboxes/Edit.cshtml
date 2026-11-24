@@ -1,5 +1,6 @@
 @page "{id:int?}"
 @using Mailflow.Domain.Enums
+@{ var isMs = Model.Input.AuthMethod == AuthMethod.MicrosoftOAuth; var isNew = Request.RouteValues["id"] is null; }
 @using Mailflow.Web.Pages.Mailboxes
 @model Mailflow.Web.Pages.Mailboxes.EditModel
 @{ ViewData["Title"] = "Boîte mail"; }
@@ -26,12 +27,19 @@
     <section class="form-section">
         <h2 class="form-section-title">Connexion</h2>
         <p class="form-section-hint">Le mot de passe n'est jamais réaffiché une fois enregistré.</p>
+        <div class="field"><label class="form-label" asp-for="Input.AuthMethod">Mode de connexion</label>
+            <select class="form-select" asp-for="Input.AuthMethod">
+                <option value="@AuthMethod.Password">Mot de passe</option>
+                <option value="@AuthMethod.MicrosoftOAuth">Compte Microsoft (OAuth2)</option>
+            </select>
+            <span class="form-text">Outlook et Hotmail refusent le mot de passe : choisissez « Compte Microsoft (OAuth2) ».</span>
+            <span class="field-validation-error" asp-validation-for="Input.AuthMethod"></span></div>
         <div class="field"><label class="form-label" for="preset">Fournisseur</label>
             <select class="form-select" id="preset">
                 <option value="">Choisir…</option>
                 @foreach (var p in ProviderPresets.All)
                 {
-                    <option value="@p.Key" data-host="@p.Host" data-port="@p.Port" data-ssl="@(p.UseSsl ? "1" : "0")">@p.Label</option>
+                    <option value="@p.Key" data-host="@p.Host" data-port="@p.Port" data-ssl="@(p.UseSsl ? "1" : "0")" data-oauth="@(p.UsesMicrosoftOAuth ? "1" : "0")">@p.Label</option>
                 }
             </select>
             <span class="form-text">Remplit le serveur, le port et le SSL. Mot de passe d'application requis pour iCloud, Gmail et Yahoo.</span></div>
@@ -42,9 +50,12 @@
         <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" asp-for="Input.UseSsl" /><label class="form-check-label" asp-for="Input.UseSsl">Connexion sécurisée (SSL)</label></div>
         <div class="form-grid">
             <div class="field"><label class="form-label" asp-for="Input.Username">Identifiant</label><input class="form-control" asp-for="Input.Username" autocomplete="off" /><span class="field-validation-error" asp-validation-for="Input.Username"></span></div>
-            <div class="field"><label class="form-label" for="Input_Password">Mot de passe</label>
-                <input type="password" class="form-control" id="Input_Password" name="Input.Password" autocomplete="new-password" placeholder="@(Request.RouteValues["id"] is null ? "" : "Laisser vide pour conserver l'actuel")" />
+            <div class="field" id="password-field" hidden="@isMs"><label class="form-label" for="Input_Password">Mot de passe</label>
+                <input type="password" class="form-control" id="Input_Password" name="Input.Password" autocomplete="new-password" placeholder="@(isNew ? "" : "Laisser vide pour conserver l'actuel")" />
                 <span class="field-validation-error" asp-validation-for="Input.Password"></span></div>
+        </div>
+        <div id="ms-section" class="field" hidden="@(!isMs)">
+            <partial name="_MsSignIn" model="Model.MsPanel" />
         </div>
         <div class="field">
             <div><button type="button" class="btn btn-secondary" hx-post="@Url.Page("/Mailboxes/Edit", "Test", new { id = Request.RouteValues["id"] })" hx-include="#mailbox-form" hx-target="#test-result">Tester la connexion</button></div>
@@ -77,7 +88,21 @@ document.getElementById('preset').addEventListener('change', function () {
     if (o.dataset.host) document.getElementById('Input_Host').value = o.dataset.host;
     document.getElementById('Input_Port').value = o.dataset.port;
     document.getElementById('Input_UseSsl').checked = o.dataset.ssl === '1';
+    var mode = document.getElementById('Input_AuthMethod');
+    mode.value = o.dataset.oauth === '1' ? 'MicrosoftOAuth' : 'Password';
+    mode.dispatchEvent(new Event('change'));
 });
+(function () {
+    var mode = document.getElementById('Input_AuthMethod');
+    function apply() {
+        var ms = mode.value === 'MicrosoftOAuth';
+        document.getElementById('password-field').hidden = ms;
+        document.getElementById('ms-section').hidden = !ms;
+        var u = document.getElementById('Input_Username'), e = document.getElementById('Input_Email');
+        if (ms && !u.value) u.value = e.value;
+    }
+    mode.addEventListener('change', apply);
+})();
 </script>
 }
 

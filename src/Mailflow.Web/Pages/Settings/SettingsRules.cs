@@ -6,7 +6,7 @@ namespace Mailflow.Web.Pages.Settings;
 
 public static class SettingsRules
 {
-    public const string RootKey = "DocumentsRoot", PatternKey = "FileNamePattern", HoursKey = "PrintMaxAgeHours";
+    public const string RootKey = "DocumentsRoot", PatternKey = "FileNamePattern", HoursKey = "PrintMaxAgeHours", OAuthClientIdKey = "OAuthMicrosoftClientId";
 
     private static bool HasTraversal(string s) => s.Split('/', '\\').Any(p => p == "..");
 
@@ -43,6 +43,10 @@ public static class SettingsRules
 
     public static string? ValidateHours(int hours)
         => hours is < 1 or > 168 ? "La durée doit être comprise entre 1 et 168 heures." : null;
+
+    /// <summary>Empty (not configured) or a GUID.</summary>
+    public static string? ValidateClientId(string? clientId)
+        => string.IsNullOrWhiteSpace(clientId) || Guid.TryParse(clientId.Trim(), out _) ? null : "L'identifiant d'application doit être un GUID (par exemple 00000000-0000-0000-0000-000000000000).";
 
     public static string? ValidateNewPassword(string? password, string? confirm)
     {

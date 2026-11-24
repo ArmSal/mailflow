@@ -8,11 +8,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Mailflow.Web.Pages.Mailboxes;
 
-public class EditModel(IAppDbContext db, ISecretStore secrets, IMailClient mail) : PageModel
+/// <summary>What the Microsoft sign-in panel shows. Never carries tokens or caches.</summary>
+public sealed record MsSignInPanel(int MailboxId, bool SignedIn, OAuthSignInStatus Status, bool Configured);
+
+public class EditModel(IAppDbContext db, ISecretStore secrets, IMailClient mail, IOAuthSignInService oauth, IMailboxConnectionFactory connections) : PageModel
 {
     public class MailboxInput
     {
         public int StoreId { get; set; }
+        public AuthMethod AuthMethod { get; set; } = AuthMethod.Password;
         [Required(ErrorMessage = "Le nom est requis."), StringLength(100)]
         public string DisplayName { get; set; } = "";
         [Required(ErrorMessage = "L'adresse est requise."), EmailAddress(ErrorMessage = "Adresse invalide."), StringLength(254)]
@@ -24,7 +28,7 @@ public class EditModel(IAppDbContext db, ISecretStore secrets, IMailClient mail)
         public bool UseSsl { get; set; } = true;
         [Required(ErrorMessage = "L'identifiant est requis."), StringLength(254)]
         public string Username { get; set; } = "";
-        /// <summary>Write-only. Blank on edit = keep the stored password.</summary>
+        /// <summary>Write-only. Blank on edit = keep the stored password. Ignored in Microsoft mode.</summary>
         public string? Password { get; set; }
         [Required, StringLength(200)]
         public string InboxFolder { get; set; } = "INBOX";
@@ -38,23 +42,25 @@ public class EditModel(IAppDbContext db, ISecretStore secrets, IMailClient mail)
 
     [BindProperty] public MailboxInput Input { get; set; } = new();
     public List<Store> Stores { get; private set; } = [];
+    public MsSignInPanel MsPanel { get; private set; } = new(0, false, new OAuthSignInStatus(OAuthSignInState.None), false);
 
-    public async Task<IActionResult> OnGetAsync(int? id)
+    public async Task<IActionResult> OnGetAsync(int? id, CancellationToken ct = default)
     {
         await LoadStores();
-        if (id is null) return Page();
+        if (id is null) { await LoadPanel(null, ct); return Page(); }
         var m = await db.Mailboxes.FindAsync(id.Value);
         if (m is null) return NotFound();
+        await LoadPanel(id, ct);
         Input = new MailboxInput
         {
-            StoreId = m.StoreId, DisplayName = m.DisplayName, Email = m.Email, Host = m.Host, Port = m.Port, UseSsl = m.UseSsl,
+            StoreId = m.StoreId, AuthMethod = m.AuthMethod, DisplayName = m.DisplayName, Email = m.Email, Host = m.Host, Port = m.Port, UseSsl = m.UseSsl,
             Username = m.Username, InboxFolder = m.InboxFolder, CheckIntervalMinutes = m.CheckIntervalMinutes,
             LookbackDays = m.LookbackDays, DefaultAfterProcessing = m.DefaultAfterProcessing, IsActive = m.IsActive,
         };
         return Page();
     }
 
-    public async Task<IActionResult> OnPostAsync(int? id)
+    public async Task<IActionResult> OnPostAsync(int? id, CancellationToken ct = default)
     {
         Input.DisplayName = (Input.DisplayName ?? "").Trim();
         Input.Email = (Input.Email ?? "").Trim();
@@ -69,9 +75,8 @@ public class EditModel(IAppDbContext db, ISecretStore secrets, IMailClient mail)
         if (Input.CheckIntervalMinutes is < 1 or > 1440) ModelState.AddModelError("Input.CheckIntervalMinutes", "Intervalle : 1 à 1440 minutes.");
         if (Input.LookbackDays is < 1 or > 365) ModelState.AddModelError("Input.LookbackDays", "Historique : 1 à 365 jours.");
         if (!Enum.IsDefined(Input.DefaultAfterProcessing)) ModelState.AddModelError("Input.DefaultAfterProcessing", "Valeur invalide.");
-        if (id is null && string.IsNullOrEmpty(Input.Password)) ModelState.AddModelError("Input.Password", "Le mot de passe est requis.");
+        if (!Enum.IsDefined(Input.AuthMethod)) ModelState.AddModelError("Input.AuthMethod", "Valeur invalide.");
         if (!await db.Stores.AnyAsync(s => s.Id == Input.StoreId)) ModelState.AddModelError("Input.StoreId", "Magasin invalide.");
-        if (!ModelState.IsValid) { await LoadStores(); return Page(); }
 
         Mailbox? m = null;
         if (id is not null)
@@ -79,15 +84,20 @@ public class EditModel(IAppDbContext db, ISecretStore secrets, IMailClient mail)
             m = await db.Mailboxes.FindAsync(id.Value);
             if (m is null) return NotFound();
         }
-        else db.Mailboxes.Add(m = new Mailbox());
+        if (Input.AuthMethod == AuthMethod.Password && string.IsNullOrEmpty(Input.Password) && string.IsNullOrEmpty(m?.EncryptedPassword))
+            ModelState.AddModelError("Input.Password", "Le mot de passe est requis.");
+        if (!ModelState.IsValid) { await LoadStores(); await LoadPanel(id, ct); return Page(); }
+
+        if (m is null) db.Mailboxes.Add(m = new Mailbox());
         m.StoreId = Input.StoreId;
+        m.AuthMethod = Input.AuthMethod;
         m.DisplayName = Input.DisplayName;
         m.Email = Input.Email;
         m.Host = Input.Host;
         m.Port = Input.Port;
         m.UseSsl = Input.UseSsl;
         m.Username = Input.Username;
-        if (!string.IsNullOrEmpty(Input.Password)) m.EncryptedPassword = secrets.Protect(Input.Password);
+        if (Input.AuthMethod == AuthMethod.Password && !string.IsNullOrEmpty(Input.Password)) m.EncryptedPassword = secrets.Protect(Input.Password);
         m.InboxFolder = Input.InboxFolder;
         m.CheckIntervalMinutes = Input.CheckIntervalMinutes;
         m.LookbackDays = Input.LookbackDays;
@@ -102,22 +112,70 @@ public class EditModel(IAppDbContext db, ISecretStore secrets, IMailClient mail)
         ConnectionTestResult result;
         try
         {
-            var password = Input.Password;
-            if (string.IsNullOrEmpty(password) && id is not null)
-            {
-                var stored = await db.Mailboxes.Where(x => x.Id == id.Value).Select(x => x.EncryptedPassword).FirstOrDefaultAsync(ct);
-                if (!string.IsNullOrEmpty(stored)) password = secrets.Unprotect(stored);
-            }
-            if (string.IsNullOrWhiteSpace(Input.Host) || Input.Port is < 1 or > 65535 || string.IsNullOrWhiteSpace(Input.Username) || string.IsNullOrEmpty(password))
+            var stored = id is null ? null : await db.Mailboxes.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id.Value, ct);
+            var oauthMode = Input.AuthMethod == AuthMethod.MicrosoftOAuth;
+            var password = oauthMode ? null : Input.Password;
+            if (!oauthMode && string.IsNullOrEmpty(password) && !string.IsNullOrEmpty(stored?.EncryptedPassword)) password = secrets.Unprotect(stored.EncryptedPassword);
+
+            if (string.IsNullOrWhiteSpace(Input.Host) || Input.Port is < 1 or > 65535 || string.IsNullOrWhiteSpace(Input.Username))
+                result = new ConnectionTestResult(false, 0, [], oauthMode ? "Renseignez serveur, port et identifiant." : "Renseignez serveur, port, identifiant et mot de passe.");
+            else if (oauthMode && stored is null)
+                result = new ConnectionTestResult(false, 0, [], "Enregistrez d'abord la boîte, puis connectez-la avec Microsoft.");
+            else if (!oauthMode && string.IsNullOrEmpty(password))
                 result = new ConnectionTestResult(false, 0, [], "Renseignez serveur, port, identifiant et mot de passe.");
             else
-                result = await mail.TestConnectionAsync(new MailboxConnection(Input.Host.Trim(), Input.Port, Input.UseSsl, Input.Username.Trim(), password), ct);
+            {
+                var probe = new Mailbox
+                {
+                    Id = stored?.Id ?? 0, Host = Input.Host.Trim(), Port = Input.Port, UseSsl = Input.UseSsl, Username = Input.Username.Trim(),
+                    AuthMethod = Input.AuthMethod, EncryptedPassword = password is null ? "" : secrets.Protect(password),
+                    EncryptedOAuthCache = stored?.EncryptedOAuthCache,
+                };
+                var connection = await connections.CreateAsync(probe, ct);
+                result = await mail.TestConnectionAsync(connection, ct);
+            }
         }
         catch (Exception ex)
         {
+            // OAuthReconnectRequiredException carries a user-facing message: same alert style as any failure.
             result = new ConnectionTestResult(false, 0, [], ex.Message);
         }
-        return Partial("_TestResult", result);
+        return this.PartialWith("_TestResult", result, ("Hint", result.Success ? null : MailErrorHints.For(result.Error)));
+    }
+
+    public async Task<IActionResult> OnPostMsStartAsync(int id, CancellationToken ct)
+    {
+        if (!await db.Mailboxes.AnyAsync(x => x.Id == id, ct)) return NotFound();
+        var configured = await oauth.IsConfiguredAsync(ct);
+        var status = configured
+            ? await oauth.StartAsync(id, ct)
+            : new OAuthSignInStatus(OAuthSignInState.Failed, null, "Renseignez d'abord l'identifiant d'application Microsoft dans les Paramètres.");
+        return await PanelAsync(id, status, configured, ct);
+    }
+
+    public async Task<IActionResult> OnGetMsStatusAsync(int id, CancellationToken ct)
+        => await PanelAsync(id, oauth.GetStatus(id), await oauth.IsConfiguredAsync(ct), ct);
+
+    public async Task<IActionResult> OnPostMsSignOutAsync(int id, CancellationToken ct)
+    {
+        if (!await db.Mailboxes.AnyAsync(x => x.Id == id, ct)) return NotFound();
+        await oauth.SignOutAsync(id, ct);
+        return Partial("_MsSignIn", new MsSignInPanel(id, false, new OAuthSignInStatus(OAuthSignInState.None), await oauth.IsConfiguredAsync(ct)));
+    }
+
+    private async Task<IActionResult> PanelAsync(int id, OAuthSignInStatus status, bool configured, CancellationToken ct)
+    {
+        var m = await db.Mailboxes.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
+        if (m is null) return NotFound();
+        return Partial("_MsSignIn", new MsSignInPanel(id, status.State == OAuthSignInState.Succeeded || oauth.IsSignedIn(m), status, configured));
+    }
+
+    private async Task LoadPanel(int? id, CancellationToken ct)
+    {
+        var configured = await oauth.IsConfiguredAsync(ct);
+        var m = id is null ? null : await db.Mailboxes.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id.Value, ct);
+        var status = m is null ? new OAuthSignInStatus(OAuthSignInState.None) : oauth.GetStatus(m.Id);
+        MsPanel = new MsSignInPanel(m?.Id ?? 0, m is not null && (status.State == OAuthSignInState.Succeeded || oauth.IsSignedIn(m)), status, configured);
     }
 
     private async Task LoadStores() => Stores = await db.Stores.OrderBy(s => s.Name).ToListAsync();
