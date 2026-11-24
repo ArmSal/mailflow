@@ -1,0 +1,51 @@
+/* Base typography and the Bootstrap 5.3 bridge: Bootstrap stays loaded, its variables are pointed at our tokens
+   so legacy markup (btn, table, form-control, alert, card...) follows the theme in light and dark. */
+body {
+  --bs-body-font-family: var(--font-sans);
+  --bs-body-font-size: var(--fs-base);
+  --bs-body-bg: var(--bg);
+  --bs-body-color: var(--text);
+  --bs-secondary-color: var(--text-muted);
+  --bs-border-color: var(--border);
+  --bs-link-color: var(--accent);
+  --bs-link-hover-color: var(--accent-hover);
+  --bs-link-color-rgb: var(--accent-rgb);
+  --bs-emphasis-color: var(--text);
+  --bs-heading-color: var(--text);
+  --bs-primary: var(--accent);
+  --bs-form-control-bg: var(--surface);
+  --bs-tertiary-bg: var(--surface-2);
+  --bs-secondary-bg: var(--surface-2);
+  --bs-secondary-rgb: var(--neutral-rgb);
+  --bs-success-rgb: var(--ok-rgb);
+  --bs-danger-rgb: var(--error-rgb);
+  --bs-warning-rgb: var(--warn-rgb);
+  font-feature-settings: "tnum" 0;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+:root { --accent-rgb: 11,110,117; --neutral-rgb: 70,83,101; --ok-rgb: 22,106,63; --warn-rgb: 122,79,0; --error-rgb: 180,35,24; }
+:root[data-theme="dark"] { --accent-rgb: 95,207,212; --neutral-rgb: 180,192,205; --ok-rgb: 111,220,156; --warn-rgb: 242,193,92; --error-rgb: 255,155,145; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --accent-rgb: 95,207,212; --neutral-rgb: 180,192,205; --ok-rgb: 111,220,156; --warn-rgb: 242,193,92; --error-rgb: 255,155,145; }
+}
+
+h1, h2, h3, h4, h5, h6 { font-weight: 650; letter-spacing: -.01em; line-height: 1.25; }
+a { text-underline-offset: .18em; }
+.text-muted, .small.text-muted { color: var(--text-muted) !important; }
+.small, small { font-size: var(--fs-sm); }
+code { color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: .05rem .3rem; font-size: .85em; }
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* One visible focus style everywhere, keyboard only */
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; box-shadow: none; }
+
+.visually-hidden-focusable:not(:focus):not(:focus-within) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.skip-link { position: fixed; top: .5rem; left: .5rem; z-index: 1100; background: var(--surface); color: var(--text); padding: .5rem .75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-strong); }
+
+.icon { width: 1.125em; height: 1.125em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; vertical-align: -.2em; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+}

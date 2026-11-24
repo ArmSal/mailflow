@@ -4,20 +4,19 @@
     ViewData["Title"] = "Connexion";
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-5 col-lg-4">
-        <h1 class="h3 mb-3">Connexion</h1>
-        <form method="post">
-            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
-            <div class="mb-3">
-                <label asp-for="Password" class="form-label">Mot de passe</label>
-                <input asp-for="Password" class="form-control" autofocus autocomplete="current-password" />
-            </div>
-            @if (Model.Error is not null)
-            {
-                <div class="alert alert-danger">@Model.Error</div>
-            }
-            <button type="submit" class="btn btn-primary">Se connecter</button>
-        </form>
-    </div>
+<div class="auth-panel">
+    <h1>Connexion</h1>
+    <p class="lead-text">Saisissez le mot de passe du tableau de bord.</p>
+    <form method="post">
+        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+        <div class="field">
+            <label asp-for="Password" class="form-label">Mot de passe</label>
+            <input asp-for="Password" class="form-control" autofocus autocomplete="current-password" />
+        </div>
+        @if (Model.Error is not null)
+        {
+            <div class="alert alert-danger" role="alert">@Model.Error</div>
+        }
+        <button type="submit" class="btn btn-primary w-100">Se connecter</button>
+    </form>
 </div>

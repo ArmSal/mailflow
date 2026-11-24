@@ -1,0 +1,64 @@
+/* App shell: fixed side navigation + top bar + content. Anonymous pages use .auth-shell. */
+.app-shell { display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr); min-height: 100vh; }
+
+.sidenav {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto; z-index: 1040;
+  background: var(--nav-bg); color: var(--nav-text); display: flex; flex-direction: column; padding: var(--sp-4) var(--sp-3);
+}
+.wordmark { display: inline-flex; align-items: center; gap: .6rem; color: var(--nav-text-strong); text-decoration: none; font-weight: 700; font-size: 1.25rem; letter-spacing: -.02em; padding: .25rem .5rem; }
+.wordmark:hover { color: var(--nav-text-strong); }
+.wordmark .icon { width: 1.75rem; height: 1.75rem; stroke: var(--nav-accent); stroke-width: 1.6; }
+.sidenav .wordmark { margin-bottom: var(--sp-4); }
+
+.nav-group { margin-top: var(--sp-4); }
+.nav-group-title { margin: 0 0 .25rem; padding: 0 .75rem; font-size: var(--fs-xs); font-weight: 600; color: var(--nav-group); letter-spacing: .02em; }
+.nav-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.nav-link-item {
+  display: flex; align-items: center; gap: .7rem; padding: .5rem .75rem; border-radius: var(--radius-sm);
+  color: var(--nav-text); text-decoration: none; font-size: var(--fs-base); position: relative;
+}
+.nav-link-item:hover { background: var(--nav-hover); color: var(--nav-text-strong); }
+.nav-link-item[aria-current="page"] { background: var(--nav-active); color: var(--nav-text-strong); font-weight: 600; }
+.nav-link-item[aria-current="page"]::before { content: ""; position: absolute; left: -.75rem; top: .4rem; bottom: .4rem; width: 3px; border-radius: 0 3px 3px 0; background: var(--nav-accent); }
+.sidenav :focus-visible { outline-color: #9fd0ff; }
+
+.main-col { min-width: 0; display: flex; flex-direction: column; }
+.topbar {
+  position: sticky; top: 0; z-index: 1030; height: var(--topbar-h); display: flex; align-items: center; gap: var(--sp-3);
+  padding: 0 var(--sp-5); background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+.topbar .wordmark { display: none; color: var(--text); }
+.topbar .wordmark .icon { stroke: var(--accent); }
+.topbar-spacer { flex: 1; }
+.page { width: 100%; max-width: var(--content-max); padding: var(--sp-5); flex: 1; }
+
+.nav-scrim { display: none; }
+.topbar [data-nav-toggle] { display: none; }
+
+/* Narrow screens (< 900px): the side navigation becomes a drawer */
+@media (max-width: 899.98px) {
+  .app-shell { grid-template-columns: minmax(0, 1fr); }
+  .sidenav { position: fixed; inset: 0 auto 0 0; width: min(var(--sidebar-w), 85vw); transform: translateX(-100%); transition: transform .2s ease; }
+  .nav-open .sidenav { transform: none; box-shadow: var(--shadow-2); }
+  .nav-open .nav-scrim { display: block; position: fixed; inset: 0; z-index: 1035; background: rgba(0,0,0,.45); }
+  .topbar [data-nav-toggle] { display: inline-flex; }
+  .topbar { padding: 0 var(--sp-3); }
+  .topbar .wordmark { display: inline-flex; }
+  .page { padding: var(--sp-4) var(--sp-3); }
+}
+
+/* Anonymous pages (Connexion, Première configuration, Erreur) */
+.auth-shell { min-height: 100vh; display: grid; place-items: center; padding: var(--sp-4); background:
+  radial-gradient(60rem 30rem at 15% -10%, var(--accent-soft), transparent 70%), var(--bg); }
+.auth-card { width: min(26rem, 100%); }
+.auth-card .wordmark { color: var(--text); margin-bottom: var(--sp-4); padding-left: 0; }
+.auth-card .wordmark .icon { stroke: var(--accent); }
+.auth-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--sp-5); box-shadow: var(--shadow-2); }
+.auth-panel h1 { font-size: var(--fs-xl); margin: 0 0 .25rem; }
+.auth-panel .lead-text { color: var(--text-muted); margin: 0 0 var(--sp-4); }
+
+/* Theme toggle shows the icon of the mode it switches to */
+.theme-toggle .icon-sun { display: none; }
+:root[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+:root[data-theme="dark"] .theme-toggle .icon-sun { display: inline-block; }
