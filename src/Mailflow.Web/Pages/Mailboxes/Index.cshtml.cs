@@ -23,8 +23,8 @@ public class IndexModel(IAppDbContext db) : PageModel
         if (m is null) return NotFound();
         m.IsActive = !m.IsActive;
         await db.SaveChangesAsync();
-        ViewData["StoreName"] = await db.Stores.Where(s => s.Id == m.StoreId).Select(s => s.Name).FirstOrDefaultAsync();
-        return Partial("_MailboxRow", m);
+        var storeName = await db.Stores.Where(s => s.Id == m.StoreId).Select(s => s.Name).FirstOrDefaultAsync();
+        return this.PartialWith("_MailboxRow", m, ("StoreName", storeName));
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(int id)
@@ -33,9 +33,8 @@ public class IndexModel(IAppDbContext db) : PageModel
         if (m is null) return Content("");
         if (await db.ProcessedMessages.AnyAsync(p => p.MailboxId == id))
         {
-            ViewData["Error"] = "Suppression impossible : des messages ont été traités. Désactivez la boîte.";
-            ViewData["StoreName"] = await db.Stores.Where(s => s.Id == m.StoreId).Select(s => s.Name).FirstOrDefaultAsync();
-            return Partial("_MailboxRow", m);
+            var storeName = await db.Stores.Where(s => s.Id == m.StoreId).Select(s => s.Name).FirstOrDefaultAsync();
+            return this.PartialWith("_MailboxRow", m, ("Error", "Suppression impossible : des messages ont été traités. Désactivez la boîte."), ("StoreName", storeName));
         }
         db.Mailboxes.Remove(m);
         await db.SaveChangesAsync();

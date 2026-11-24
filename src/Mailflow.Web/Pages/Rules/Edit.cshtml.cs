@@ -131,9 +131,11 @@ public class EditModel(IAppDbContext db, IRuleTester tester) : PageModel
     public async Task<IActionResult> OnPostTestAsync(int id, CancellationToken ct)
     {
         if (!await db.Rules.AnyAsync(r => r.Id == id, ct)) return NotFound();
-        try { ViewData["Matches"] = await tester.TestAsync(id, 50, ct); }
-        catch (Exception ex) { ViewData["Error"] = ex.Message; }
-        return Partial("_RuleTestResult");
+        IReadOnlyList<RuleTestMatch>? matches = null;
+        string? error = null;
+        try { matches = await tester.TestAsync(id, 50, ct); }
+        catch (Exception ex) { error = ex.Message; }
+        return this.PartialWith("_RuleTestResult", null, ("Matches", matches), ("Error", error));
     }
 
     private static bool IsValidRegex(string pattern)

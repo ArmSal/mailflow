@@ -27,8 +27,7 @@ public class IndexModel(IAppDbContext db) : PageModel
         if (s is null) return Content("");
         if (await db.Mailboxes.AnyAsync(m => m.StoreId == id) || await db.Printers.AnyAsync(p => p.StoreId == id))
         {
-            ViewData["Error"] = "Suppression impossible : des boîtes mail ou imprimantes sont liées. Désactivez le magasin.";
-            return Partial("_StoreRow", s);
+            return this.PartialWith("_StoreRow", s, ("Error", "Suppression impossible : des boîtes mail ou imprimantes sont liées. Désactivez le magasin."));
         }
         db.Stores.Remove(s);
         await db.SaveChangesAsync();

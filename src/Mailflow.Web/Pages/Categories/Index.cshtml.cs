@@ -18,8 +18,7 @@ public class IndexModel(IAppDbContext db) : PageModel
         if (c is null) return Content("");
         if (await db.Documents.AnyAsync(d => d.CategoryId == id) || await db.RuleActions.AnyAsync(a => a.CategoryId == id))
         {
-            ViewData["Error"] = "Suppression impossible : la catégorie est utilisée par des documents ou des règles.";
-            return Partial("_CategoryRow", c);
+            return this.PartialWith("_CategoryRow", c, ("Error", "Suppression impossible : la catégorie est utilisée par des documents ou des règles."));
         }
         db.Categories.Remove(c);
         await db.SaveChangesAsync();

@@ -23,8 +23,7 @@ public class IndexModel(IAppDbContext db, IPrinterService printers, ITestPagePro
         if (p is null) return NotFound();
         p.IsActive = !p.IsActive;
         await db.SaveChangesAsync();
-        await LoadStoreName(p);
-        return Partial("_PrinterRow", p);
+        return this.PartialWith("_PrinterRow", p, ("StoreName", await StoreNameAsync(p)));
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(int id)
@@ -33,9 +32,8 @@ public class IndexModel(IAppDbContext db, IPrinterService printers, ITestPagePro
         if (p is null) return Content("");
         if (await db.Documents.AnyAsync(d => d.PrinterId == id) || await db.RuleActions.AnyAsync(a => a.PrinterId == id))
         {
-            ViewData["Error"] = "Suppression impossible : l'imprimante est utilisée. Désactivez-la.";
-            await LoadStoreName(p);
-            return Partial("_PrinterRow", p);
+            return this.PartialWith("_PrinterRow", p,
+                ("Error", "Suppression impossible : l'imprimante est utilisée. Désactivez-la."), ("StoreName", await StoreNameAsync(p)));
         }
         db.Printers.Remove(p);
         await db.SaveChangesAsync();
@@ -46,22 +44,22 @@ public class IndexModel(IAppDbContext db, IPrinterService printers, ITestPagePro
     {
         var p = await db.Printers.FindAsync(id);
         if (p is null) return NotFound();
+        bool ok;
+        string message;
         try
         {
             await printers.PrintAsync(testPage.GetTestPagePath(), p.WindowsName, 1, p.Duplex, ct);
-            ViewData["Ok"] = true;
-            ViewData["Message"] = "Page de test envoyée.";
+            ok = true;
+            message = "Page de test envoyée.";
         }
         catch (Exception ex)
         {
-            ViewData["Ok"] = false;
-            ViewData["Message"] = "Échec de l'impression : " + ex.Message;
+            ok = false;
+            message = "Échec de l'impression : " + ex.Message;
         }
-        return Partial("_TestPrintResult");
+        return this.PartialWith("_TestPrintResult", null, ("Ok", ok), ("Message", message));
     }
 
-    private async Task LoadStoreName(Printer p)
-    {
-        ViewData["StoreName"] = await db.Stores.Where(s => s.Id == p.StoreId).Select(s => s.Name).FirstOrDefaultAsync();
-    }
+    private Task<string?> StoreNameAsync(Printer p) =>
+        db.Stores.Where(s => s.Id == p.StoreId).Select(s => s.Name).FirstOrDefaultAsync();
 }
