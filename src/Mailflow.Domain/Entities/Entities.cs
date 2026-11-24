@@ -107,6 +107,7 @@ public class ProcessedMessage
     public string From { get; set; } = "";
     public string Subject { get; set; } = "";
     public int? MatchedRuleId { get; set; }
+    public SenderVerification SenderVerification { get; set; } = SenderVerification.Unknown;
     public MessageStatus Status { get; set; }
     public DateTime ProcessedAt { get; set; }
 }

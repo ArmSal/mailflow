@@ -267,6 +267,10 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("ReceivedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("SenderVerification")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("TEXT");

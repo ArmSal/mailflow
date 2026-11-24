@@ -13,7 +13,8 @@ public sealed record MailMessage(
     string To,
     string Subject,
     string Body,
-    IReadOnlyList<MailAttachment> Pdfs);
+    IReadOnlyList<MailAttachment> Pdfs,
+    Mailflow.Domain.Enums.SenderVerification SenderVerification = Mailflow.Domain.Enums.SenderVerification.Unknown);
 
 /// <summary>When <paramref name="AccessToken"/> is set the client signs in with XOAUTH2 and ignores the password.</summary>
 public sealed record MailboxConnection(string Host, int Port, bool UseSsl, string Username, string Password, string? AccessToken = null);
