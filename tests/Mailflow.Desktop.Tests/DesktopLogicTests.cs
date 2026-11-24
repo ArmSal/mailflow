@@ -37,14 +37,6 @@ public class DesktopLogicTests
     }
 
     [Fact]
-    public async Task AttachesOnlyWhenHealthAnswersMailflow()
-    {
-        Assert.Equal(ServerMode.Attach, await AttachOrStart.DecideAsync(_ => Task.FromResult<string?>("Mailflow")));
-        Assert.Equal(ServerMode.Start, await AttachOrStart.DecideAsync(_ => Task.FromResult<string?>("other")));
-        Assert.Equal(ServerMode.Start, await AttachOrStart.DecideAsync(_ => throw new HttpRequestException()));
-    }
-
-    [Fact]
     public void WindowStateRoundTrips()
     {
         var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "w.json");

@@ -40,7 +40,8 @@ internal static class Program
         var url = new Uri(config["Kestrel:Endpoints:Http:Url"] ?? "http://127.0.0.1:5088");
 
         ApplicationConfiguration.Initialize();
-        System.Windows.Forms.Application.Run(new TrayApp(url, options, showEvent));
-        return 0;
+        var tray = new TrayApp(url, options, showEvent);
+        System.Windows.Forms.Application.Run(tray);
+        return tray.ExitCode;
     }
 }
