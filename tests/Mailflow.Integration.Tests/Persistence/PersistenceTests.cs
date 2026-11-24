@@ -1,7 +1,10 @@
 using Mailflow.Domain.Entities;
+using Mailflow.Domain.Enums;
 using Mailflow.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Mailflow.Integration.Tests.Persistence;
 
@@ -32,6 +35,24 @@ public sealed class PersistenceTests : IDisposable
         Assert.Equal("C:\\docs", db.Settings.Single(s => s.Key == "DocumentsRoot").Value);
         Assert.Equal("24", db.Settings.Single(s => s.Key == "PrintMaxAgeHours").Value);
         Assert.Equal("{Category}/{yyyy}/{MM}/{yyyy-MM-dd}_{Supplier}_{OriginalName}.pdf", db.Settings.Single(s => s.Key == "FileNamePattern").Value);
+    }
+
+    [Fact]
+    public async Task Upgrade_keeps_existing_mailboxes_as_password_mailboxes()
+    {
+        using var db = new MailflowDbContext(new DbContextOptionsBuilder<MailflowDbContext>().UseSqlite(_conn).Options);
+        // A database created by the very first version, holding a real mailbox.
+        db.GetService<IMigrator>().Migrate("20261124161503_Initial");
+        db.Database.ExecuteSqlRaw("INSERT INTO Stores (Id, Name, IsActive) VALUES (1, 'Store A', 1)");
+        db.Database.ExecuteSqlRaw("INSERT INTO Mailboxes (Id, StoreId, DisplayName, Email, Host, Port, UseSsl, Username, EncryptedPassword, InboxFolder, CheckIntervalMinutes, LookbackDays, DefaultAfterProcessing, IsActive) " +
+                                  "VALUES (1, 1, 'Old', 'a@example.com', 'imap.example.com', 993, 1, 'a@example.com', 'secret', 'INBOX', 5, 3, 'Leave', 1)");
+
+        db.Database.Migrate();
+
+        var mailbox = await db.Mailboxes.SingleAsync();
+        Assert.Equal(AuthMethod.Password, mailbox.AuthMethod);
+        Assert.Null(mailbox.EncryptedOAuthCache);
+        Assert.Equal("secret", mailbox.EncryptedPassword);
     }
 
     [Fact]

@@ -126,6 +126,10 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("AuthMethod")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("CheckIntervalMinutes")
                         .HasColumnType("INTEGER");
 
@@ -141,6 +145,9 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(320)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EncryptedOAuthCache")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("EncryptedPassword")
