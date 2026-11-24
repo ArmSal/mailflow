@@ -45,7 +45,7 @@
                         <ul class="nav-list">
                             @foreach (var i in g.Items)
                             {
-                                <li><a class="nav-link-item" href="~@i.Url" aria-current="@(i.Url == activeUrl ? "page" : null)"><svg class="icon" aria-hidden="true"><use href="#i-@i.Icon" /></svg>@i.Label</a></li>
+                                <li><a class="nav-link-item" href="@Url.Content("~" + i.Url)" aria-current="@(i.Url == activeUrl ? "page" : null)"><svg class="icon" aria-hidden="true"><use href="#i-@i.Icon" /></svg>@i.Label</a></li>
                             }
                         </ul>
                     </div>

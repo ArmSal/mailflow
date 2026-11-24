@@ -109,7 +109,8 @@ internal sealed class MainForm : Form
         {
             if (!e.IsSuccess && e.WebErrorStatus != CoreWebView2WebErrorStatus.OperationCanceled)
             {
-                core.NavigateToString(ErrorPage);
+                // The server answered with an error page (404, 500...): say so, instead of claiming it is unreachable.
+                core.NavigateToString(e.HttpStatusCode >= 400 ? HttpErrorPage(e.HttpStatusCode) : ErrorPage);
                 return;
             }
             _web.Visible = true;
@@ -123,6 +124,14 @@ internal sealed class MainForm : Form
         try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
         catch (Exception) { /* no browser available */ }
     }
+
+    private static string HttpErrorPage(int status) => $$"""
+        <!doctype html><html lang="fr"><meta charset="utf-8"><body style="font-family:Segoe UI,sans-serif;text-align:center;margin-top:20vh;color:#374151">
+        <h2>{{(status == 404 ? "Page introuvable" : "Le serveur a renvoyé une erreur")}}</h2>
+        <p>Code {{status}}.</p>
+        <button onclick="window.chrome.webview.postMessage('retry')" style="font-size:16px;padding:8px 20px;cursor:pointer">Retour à l'accueil</button>
+        </body></html>
+        """;
 
     private const string ErrorPage = """
         <!doctype html><html lang="fr"><meta charset="utf-8"><body style="font-family:Segoe UI,sans-serif;text-align:center;margin-top:20vh;color:#374151">
