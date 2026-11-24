@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Mailflow.Application.Abstractions;
+using Mailflow.Domain.Enums;
 using Mailflow.Infrastructure.Storage;
 using Mailflow.Web.Auth;
 using Mailflow.Web.Backup;
@@ -41,6 +42,13 @@ public class IndexModel(
         public string? ClientId { get; set; }
     }
 
+    public class SenderCheckInput
+    {
+        public string? Mode { get; set; }
+    }
+
+    [BindProperty] public SenderCheckInput SenderCheck { get; set; } = new();
+    public string? SenderCheckMessage { get; private set; }
     [BindProperty] public MicrosoftInput Microsoft { get; set; } = new();
     public string? MicrosoftMessage { get; private set; }
     public bool MicrosoftConfigured { get; private set; }
@@ -96,6 +104,24 @@ public class IndexModel(
         return Page();
     }
 
+    public async Task<IActionResult> OnPostSenderCheckAsync()
+    {
+        var ct = HttpContext.RequestAborted;
+        var mode = (SenderCheck.Mode ?? "").Trim();
+        await LoadAsync();
+        if (SettingsRules.ValidateSenderCheck(mode) is { } error)
+        {
+            ModelState.AddModelError("SenderCheck.Mode", error);
+            return Page();
+        }
+        await SettingsRules.SaveAsync(db, SettingsRules.SenderCheckKey, mode, ct);
+        await db.SaveChangesAsync(ct);
+        SenderCheck = new SenderCheckInput { Mode = mode };
+        SenderCheckMessage = "Vérification de l'expéditeur enregistrée.";
+        ModelState.Clear();
+        return Page();
+    }
+
     public async Task<IActionResult> OnPostPasswordAsync()
     {
         var ct = HttpContext.RequestAborted;
@@ -132,6 +158,7 @@ public class IndexModel(
             PrintMaxAgeHours = int.TryParse(s.GetValueOrDefault(SettingsRules.HoursKey), out var h) ? h : 24,
         };
         SetMicrosoft(s);
+        SenderCheck = new SenderCheckInput { Mode = SettingsRules.ParseSenderCheck(s.GetValueOrDefault(SettingsRules.SenderCheckKey)).ToString() };
     }
 
     private async Task LoadMicrosoftAsync(CancellationToken ct) => SetMicrosoft(await SettingsRules.LoadAsync(db, ct));

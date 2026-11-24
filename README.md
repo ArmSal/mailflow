@@ -286,7 +286,7 @@ Adresse par défaut : **http://127.0.0.1:5088** (liée à `127.0.0.1`). Connexio
 | **Règles** | Liste ordonnée (glisser-déposer), éditeur conditions / actions, **Tester cette règle** sur les 50 derniers e-mails (lecture seule), **Expéditeurs autorisés** |
 | **Historique** | Recherche par date / fournisseur / catégorie / magasin, **Ouvrir le PDF**, **Réimprimer**, **Changer de catégorie** |
 | **Journal** | Exécutions et erreurs |
-| **Paramètres** | Dossier racine des documents, modèle de nom de fichier, âge maximal d'impression, mot de passe admin, sauvegarde immédiate, **Import config.yaml** |
+| **Paramètres** | Dossier racine des documents, modèle de nom de fichier, âge maximal d'impression, vérification de l'expéditeur avant impression, mot de passe admin, sauvegarde immédiate, **Import config.yaml** |
 
 Principes d'interface : Bootstrap 5, HTMX pour les actions en ligne (tests, interrupteurs, « lancer maintenant »). Pas de SPA, pas d'étape de build front.
 
@@ -297,7 +297,7 @@ Principes d'interface : Bootstrap 5, HTMX pour les actions en ligne (tests, inte
 | Risque | Parade |
 |---|---|
 | Accès au tableau de bord par le personnel / le réseau | Lié à `127.0.0.1`, mot de passe haché, session de 30 min, jetons anti-falsification sur tous les formulaires, 5 tentatives de connexion par minute, hôtes autorisés limités à `localhost` (`AllowedHosts`), assistant de premier lancement accessible uniquement depuis la machine locale |
-| Usurpation de l'expéditeur (en-tête `From` falsifiable) | L'adresse est analysée strictement (toute adresse ambiguë est ignorée). La vérification DKIM/DMARC avant impression n'est **pas encore** en place : ne mettez dans les expéditeurs autorisés que des fournisseurs de confiance |
+| Usurpation de l'expéditeur (en-tête `From` falsifiable) | L'adresse est analysée strictement (toute adresse ambiguë est ignorée). Vérification optionnelle du verdict DKIM/DMARC du serveur de réception (Paramètres) : **Désactivée**, **Avertir** (défaut : impression inchangée, l'Historique signale les expéditeurs non vérifiés) ou **Stricte** (seuls les expéditeurs vérifiés sont imprimés ; les autres sont archivés, réimpression possible). Un serveur sans verdict compte comme non vérifié. Ne mettez dans les expéditeurs autorisés que des fournisseurs de confiance |
 | Mots de passe des boîtes | Chiffrés avec **DPAPI** (portée : compte du service), jamais affichés |
 | Impression sauvage | Impression uniquement depuis les **expéditeurs autorisés**, âge maximal 24 h |
 | PDF malveillants | Jamais ouverts ni exécutés : seul le texte est lu (PdfPig) ; SumatraPDF ne fait qu'imprimer |

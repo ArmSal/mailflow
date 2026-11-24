@@ -60,6 +60,32 @@
     <div class="form-actions mb-4"><button class="btn btn-primary" type="submit">Enregistrer</button></div>
 </form>
 
+<form method="post" asp-page-handler="SenderCheck">
+    <section class="form-section">
+        <h2 class="form-section-title">Vérification de l'expéditeur avant impression</h2>
+        <p class="form-section-hint">L'adresse d'expédition d'un e-mail peut être falsifiée. Cette vérification s'appuie sur le verdict DKIM/DMARC du serveur de messagerie qui a reçu le message.</p>
+        @if (Model.SenderCheckMessage is not null) { <div class="alert alert-success" role="status">@Model.SenderCheckMessage</div> }
+        @if (ViewData.ModelState.Keys.Any(k => k.StartsWith("SenderCheck.") && ViewData.ModelState[k]!.Errors.Count > 0)) { <div class="alert alert-danger" role="alert">@ViewData.ModelState["SenderCheck.Mode"]!.Errors[0].ErrorMessage</div> }
+        <div class="field">
+            <label class="form-label" asp-for="SenderCheck.Mode">Mode de vérification</label>
+            <select class="form-select" asp-for="SenderCheck.Mode" aria-describedby="sender-check-help">
+                <option value="Off" selected="@(Model.SenderCheck.Mode == "Off")">Désactivée</option>
+                <option value="Warn" selected="@(Model.SenderCheck.Mode == "Warn")">Avertir (recommandé)</option>
+                <option value="Strict" selected="@(Model.SenderCheck.Mode == "Strict")">Stricte</option>
+            </select>
+            <div id="sender-check-help" class="form-text">
+                <ul class="mb-1">
+                    <li><strong>Désactivée</strong> : aucune vérification, impression comme avant.</li>
+                    <li><strong>Avertir</strong> : impression comme avant, mais l'Historique signale les expéditeurs non vérifiés.</li>
+                    <li><strong>Stricte</strong> : seuls les expéditeurs vérifiés sont imprimés ; les autres documents sont archivés sans impression (« Réimprimer » reste possible).</li>
+                </ul>
+                Un serveur de messagerie qui ne fournit pas ce verdict donne « non vérifié » : en mode Stricte, aucune impression automatique ne partirait pour ses messages. Essayez d'abord Avertir et consultez la colonne « Impression » de l'Historique. Le verdict n'est fiable que dans la mesure où le serveur qui reçoit les messages l'est.
+            </div>
+        </div>
+    </section>
+    <div class="form-actions mb-4"><button class="btn btn-primary" type="submit">Enregistrer</button></div>
+</form>
+
 <form method="post" asp-page-handler="Password">
     <section class="form-section">
         <h2 class="form-section-title">Sécurité</h2>
