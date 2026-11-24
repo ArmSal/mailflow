@@ -1,37 +1,55 @@
 @model Mailflow.Web.Pages.History.HistoryRowModel
 @{ var r = Model.Row; }
 <tr>
-    <td>@r.ReceivedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
-    <td>@r.From</td>
-    <td>@r.Subject</td>
-    <td>@r.OriginalName</td>
+    <td class="text-nowrap">@r.ReceivedAt.ToLocalTime().ToString("dd/MM/yyyy")<span class="cell-sub">@r.ReceivedAt.ToLocalTime().ToString("HH:mm")</span></td>
+    <td class="cell-doc">
+        <div class="cell-clip" title="@r.Subject">@r.Subject</div>
+        <span class="cell-sub cell-clip" title="@r.From">@r.From</span>
+        <span class="cell-sub cell-clip" title="@r.OriginalName">@r.OriginalName</span>
+    </td>
     <td>@r.Category</td>
     <td>@r.Store</td>
-    <td>
-        @if (r.PrintedAt is { } p) { <span>@p.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span> }
-        else { <span class="text-muted">Non imprimé</span> }
-        @if (!string.IsNullOrEmpty(r.PrintError)) { <div class="text-danger small">@r.PrintError</div> }
-        @if (Model.Message is not null) { <div class="small @(Model.Ok ? "text-success" : "text-danger")">@Model.Message</div> }
+    <td class="cell-result">
+        @if (r.PrintedAt is { } p) { <span class="badge badge-ok">Imprimé</span><span class="print-detail">@p.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span> }
+        else if (!string.IsNullOrEmpty(r.PrintError)) { <span class="badge badge-error">Erreur</span> }
+        else { <span class="badge badge-neutral">Non imprimé</span> }
+        @if (!string.IsNullOrEmpty(r.PrintError)) { <span class="print-error">@r.PrintError</span> }
+        @if (Model.Message is not null) { <span class="row-msg @(Model.Ok ? "is-ok" : "is-error")" role="status">@Model.Message</span> }
     </td>
-    <td class="text-end">
-        <a class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener" href="@Url.Page("/History/Index", "Pdf", new { id = r.DocumentId })">Ouvrir le PDF</a>
-        <form method="post" class="d-inline-flex gap-1 mt-1" hx-post="@Url.Page("/History/Index", "Reprint", new { id = r.DocumentId })" hx-target="closest tr" hx-swap="outerHTML">
-            <select name="printerId" class="form-select form-select-sm" aria-label="Imprimante">
-                @foreach (var pr in Model.Printers)
-                {
-                    <option value="@pr.Id">@pr.DisplayName</option>
-                }
-            </select>
-            <button class="btn btn-sm btn-outline-secondary" type="submit">Réimprimer</button>
-        </form>
-        <form method="post" class="d-inline-flex gap-1 mt-1" hx-post="@Url.Page("/History/Index", "Reclassify", new { id = r.DocumentId })" hx-target="closest tr" hx-swap="outerHTML">
-            <select name="categoryId" class="form-select form-select-sm" aria-label="Catégorie">
-                @foreach (var c in Model.Categories)
-                {
-                    <option value="@c.Id" selected="@(c.Id == r.CategoryId)">@c.Name</option>
-                }
-            </select>
-            <button class="btn btn-sm btn-outline-secondary" type="submit">Changer de catégorie</button>
-        </form>
+    <td>
+        <div class="history-actions">
+            <a class="btn btn-sm btn-secondary btn-icon" target="_blank" rel="noopener" href="@Url.Page("/History/Index", "Pdf", new { id = r.DocumentId })" aria-label="Ouvrir le PDF" title="Ouvrir le PDF"><svg class="icon" aria-hidden="true"><use href="#i-file" /></svg></a>
+            <details class="action-menu">
+                <summary class="btn btn-sm btn-secondary btn-icon" aria-label="Plus d'actions" title="Plus d'actions"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01" stroke-width="3" /></svg></summary>
+                <div class="action-menu-panel">
+                    <form method="post" hx-post="@Url.Page("/History/Index", "Reprint", new { id = r.DocumentId })" hx-target="closest tr" hx-swap="outerHTML">
+                        <label class="form-label" for="printer-@r.DocumentId">Imprimante</label>
+                        <div class="menu-line">
+                            <select name="printerId" id="printer-@r.DocumentId" class="form-select form-select-sm">
+                                @foreach (var pr in Model.Printers)
+                                {
+                                    <option value="@pr.Id">@pr.DisplayName</option>
+                                }
+                            </select>
+                            <button class="btn btn-sm btn-secondary" type="submit">Réimprimer</button>
+                        </div>
+                    </form>
+                    <form method="post" hx-post="@Url.Page("/History/Index", "Reclassify", new { id = r.DocumentId })" hx-target="closest tr" hx-swap="outerHTML">
+                        <label class="form-label" for="category-@r.DocumentId">Catégorie</label>
+                        <div class="menu-line">
+                            <select name="categoryId" id="category-@r.DocumentId" class="form-select form-select-sm">
+                                @foreach (var c in Model.Categories)
+                                {
+                                    <option value="@c.Id" selected="@(c.Id == r.CategoryId)">@c.Name</option>
+                                }
+                            </select>
+                            <button class="btn btn-sm btn-secondary" type="submit">Changer de catégorie</button>
+                        </div>
+                    </form>
+                </div>
+            </details>
+        </div>
     </td>
 </tr>
+
+
