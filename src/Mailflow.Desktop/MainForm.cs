@@ -85,7 +85,8 @@ internal sealed class MainForm : Form
 #if !DEBUG
         core.Settings.AreDevToolsEnabled = false;
         core.Settings.AreDefaultContextMenusEnabled = false;
-        core.Settings.AreBrowserAcceleratorKeysEnabled = false; // no print preview, view-source or reload shortcuts
+        // Browser shortcuts stay enabled on purpose: F5 / Ctrl+R reload the page and Ctrl+wheel zooms. Navigation away from
+        // the app's own origin is blocked separately, so shortcuts like view-source cannot leave the app.
 #endif
         core.Settings.IsStatusBarEnabled = false;
         core.NavigationStarting += (_, e) =>
