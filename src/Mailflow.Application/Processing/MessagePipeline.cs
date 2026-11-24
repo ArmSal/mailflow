@@ -27,6 +27,9 @@ public sealed class MessagePipeline(
         var allowed = await db.AllowedSenders.ToListAsync(ct);
         var maxAge = await MaxAgeHoursAsync(ct);
 
+        var senderMode = PrintPolicy.ParseMode((await db.Settings.FirstOrDefaultAsync(x => x.Key == "PrintSenderCheck", ct))?.Value);
+        var senderBlocked = PrintPolicy.SenderBlocksPrint(senderMode, message.SenderVerification);
+
         var from = ExtractAddress(message.From);
         var context = new MatchContext(from, ExtractRecipient(message.To), message.Subject, message.Body,
             message.Pdfs.Select(p => p.FileName).ToList(), ReadPdfText(message), message.Pdfs.Count > 0);
@@ -56,7 +59,7 @@ public sealed class MessagePipeline(
             var processed = new ProcessedMessage
             {
                 MailboxId = mailbox.Id, MessageId = key, ImapUid = message.Uid, ReceivedAt = message.ReceivedAt,
-                From = message.From, Subject = message.Subject, MatchedRuleId = evaluation.MatchedRules.FirstOrDefault()?.Id,
+                From = message.From, SenderVerification = message.SenderVerification, Subject = message.Subject, MatchedRuleId = evaluation.MatchedRules.FirstOrDefault()?.Id,
                 Status = skip ? MessageStatus.Skipped : MessageStatus.Processed, ProcessedAt = now
             };
             db.ProcessedMessages.Add(processed);
@@ -74,7 +77,12 @@ public sealed class MessagePipeline(
                         ProcessedMessageId = processed.Id, Sha256 = stored.Sha256, OriginalName = pdf.FileName,
                         StoredPath = stored.Path, CategoryId = category.Id
                     };
-                    if (print)
+                    if (print && senderBlocked)
+                    {
+                        doc.PrinterId = printer!.Id;
+                        doc.PrintError = PrintPolicy.SenderBlockedMessage;
+                    }
+                    else if (print)
                     {
                         try
                         {

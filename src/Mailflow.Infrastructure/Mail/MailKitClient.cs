@@ -52,15 +52,18 @@ public sealed class MailKitClient : IMailClient
                 await part.Content.DecodeToAsync(ms, ct);
                 pdfs.Add(new MailAttachment(name, ms.ToArray()));
             }
+            var authHeaders = m.Headers.Where(h => h.Id == HeaderId.AuthenticationResults).Select(h => h.Value).ToList();
+            var fromAddress = m.From.Mailboxes.FirstOrDefault()?.Address ?? "";
             result.Add(new MailMessage(
                 m.MessageId ?? $"uid-{uid.Id}",
                 uid.Id,
                 m.Date.UtcDateTime,
-                m.From.Mailboxes.FirstOrDefault()?.Address ?? "",
+                fromAddress,
                 m.To.Mailboxes.FirstOrDefault()?.Address ?? "",
                 m.Subject ?? "",
                 m.TextBody ?? "",
-                pdfs));
+                pdfs,
+                SenderAuthParser.Parse(authHeaders, fromAddress)));
         }
         await client.DisconnectAsync(true, ct);
         return result;

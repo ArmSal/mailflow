@@ -297,3 +297,84 @@ public class PrintPolicyTests
     [Fact] public void Sender_scoped_to_other_store_is_refused() => Assert.False(Check(from: "a@magasin2.fr", store: 1));
     [Fact] public void Sender_scoped_to_this_store_is_allowed() => Assert.True(Check(from: "a@magasin2.fr", store: 2));
 }
+
+public class SenderCheckTests
+{
+    const string Blocked = "Impression bloquée : expéditeur non vérifié (DKIM/DMARC).";
+
+    static Fixture Setup(string? mode, SenderVerification v)
+    {
+        var f = new Fixture();
+        if (mode != null) f.Db.Settings.Add(new Setting { Key = "PrintSenderCheck", Value = mode });
+        f.Db.SaveChanges();
+        f.Fetch(Fixture.Msg() with { SenderVerification = v });
+        return f;
+    }
+
+    [Theory]
+    [InlineData("Off", SenderVerification.Unknown, true)]
+    [InlineData("Off", SenderVerification.Pass, true)]
+    [InlineData("Off", SenderVerification.Fail, true)]
+    [InlineData("Warn", SenderVerification.Unknown, true)]
+    [InlineData("Warn", SenderVerification.Pass, true)]
+    [InlineData("Warn", SenderVerification.Fail, true)]
+    [InlineData("Strict", SenderVerification.Unknown, false)]
+    [InlineData("Strict", SenderVerification.Pass, true)]
+    [InlineData("Strict", SenderVerification.Fail, false)]
+    public async Task Mode_and_verification_decide_printing(string mode, SenderVerification v, bool prints)
+    {
+        using var f = Setup(mode, v);
+
+        var log = await f.Processor.RunAsync(f.Mailbox, default);
+
+        var doc = Assert.Single(f.Db.Documents);
+        Assert.Equal(prints ? 1 : 0, log.Printed);
+        Assert.Equal(1, log.DocumentsSaved);
+        Assert.Equal(v, Assert.Single(f.Db.ProcessedMessages).SenderVerification);
+        if (prints)
+        {
+            Assert.NotNull(doc.PrintedAt);
+            Assert.Null(doc.PrintError);
+        }
+        else
+        {
+            await f.Printer.DidNotReceiveWithAnyArgs().PrintAsync(default!, default!, default, default, default);
+            Assert.Null(doc.PrintedAt);
+            Assert.Equal(Blocked, doc.PrintError);
+        }
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("banana")]
+    [InlineData("7")]
+    public async Task Missing_or_invalid_setting_defaults_to_Warn_and_prints(string? mode)
+    {
+        using var f = Setup(mode, SenderVerification.Fail);
+
+        var log = await f.Processor.RunAsync(f.Mailbox, default);
+
+        Assert.Equal(1, log.Printed);
+    }
+
+    [Fact]
+    public async Task Strict_block_still_marks_the_message_read()
+    {
+        using var f = Setup("Strict", SenderVerification.Fail);
+
+        await f.Processor.RunAsync(f.Mailbox, default);
+
+        await f.Mail.Received(1).MarkAsReadAsync(Arg.Any<MailboxConnection>(), "INBOX", 10, Arg.Any<CancellationToken>());
+    }
+
+    [Fact] public void ParseMode_is_case_insensitive() => Assert.Equal(SenderCheckMode.Strict, PrintPolicy.ParseMode(" strict "));
+
+    [Fact]
+    public void Only_strict_without_pass_blocks()
+    {
+        foreach (var m in Enum.GetValues<SenderCheckMode>())
+            foreach (var v in Enum.GetValues<SenderVerification>())
+                Assert.Equal(m == SenderCheckMode.Strict && v != SenderVerification.Pass, PrintPolicy.SenderBlocksPrint(m, v));
+    }
+}
