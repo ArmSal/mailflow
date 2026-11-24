@@ -14,6 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Mailflow.Desktop.Tests" />
     <ProjectReference Include="..\Mailflow.Web\Mailflow.Web.csproj" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.*" />
     <EmbeddedResource Include="Assets\mailflow.ico" LogicalName="mailflow.ico" />

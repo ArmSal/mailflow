@@ -64,17 +64,18 @@ internal sealed class TrayApp : ApplicationContext
         if (!options.Minimized) ShowWindow();
     }
 
+    public int ExitCode { get; private set; }
+
     private async Task StartAsync()
     {
-        try
+        var outcome = await StartupFlow.RunAsync(_url.Port, ct => AttachOrStart.HttpProbeAsync(_url, ct),
+            () => PortOwner.GetListenerImagePath(_url.Port), Environment.ProcessPath,
+            async () => _host = await Task.Run(() => MailflowHost.StartAsync(_options.HostArgs, CancellationToken.None)),
+            Dialogs.ShowError);
+        ExitCode = StartupFlow.ExitCode(outcome);
+        if (ExitCode != 0)
         {
-            var mode = await AttachOrStart.DecideAsync(ct => AttachOrStart.HttpProbeAsync(_url, ct));
-            if (mode == ServerMode.Start)
-                _host = await Task.Run(() => MailflowHost.StartAsync(_options.HostArgs, CancellationToken.None));
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Impossible de démarrer Mailflow : {ex.Message}", "Mailflow", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            _form.Hide();
             await ExitAsync();
             return;
         }
