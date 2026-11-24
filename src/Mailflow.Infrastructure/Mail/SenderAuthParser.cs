@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Mailflow.Domain.Enums;
+using MimeKit.Cryptography;
 
 namespace Mailflow.Infrastructure.Mail;
 
@@ -20,17 +21,19 @@ public static partial class SenderAuthParser
             if (fromDomain.Length == 0 || authenticationResultsHeaders is not { Count: > 0 } || authenticationResultsHeaders[0] is not { } header)
                 return SenderVerification.Unknown;
 
+            // MimeKit's RFC 8601 parser understands quoted strings, escapes and comments. A hand-written split on ';'
+            // can be fooled by values copied from the message (e.g. a quoted envelope sender) into seeing fake clauses.
+            if (!AuthenticationResults.TryParse(System.Text.Encoding.UTF8.GetBytes(header), out var parsed)) return SenderVerification.Unknown;
+
             bool dmarcPass = false, dmarcFail = false, dkimPass = false, dkimFail = false;
-            // First segment is the authserv-id; the rest are "method=result prop.name=value ..." clauses.
-            foreach (var clause in StripComments(header).Split(';').Skip(1))
+            foreach (var clause in parsed.Results)
             {
-                var m = ClauseRegex().Match(clause);
-                if (!m.Success) continue;
-                var method = m.Groups[1].Value.ToLowerInvariant();
-                var result = m.Groups[2].Value.ToLowerInvariant();
+                var method = clause.Method.ToLowerInvariant();
+                var result = clause.Result.ToLowerInvariant();
                 var props = new Dictionary<string, string>();
-                foreach (Match p in PropRegex().Matches(m.Groups[3].Value))
-                    props[p.Groups[1].Value.ToLowerInvariant()] = p.Groups[2].Value.Trim('"');
+                foreach (var p in clause.Properties)
+                    if (IsPlainDomainValue(p.Value))
+                        props[$"{p.PropertyType}.{p.Property}".ToLowerInvariant()] = p.Value.Trim();
 
                 if (method == "dmarc")
                 {
@@ -74,23 +77,9 @@ public static partial class SenderAuthParser
         return s[(s.LastIndexOf('@') + 1)..].Trim().ToLowerInvariant();
     }
 
-    /// <summary>Removes (possibly nested) parenthesised comments and turns folded whitespace into single spaces.</summary>
-    static string StripComments(string s)
-    {
-        var sb = new System.Text.StringBuilder(s.Length);
-        int depth = 0;
-        foreach (var c in s)
-        {
-            if (c == '(') depth++;
-            else if (c == ')') { if (depth > 0) depth--; }
-            else if (depth == 0) sb.Append(char.IsWhiteSpace(c) ? ' ' : c);
-        }
-        return sb.ToString();
-    }
+    /// <summary>Only plain "domain", "@domain" or "user@domain" values are used for alignment; anything else is ignored.</summary>
+    static bool IsPlainDomainValue(string? v) => v is { Length: > 0 and <= 320 } && PlainDomainRegex().IsMatch(v.Trim());
 
-    [GeneratedRegex(@"^\s*([A-Za-z0-9-]+)\s*=\s*([A-Za-z]+)(.*)$", RegexOptions.Singleline)]
-    private static partial Regex ClauseRegex();
-
-    [GeneratedRegex(@"([A-Za-z0-9-]+\.[A-Za-z0-9-]+)\s*=\s*(""[^""]*""|\S+)")]
-    private static partial Regex PropRegex();
+    [GeneratedRegex(@"^[A-Za-z0-9._+-]*@?[A-Za-z0-9.-]+$")]
+    private static partial Regex PlainDomainRegex();
 }

@@ -34,6 +34,19 @@ public class SenderAuthParserTests
     [Fact] public void Dkim_fail_with_other_aligned_pass_passes() => Assert.Equal(SenderVerification.Pass, P("mx; dkim=fail header.d=supplier.example header.s=a; dkim=pass header.d=supplier.example header.s=b"));
     [Fact] public void Dkim_fail_with_only_unaligned_pass_fails() => Assert.Equal(SenderVerification.Fail, P("mx; dkim=fail header.d=supplier.example; dkim=pass header.d=attacker.example"));
 
+    // Parser-differential attacks: some values (envelope sender, reasons) are copied from the message, so a sender can
+    // put ';', '(' or '"' into them. They must never be read as separate clauses or hide later ones.
+    [Fact] public void Fake_clause_hidden_in_a_quoted_envelope_sender_is_not_a_verdict() =>
+        Assert.Equal(SenderVerification.Unknown, P("mx; spf=pass smtp.mailfrom=\"x;dkim=pass header.d=supplier.example;y\"@attacker.example; dkim=none"));
+    [Fact] public void Escaped_quote_does_not_end_a_quoted_string_early() =>
+        Assert.Equal(SenderVerification.Unknown, P("mx; spf=neutral reason=\"a\\\"; dkim=pass header.d=supplier.example; b\"; dkim=none"));
+    [Fact] public void Open_parenthesis_inside_quotes_does_not_hide_a_later_dmarc_fail() =>
+        Assert.Equal(SenderVerification.Fail, P("mx; dkim=pass reason=\"(\" header.d=supplier.example; dmarc=fail header.from=supplier.example"));
+    [Fact] public void Malformed_header_is_never_a_pass() =>
+        Assert.NotEqual(SenderVerification.Pass, P("mx; dkim=pass header.d=supplier.example reason=\"(\"; dkim=pass header.d=supplier.example \""));
+    [Fact] public void Domain_value_with_extra_text_is_not_trusted() =>
+        Assert.Equal(SenderVerification.Unknown, P("mx; dkim=pass header.d=\"supplier.example attacker.example\""));
+
     [Theory]
     [InlineData("mx; none")]
     [InlineData("mx; dkim=none; dmarc=none")]
