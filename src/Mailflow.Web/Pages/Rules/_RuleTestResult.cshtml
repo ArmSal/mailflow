@@ -1,21 +1,23 @@
 @using Mailflow.Web.Pages.Rules
 @if (ViewData["Error"] is string err)
 {
-    <div class="alert alert-danger">Test impossible : @err</div>
+    <div class="alert alert-danger" role="alert">Test impossible : @err</div>
 }
 else if (ViewData["Matches"] is IReadOnlyList<RuleTestMatch> matches)
 {
-    <div class="alert alert-info">@matches.Count e-mail(s) correspondant(s) parmi les 50 derniers (aucune action exécutée).</div>
+    <div class="alert @(matches.Count > 0 ? "alert-success" : "alert-info")" role="status">@matches.Count e-mail(s) correspondant(s) parmi les 50 derniers (aucune action exécutée).</div>
     @if (matches.Count > 0)
     {
-        <table class="table table-sm">
-            <thead><tr><th>Reçu</th><th>De</th><th>Objet</th></tr></thead>
-            <tbody>
-            @foreach (var m in matches)
-            {
-                <tr><td>@m.ReceivedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td><td>@m.From</td><td>@m.Subject</td></tr>
-            }
-            </tbody>
-        </table>
+        <div class="table-wrap">
+            <table class="table table-sm align-middle">
+                <thead><tr><th scope="col">Reçu</th><th scope="col">De</th><th scope="col">Objet</th></tr></thead>
+                <tbody>
+                @foreach (var m in matches)
+                {
+                    <tr><td class="text-nowrap">@m.ReceivedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td><td>@m.From</td><td>@m.Subject</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
     }
 }

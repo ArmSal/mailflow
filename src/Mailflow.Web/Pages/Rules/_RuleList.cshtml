@@ -1,33 +1,83 @@
+@using Mailflow.Domain.Enums
+@using Mailflow.Web.Pages.Rules
 @model Mailflow.Web.Pages.Rules.RuleListVm
-<table class="table align-middle">
-    <thead><tr><th>#</th><th>Nom</th><th>Boîte</th><th>Conditions</th><th>Actions</th><th>Actif</th><th></th></tr></thead>
-    <tbody>
-    @foreach (var r in Model.Rules)
-    {
-        <tr>
-            <td>@r.Priority</td>
-            <td>@r.Name @if (r.StopProcessing) { <span class="badge bg-secondary">stop</span> }</td>
-            <td>@(r.MailboxId is int mid && Model.Mailboxes.TryGetValue(mid, out var mn) ? mn : "Toutes")</td>
-            <td>@r.Conditions.Count</td>
-            <td>@r.Actions.Count</td>
-            <td>
-                <form method="post" hx-post="@Url.Page("/Rules/Index", "Toggle", new { id = r.Id })" hx-target="#rule-list" hx-swap="innerHTML">
-                    <button class="btn btn-sm @(r.IsActive ? "btn-success" : "btn-outline-secondary")" type="submit">@(r.IsActive ? "Actif" : "Inactif")</button>
-                </form>
-            </td>
-            <td class="text-end">
-                <form method="post" class="d-inline" hx-post="@Url.Page("/Rules/Index", "Move", new { id = r.Id, dir = "up" })" hx-target="#rule-list" hx-swap="innerHTML">
-                    <button class="btn btn-sm btn-outline-secondary" type="submit" aria-label="Monter">&#9650;</button>
-                </form>
-                <form method="post" class="d-inline" hx-post="@Url.Page("/Rules/Index", "Move", new { id = r.Id, dir = "down" })" hx-target="#rule-list" hx-swap="innerHTML">
-                    <button class="btn btn-sm btn-outline-secondary" type="submit" aria-label="Descendre">&#9660;</button>
-                </form>
-                <a class="btn btn-sm btn-outline-primary" asp-page="/Rules/Edit" asp-route-id="@r.Id">Modifier</a>
-                <form method="post" class="d-inline" hx-post="@Url.Page("/Rules/Index", "Delete", new { id = r.Id })" hx-target="#rule-list" hx-swap="innerHTML" hx-confirm="Supprimer cette règle ?">
-                    <button class="btn btn-sm btn-outline-danger" type="submit">Supprimer</button>
-                </form>
-            </td>
-        </tr>
-    }
-    </tbody>
-</table>
+@if (Model.Rules.Count == 0)
+{
+    <div class="card">
+        <div class="empty-state">
+            <span class="empty-state-icon"><svg class="icon" aria-hidden="true"><use href="#i-rules" /></svg></span>
+            <h2 class="empty-state-title">Aucune règle</h2>
+            <p>Créez une règle pour classer et imprimer automatiquement les documents reçus.</p>
+            <a class="btn btn-primary" asp-page="/Rules/Edit">Ajouter une règle</a>
+        </div>
+    </div>
+}
+else
+{
+<div class="table-wrap">
+    <table class="table align-middle">
+        <thead><tr><th scope="col">Ordre</th><th scope="col">Règle</th><th scope="col">Statut</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+        <tbody>
+        @{ var last = Model.Rules.Count - 1; }
+        @for (var i = 0; i < Model.Rules.Count; i++)
+        {
+            var r = Model.Rules[i];
+            var conds = r.Conditions.ToList();
+            var acts = r.Actions.ToList();
+            <tr class="@(r.IsActive ? "" : "is-inactive")">
+                <td>
+                    <div class="rule-order">
+                        <span class="rule-rank" title="Position dans la liste">@(i + 1)</span>
+                        <form method="post" hx-post="@Url.Page("/Rules/Index", "Move", new { id = r.Id, dir = "up" })" hx-target="#rule-list" hx-swap="innerHTML">
+                            <button class="btn btn-sm btn-secondary" type="submit" aria-label="Monter" title="Monter" disabled="@(i == 0)"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6" /></svg></button>
+                        </form>
+                        <form method="post" hx-post="@Url.Page("/Rules/Index", "Move", new { id = r.Id, dir = "down" })" hx-target="#rule-list" hx-swap="innerHTML">
+                            <button class="btn btn-sm btn-secondary" type="submit" aria-label="Descendre" title="Descendre" disabled="@(i == last)"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg></button>
+                        </form>
+                    </div>
+                </td>
+                <td>
+                    <span class="rule-name">@r.Name</span>
+                    @if (r.StopProcessing) { <span class="badge badge-neutral ms-1" title="Les règles suivantes ne sont pas appliquées">Arrêt ensuite</span> }
+                    <div class="rule-meta">
+                        <span>Boîte : @(r.MailboxId is int mid && Model.Mailboxes.TryGetValue(mid, out var mn) ? mn : "toutes")</span>
+                        <span>@(r.MatchMode == MatchMode.Any ? "Au moins une condition" : "Toutes les conditions")</span>
+                    </div>
+                    <div class="chips"><span class="chips-label">Si</span>
+                        @if (conds.Count == 0) { <span class="chip chip--more"><span>aucune condition</span></span> }
+                        @foreach (var c in conds.Take(3))
+                        {
+                            <span class="chip"><span>@(c.Field == ConditionField.HasPdf ? RuleLabels.Fields[c.Field] : $"{RuleLabels.Fields.GetValueOrDefault(c.Field, c.Field.ToString())} {RuleLabels.Operators.GetValueOrDefault(c.Operator, c.Operator.ToString())} « {c.Value} »")</span></span>
+                        }
+                        @if (conds.Count > 3) { <span class="chip chip--more"><span>+@(conds.Count - 3)</span></span> }
+                    </div>
+                    <div class="chips"><span class="chips-label">Alors</span>
+                        @if (acts.Count == 0) { <span class="chip chip--more"><span>aucune action</span></span> }
+                        @foreach (var a in acts.Take(4))
+                        {
+                            <span class="chip chip--action"><span>@RuleLabels.Actions.GetValueOrDefault(a.Type, a.Type.ToString())</span></span>
+                        }
+                        @if (acts.Count > 4) { <span class="chip chip--more"><span>+@(acts.Count - 4)</span></span> }
+                    </div>
+                </td>
+                <td>
+                    <form method="post" hx-post="@Url.Page("/Rules/Index", "Toggle", new { id = r.Id })" hx-target="#rule-list" hx-swap="innerHTML">
+                        <button class="btn btn-sm toggle-state @(r.IsActive ? "btn-success" : "btn-secondary")" type="submit" aria-pressed="@(r.IsActive ? "true" : "false")" title="@(r.IsActive ? "Désactiver cette règle" : "Activer cette règle")">@(r.IsActive ? "Actif" : "Inactif")</button>
+                    </form>
+                </td>
+                <td>
+                    <div class="row-actions">
+                        <a class="btn btn-sm btn-secondary" asp-page="/Rules/Edit" asp-route-id="@r.Id">Modifier</a>
+                        <form method="post" hx-post="@Url.Page("/Rules/Index", "Delete", new { id = r.Id })" hx-target="#rule-list" hx-swap="innerHTML" hx-confirm="Supprimer cette règle ?">
+                            <button class="btn btn-sm btn-danger" type="submit">Supprimer</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+}
+
+

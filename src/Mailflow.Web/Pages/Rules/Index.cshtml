@@ -1,11 +1,15 @@
 @page
 @model Mailflow.Web.Pages.Rules.IndexModel
 @{ ViewData["Title"] = "Règles"; }
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3">Règles</h1>
+<link rel="stylesheet" href="~/css/page-activity.css" asp-append-version="true" />
+<div class="page-header">
     <div>
-        <a class="btn btn-outline-secondary" asp-page="AllowedSenders">Expéditeurs autorisés</a>
-        <a class="btn btn-primary" asp-page="Edit">Ajouter une règle</a>
+        <h1 class="page-title">Règles</h1>
+        <p class="page-subtitle">Elles s'appliquent dans l'ordre de la liste : la première règle est la plus prioritaire.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-secondary" asp-page="AllowedSenders"><svg class="icon" aria-hidden="true"><use href="#i-shield" /></svg>Expéditeurs autorisés</a>
+        <a class="btn btn-primary" asp-page="Edit"><svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg>Ajouter une règle</a>
     </div>
 </div>
 <div id="rule-list"><partial name="_RuleList" model="Model.List" /></div>
