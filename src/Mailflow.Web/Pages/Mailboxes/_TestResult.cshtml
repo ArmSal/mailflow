@@ -1,15 +1,18 @@
 @model Mailflow.Application.Abstractions.ConnectionTestResult
 @if (Model.Success)
 {
-    <div class="alert alert-success">
-        Connexion réussie : @Model.MessageCount message(s) dans la boîte.
+    <div class="alert alert-success" role="status">
+        <span class="alert-title">Connexion réussie : @Model.MessageCount message(s) dans la boîte.</span>
         @if (Model.Folders.Count > 0)
         {
-            <div class="small mt-1">Dossiers : @string.Join(", ", Model.Folders)</div>
+            <span class="small">Dossiers disponibles :</span>
+            <ul class="chip-list">
+                @foreach (var f in Model.Folders) { <li class="chip">@f</li> }
+            </ul>
         }
     </div>
 }
 else
 {
-    <div class="alert alert-danger">Échec de la connexion : @Model.Error</div>
+    <div class="alert alert-danger" role="alert"><span class="alert-title">Échec de la connexion</span>@Model.Error</div>
 }

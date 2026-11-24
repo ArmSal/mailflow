@@ -1,25 +1,27 @@
 @model Mailflow.Domain.Entities.Printer
 <tr>
-    <td>@Model.DisplayName
-        @if (ViewData["Error"] is string err) { <div class="text-danger small">@err</div> }
+    <td><strong>@Model.DisplayName</strong><span class="cell-sub">@Model.WindowsName</span>
+        @if (ViewData["Error"] is string err) { <span class="cell-inline-error" role="alert">@err</span> }
     </td>
-    <td>@Model.WindowsName</td>
     <td>@ViewData["StoreName"]</td>
-    <td>@Model.DefaultCopies</td>
-    <td>@(Model.Duplex ? "Oui" : "Non")</td>
+    <td class="text-nowrap">@Model.DefaultCopies @(Model.DefaultCopies > 1 ? "copies" : "copie")<span class="cell-sub">@(Model.Duplex ? "Recto-verso" : "Recto seul")</span></td>
     <td>
         <form method="post" hx-post="@Url.Page("/Printers/Index", "Toggle", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML">
-            <button class="btn btn-sm @(Model.IsActive ? "btn-success" : "btn-outline-secondary")" type="submit">@(Model.IsActive ? "Actif" : "Inactif")</button>
+            <button class="badge-toggle @(Model.IsActive ? "badge-ok" : "badge-neutral")" type="submit" title="@(Model.IsActive ? "Cliquer pour désactiver" : "Cliquer pour activer")">@(Model.IsActive ? "Actif" : "Inactif")</button>
         </form>
     </td>
-    <td class="text-end">
-        <form method="post" class="d-inline" hx-post="@Url.Page("/Printers/Index", "TestPrint", new { id = Model.Id })" hx-target="next .test-result" hx-swap="innerHTML">
-            <button class="btn btn-sm btn-outline-secondary" type="submit">Test d'impression</button>
-        </form>
-        <a class="btn btn-sm btn-outline-primary" asp-page="/Printers/Edit" asp-route-id="@Model.Id">Modifier</a>
-        <form method="post" class="d-inline" hx-post="@Url.Page("/Printers/Index", "Delete", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Supprimer cette imprimante ?">
-            <button class="btn btn-sm btn-outline-danger" type="submit">Supprimer</button>
-        </form>
-        <div class="test-result mt-1"></div>
+    <td>
+        <div class="row-actions row-actions-nowrap">
+            <form method="post" hx-post="@Url.Page("/Printers/Index", "TestPrint", new { id = Model.Id })" hx-target="next .test-result" hx-swap="innerHTML">
+                <button class="btn btn-sm btn-secondary" type="submit">Test d'impression</button>
+            </form>
+            <a class="btn btn-sm btn-secondary" asp-page="/Printers/Edit" asp-route-id="@Model.Id">Modifier</a>
+            <form method="post" hx-post="@Url.Page("/Printers/Index", "Delete", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Supprimer cette imprimante ?">
+                <button class="btn btn-sm btn-danger" type="submit">Supprimer</button>
+            </form>
+        </div>
+        <div class="test-result" aria-live="polite"></div>
     </td>
 </tr>
+
+

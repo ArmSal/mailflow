@@ -1,16 +1,34 @@
 @page
 @model Mailflow.Web.Pages.Categories.IndexModel
 @{ ViewData["Title"] = "Catégories"; }
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3">Catégories / Dossiers</h1>
-    <a class="btn btn-primary" asp-page="Edit">Ajouter une catégorie</a>
+<link rel="stylesheet" href="~/css/page-config.css" asp-append-version="true" />
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Catégories</h1>
+        <p class="page-subtitle">Les catégories de documents et les dossiers dans lesquels ils sont rangés.</p>
+    </div>
+    <div class="page-actions"><a class="btn btn-primary" asp-page="Edit"><svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg>Ajouter une catégorie</a></div>
 </div>
-<table class="table align-middle">
-    <thead><tr><th>Ordre</th><th>Nom</th><th>Sous-dossier local</th><th>Dossier IMAP</th><th></th></tr></thead>
-    <tbody>
-    @foreach (var c in Model.Items)
-    {
-        <partial name="_CategoryRow" model="c" />
-    }
-    </tbody>
-</table>
+@if (!Model.Items.Any())
+{
+    <div class="card"><div class="empty-state">
+        <span class="empty-state-icon"><svg class="icon" aria-hidden="true"><use href="#i-tag" /></svg></span>
+        <h2 class="empty-state-title">Aucune catégorie</h2>
+        <p>Ajoutez une catégorie pour classer les documents reçus dans des dossiers.</p>
+        <a class="btn btn-primary" asp-page="Edit">Ajouter une catégorie</a>
+    </div></div>
+}
+else
+{
+<div class="table-wrap">
+    <table class="table align-middle">
+        <thead><tr><th scope="col" class="num">Ordre</th><th scope="col">Nom</th><th scope="col">Sous-dossier local</th><th scope="col">Dossier IMAP</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+        <tbody>
+        @foreach (var c in Model.Items)
+        {
+            <partial name="_CategoryRow" model="c" />
+        }
+        </tbody>
+    </table>
+</div>
+}
