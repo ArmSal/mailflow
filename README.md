@@ -77,6 +77,8 @@ flowchart LR
 ## 2. Fonctionnalités
 
 - 📥 Lecture IMAP multi-boîtes avec préréglages (OVH MX Plan, OVH Email Pro, iCloud, Gmail, Outlook / Hotmail, Yahoo) et option « IMAP personnalisé »
+- 🔐 Outlook / Hotmail : connexion par **compte Microsoft (OAuth2)**, sans mot de passe (code d'appareil). Gratuit, sans secret à conserver ; chaque installation inscrit sa propre application.
+  Procédure pas à pas : [Docs/microsoft-oauth-setup.md](Docs/microsoft-oauth-setup.md).
 - 🧠 Moteur de règles : expéditeur, domaine, objet, corps, nom de pièce jointe, **texte du PDF** (insensible à la casse et aux accents, regex avec délai maximal)
 - 🗂️ Archivage : `{Catégorie}/{aaaa}/{MM}/{aaaa-MM-jj}_{Fournisseur}_{NomOriginal}.pdf`, dédoublonnage par SHA-256
 - 🖨️ Impression silencieuse via SumatraPDF, **uniquement** pour les expéditeurs autorisés et les e-mails récents

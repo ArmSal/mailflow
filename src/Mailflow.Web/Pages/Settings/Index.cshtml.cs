@@ -36,6 +36,14 @@ public class IndexModel(
         public string Confirm { get; set; } = "";
     }
 
+    public class MicrosoftInput
+    {
+        public string? ClientId { get; set; }
+    }
+
+    [BindProperty] public MicrosoftInput Microsoft { get; set; } = new();
+    public string? MicrosoftMessage { get; private set; }
+    public bool MicrosoftConfigured { get; private set; }
     [BindProperty] public SettingsInput Input { get; set; } = new();
     [BindProperty] public PasswordInput Password { get; set; } = new();
     public string? SettingsMessage { get; private set; }
@@ -47,6 +55,7 @@ public class IndexModel(
     public async Task<IActionResult> OnPostSettingsAsync()
     {
         var ct = HttpContext.RequestAborted;
+        await LoadMicrosoftAsync(ct);
         Input.DocumentsRoot = (Input.DocumentsRoot ?? "").Trim();
         Input.FileNamePattern = (Input.FileNamePattern ?? "").Trim();
         var errors = new (string Field, string? Error)[]
@@ -63,6 +72,27 @@ public class IndexModel(
         await SettingsRules.SaveAsync(db, SettingsRules.HoursKey, Input.PrintMaxAgeHours.ToString(), ct);
         await db.SaveChangesAsync(ct);
         SettingsMessage = "Paramètres enregistrés.";
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostMicrosoftAsync()
+    {
+        var ct = HttpContext.RequestAborted;
+        var clientId = (Microsoft.ClientId ?? "").Trim();
+        await LoadAsync();
+        if (SettingsRules.ValidateClientId(clientId) is { } error)
+        {
+            ModelState.AddModelError("Microsoft.ClientId", error);
+            Microsoft = new MicrosoftInput { ClientId = clientId };
+            return Page();
+        }
+        if (clientId.Length > 0) clientId = Guid.Parse(clientId).ToString();
+        await SettingsRules.SaveAsync(db, SettingsRules.OAuthClientIdKey, clientId, ct);
+        await db.SaveChangesAsync(ct);
+        Microsoft = new MicrosoftInput { ClientId = clientId };
+        MicrosoftConfigured = clientId.Length > 0;
+        MicrosoftMessage = MicrosoftConfigured ? "Identifiant d'application Microsoft enregistré." : "Connexion Microsoft désactivée : identifiant effacé.";
+        ModelState.Clear();
         return Page();
     }
 
@@ -101,5 +131,15 @@ public class IndexModel(
             FileNamePattern = s.GetValueOrDefault(SettingsRules.PatternKey) is { Length: > 0 } p ? p : storeOptions.Value.FileNamePattern,
             PrintMaxAgeHours = int.TryParse(s.GetValueOrDefault(SettingsRules.HoursKey), out var h) ? h : 24,
         };
+        SetMicrosoft(s);
+    }
+
+    private async Task LoadMicrosoftAsync(CancellationToken ct) => SetMicrosoft(await SettingsRules.LoadAsync(db, ct));
+
+    private void SetMicrosoft(Dictionary<string, string> s)
+    {
+        var id = s.GetValueOrDefault(SettingsRules.OAuthClientIdKey) ?? "";
+        Microsoft = new MicrosoftInput { ClientId = id };
+        MicrosoftConfigured = id.Length > 0;
     }
 }

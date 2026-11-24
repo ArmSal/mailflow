@@ -5,6 +5,7 @@ using Mailflow.Web.Pages.Rules;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using MailboxEdit = Mailflow.Web.Pages.Mailboxes.EditModel;
 using MailboxIndex = Mailflow.Web.Pages.Mailboxes.IndexModel;
 using CategoryEdit = Mailflow.Web.Pages.Categories.EditModel;
@@ -17,6 +18,10 @@ public class PagesTests : IDisposable
     private readonly SqliteFixture _fx = new();
     private readonly FakeSecretStore _secrets = new();
     private readonly FakeMailClient _mail = new();
+    private readonly Mailflow.Application.Abstractions.IOAuthSignInService _oauth = NSubstitute.Substitute.For<Mailflow.Application.Abstractions.IOAuthSignInService>();
+    private readonly Mailflow.Application.Abstractions.IMailboxConnectionFactory _factory = new FakeConnectionFactory(new FakeSecretStore());
+
+    public PagesTests() => _oauth.GetStatus(default).ReturnsForAnyArgs(new Mailflow.Application.Abstractions.OAuthSignInStatus(Mailflow.Application.Abstractions.OAuthSignInState.None));
 
     public void Dispose() => _fx.Dispose();
 
@@ -38,7 +43,7 @@ public class PagesTests : IDisposable
     private async Task<int> CreateMailbox(int storeId, string password)
     {
         using var db = _fx.NewDb();
-        var page = new MailboxEdit(db, _secrets, _mail).With();
+        var page = new MailboxEdit(db, _secrets, _mail, _oauth, _factory).With();
         page.Input = MailboxForm(storeId, password);
         Assert.IsType<RedirectToPageResult>(await page.OnPostAsync(null));
         return db.Mailboxes.Single().Id;
@@ -50,7 +55,7 @@ public class PagesTests : IDisposable
         var storeId = SeedStore();
         using (var db = _fx.NewDb())
         {
-            var page = new MailboxEdit(db, _secrets, _mail).With();
+            var page = new MailboxEdit(db, _secrets, _mail, _oauth, _factory).With();
             page.Input = MailboxForm(storeId, null);
             Assert.IsType<PageResult>(await page.OnPostAsync(null));
             Assert.Empty(db.Mailboxes);
@@ -68,7 +73,7 @@ public class PagesTests : IDisposable
 
         using (var db = _fx.NewDb())
         {
-            var page = new MailboxEdit(db, _secrets, _mail).With();
+            var page = new MailboxEdit(db, _secrets, _mail, _oauth, _factory).With();
             page.Input = MailboxForm(storeId, "");
             page.Input.DisplayName = "Renommée";
             Assert.IsType<RedirectToPageResult>(await page.OnPostAsync(id));
@@ -81,7 +86,7 @@ public class PagesTests : IDisposable
         }
         using (var db = _fx.NewDb())
         {
-            var page = new MailboxEdit(db, _secrets, _mail).With();
+            var page = new MailboxEdit(db, _secrets, _mail, _oauth, _factory).With();
             page.Input = MailboxForm(storeId, "new");
             await page.OnPostAsync(id);
         }
@@ -95,14 +100,14 @@ public class PagesTests : IDisposable
         var storeId = SeedStore();
         var id = await CreateMailbox(storeId, "stored");
         using var db = _fx.NewDb();
-        var page = new MailboxEdit(db, _secrets, _mail).With();
+        var page = new MailboxEdit(db, _secrets, _mail, _oauth, _factory).With();
         page.Input = MailboxForm(storeId, "");
         var result = Assert.IsType<PartialViewResult>(await page.OnPostTestAsync(id, default));
         Assert.Equal("stored", _mail.Last!.Password);
         var model = Assert.IsType<Mailflow.Application.Abstractions.ConnectionTestResult>(result.Model);
         Assert.Equal(12, model.MessageCount);
 
-        var get = new MailboxEdit(db, _secrets, _mail).With();
+        var get = new MailboxEdit(db, _secrets, _mail, _oauth, _factory).With();
         await get.OnGetAsync(id);
         Assert.Null(get.Input.Password);
     }

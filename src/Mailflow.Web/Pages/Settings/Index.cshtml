@@ -12,7 +12,7 @@
 <div class="settings-stack">
 <form method="post" asp-page-handler="Settings">
     @if (Model.SettingsMessage is not null) { <div class="alert alert-success" role="status">@Model.SettingsMessage</div> }
-    @if (!ViewData.ModelState.IsValid) { <div class="alert alert-danger" role="alert">Certains paramètres sont invalides : corrigez les champs signalés puis enregistrez de nouveau.</div> }
+    @if (ViewData.ModelState.Keys.Any(k => k.StartsWith("Input.") && ViewData.ModelState[k]!.Errors.Count > 0)) { <div class="alert alert-danger" role="alert">Certains paramètres sont invalides : corrigez les champs signalés puis enregistrez de nouveau.</div> }
     <section class="form-section">
         <h2 class="form-section-title">Dossier des documents</h2>
         <p class="form-section-hint">Où sont archivés les PDF reçus.</p>
@@ -39,6 +39,22 @@
             <label class="form-label" asp-for="Input.PrintMaxAgeHours">Âge maximum d'impression (heures, 1 à 168)</label>
             <input type="number" class="form-control" asp-for="Input.PrintMaxAgeHours" />
             <span class="field-validation-error" asp-validation-for="Input.PrintMaxAgeHours"></span>
+        </div>
+    </section>
+    <div class="form-actions mb-4"><button class="btn btn-primary" type="submit">Enregistrer</button></div>
+</form>
+
+<form method="post" asp-page-handler="Microsoft">
+    <section class="form-section">
+        <h2 class="form-section-title">Connexion Microsoft</h2>
+        <p class="form-section-hint">Pour relever une boîte Outlook / Hotmail sans mot de passe (OAuth2). Gratuit, aucun secret à conserver.</p>
+        @if (Model.MicrosoftMessage is not null) { <div class="alert alert-success" role="status">@Model.MicrosoftMessage</div> }
+        <p><span class="badge @(Model.MicrosoftConfigured ? "badge-ok" : "badge-neutral")">@(Model.MicrosoftConfigured ? "Configuré" : "Non configuré")</span></p>
+        <div class="field">
+            <label class="form-label" asp-for="Microsoft.ClientId">Identifiant d'application Azure (client)</label>
+            <input class="form-control" asp-for="Microsoft.ClientId" autocomplete="off" spellcheck="false" placeholder="00000000-0000-0000-0000-000000000000" />
+            <span class="form-text">Laisser vide pour désactiver. Procédure pas à pas : <code>Docs/microsoft-oauth-setup.md</code>.</span>
+            <span class="field-validation-error" asp-validation-for="Microsoft.ClientId"></span>
         </div>
     </section>
     <div class="form-actions mb-4"><button class="btn btn-primary" type="submit">Enregistrer</button></div>

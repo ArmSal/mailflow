@@ -1,6 +1,11 @@
 @model Mailflow.Domain.Entities.Mailbox
+@inject Mailflow.Application.Abstractions.IOAuthSignInService OAuth
 <tr>
     <td><strong>@Model.DisplayName</strong><span class="cell-sub">@Model.Email</span>
+        @if (Model.AuthMethod == Mailflow.Domain.Enums.AuthMethod.MicrosoftOAuth)
+        {
+            <span class="cell-badges"><span class="badge badge-neutral">OAuth2</span>@if (!OAuth.IsSignedIn(Model)) { <span class="badge badge-warn">Reconnexion requise</span> }</span>
+        }
         @if (ViewData["Error"] is string err) { <span class="cell-inline-error" role="alert">@err</span> }
         @if (!string.IsNullOrEmpty(Model.LastError)) { <span class="cell-inline-warn">@Model.LastError</span> }
     </td>
