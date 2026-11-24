@@ -1,0 +1,16 @@
+@page
+@model Mailflow.Web.Pages.Categories.IndexModel
+@{ ViewData["Title"] = "Catégories"; }
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3">Catégories / Dossiers</h1>
+    <a class="btn btn-primary" asp-page="Edit">Ajouter une catégorie</a>
+</div>
+<table class="table align-middle">
+    <thead><tr><th>Ordre</th><th>Nom</th><th>Sous-dossier local</th><th>Dossier IMAP</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var c in Model.Items)
+    {
+        <partial name="_CategoryRow" model="c" />
+    }
+    </tbody>
+</table>

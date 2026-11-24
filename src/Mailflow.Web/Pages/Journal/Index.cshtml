@@ -1,0 +1,53 @@
+@page
+@model Mailflow.Web.Pages.Journal.IndexModel
+@{ ViewData["Title"] = "Journal"; }
+<h1 class="h3 mb-3">Journal</h1>
+<form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-auto">
+        <label class="form-label" for="MailboxId">Boîte mail</label>
+        <select class="form-select" id="MailboxId" name="MailboxId">
+            <option value="">Toutes</option>
+            @foreach (var m in Model.Mailboxes)
+            {
+                <option value="@m.Id" selected="@(Model.MailboxId == m.Id)">@m.DisplayName</option>
+            }
+        </select>
+    </div>
+    <div class="col-auto form-check ms-2 mb-2">
+        <input class="form-check-input" type="checkbox" id="ErrorsOnly" name="ErrorsOnly" value="true" checked="@Model.ErrorsOnly" />
+        <label class="form-check-label" for="ErrorsOnly">Erreurs seulement</label>
+    </div>
+    <div class="col-auto"><button class="btn btn-primary" type="submit">Filtrer</button></div>
+</form>
+<table class="table table-sm align-middle">
+    <thead><tr><th>Date</th><th>Boîte mail</th><th>Durée</th><th>Messages</th><th>Documents</th><th>Imprimés</th><th>Erreur</th></tr></thead>
+    <tbody>
+    @foreach (var r in Model.Rows)
+    {
+        <tr>
+            <td>@r.Log.StartedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
+            <td>@r.Mailbox</td>
+            <td>@Mailflow.Web.Pages.Journal.IndexModel.FormatDuration(r.Log.Duration)</td>
+            <td>@r.Log.MessagesHandled</td>
+            <td>@r.Log.DocumentsSaved</td>
+            <td>@r.Log.Printed</td>
+            <td class="text-danger small">@r.Log.Error</td>
+        </tr>
+    }
+    @if (Model.Rows.Count == 0) { <tr><td colspan="7" class="text-muted">Aucune entrée.</td></tr> }
+    </tbody>
+</table>
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="Pagination">
+        <ul class="pagination">
+            <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : "")">
+                <a class="page-link" asp-page="Index" asp-route-PageNumber="@(Model.PageNumber - 1)" asp-route-ErrorsOnly="@Model.ErrorsOnly" asp-route-MailboxId="@Model.MailboxId">Précédent</a>
+            </li>
+            <li class="page-item disabled"><span class="page-link">Page @Model.PageNumber / @Model.TotalPages</span></li>
+            <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : "")">
+                <a class="page-link" asp-page="Index" asp-route-PageNumber="@(Model.PageNumber + 1)" asp-route-ErrorsOnly="@Model.ErrorsOnly" asp-route-MailboxId="@Model.MailboxId">Suivant</a>
+            </li>
+        </ul>
+    </nav>
+}

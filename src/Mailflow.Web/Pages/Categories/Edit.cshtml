@@ -1,0 +1,13 @@
+@page "{id:int?}"
+@model Mailflow.Web.Pages.Categories.EditModel
+@{ ViewData["Title"] = "Catégorie"; }
+<h1 class="h3 mb-3">Catégorie</h1>
+<form method="post" class="col-md-6">
+    <div class="mb-3"><label class="form-label" asp-for="Input.Name">Nom</label><input class="form-control" asp-for="Input.Name" /><span class="text-danger" asp-validation-for="Input.Name"></span></div>
+    <div class="mb-3"><label class="form-label" asp-for="Input.LocalSubfolder">Sous-dossier local</label><input class="form-control" asp-for="Input.LocalSubfolder" /><span class="text-danger" asp-validation-for="Input.LocalSubfolder"></span></div>
+    <div class="mb-3"><label class="form-label" asp-for="Input.ImapFolder">Dossier IMAP (optionnel)</label><input class="form-control" asp-for="Input.ImapFolder" /></div>
+    <div class="mb-3"><label class="form-label" asp-for="Input.Color">Couleur</label><input type="color" class="form-control form-control-color" asp-for="Input.Color" /><span class="text-danger" asp-validation-for="Input.Color"></span></div>
+    <div class="mb-3"><label class="form-label" asp-for="Input.SortOrder">Ordre d'affichage</label><input type="number" class="form-control" asp-for="Input.SortOrder" /></div>
+    <button class="btn btn-primary" type="submit">Enregistrer</button>
+    <a class="btn btn-link" asp-page="Index">Annuler</a>
+</form>

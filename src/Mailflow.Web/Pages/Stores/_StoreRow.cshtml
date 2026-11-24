@@ -1,0 +1,18 @@
+@model Mailflow.Domain.Entities.Store
+<tr>
+    <td>@Model.Name
+        @if (ViewData["Error"] is string err) { <div class="text-danger small">@err</div> }
+    </td>
+    <td>@Model.Address</td>
+    <td>
+        <form method="post" hx-post="@Url.Page("/Stores/Index", "Toggle", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML">
+            <button class="btn btn-sm @(Model.IsActive ? "btn-success" : "btn-outline-secondary")" type="submit">@(Model.IsActive ? "Actif" : "Inactif")</button>
+        </form>
+    </td>
+    <td class="text-end">
+        <a class="btn btn-sm btn-outline-primary" asp-page="/Stores/Edit" asp-route-id="@Model.Id">Modifier</a>
+        <form method="post" class="d-inline" hx-post="@Url.Page("/Stores/Index", "Delete", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Supprimer ce magasin ?">
+            <button class="btn btn-sm btn-outline-danger" type="submit">Supprimer</button>
+        </form>
+    </td>
+</tr>

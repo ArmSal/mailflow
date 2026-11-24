@@ -1,0 +1,21 @@
+@using Mailflow.Web.Pages.Rules
+@if (ViewData["Error"] is string err)
+{
+    <div class="alert alert-danger">Test impossible : @err</div>
+}
+else if (ViewData["Matches"] is IReadOnlyList<RuleTestMatch> matches)
+{
+    <div class="alert alert-info">@matches.Count e-mail(s) correspondant(s) parmi les 50 derniers (aucune action exécutée).</div>
+    @if (matches.Count > 0)
+    {
+        <table class="table table-sm">
+            <thead><tr><th>Reçu</th><th>De</th><th>Objet</th></tr></thead>
+            <tbody>
+            @foreach (var m in matches)
+            {
+                <tr><td>@m.ReceivedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td><td>@m.From</td><td>@m.Subject</td></tr>
+            }
+            </tbody>
+        </table>
+    }
+}

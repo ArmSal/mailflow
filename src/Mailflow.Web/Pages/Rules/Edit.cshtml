@@ -1,0 +1,51 @@
+@page "{id:int?}"
+@using Mailflow.Domain.Enums
+@using Mailflow.Web.Pages.Rules
+@model Mailflow.Web.Pages.Rules.EditModel
+@{ ViewData["Title"] = "Règle"; var editId = Model.RuleId; }
+<h1 class="h3 mb-3">Règle</h1>
+<form method="post" id="rule-form">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    <div class="row">
+        <div class="col-md-6 mb-3"><label class="form-label" asp-for="Input.Name">Nom</label><input class="form-control" asp-for="Input.Name" /></div>
+        <div class="col-md-6 mb-3"><label class="form-label" asp-for="Input.MailboxId">Boîte mail</label>
+            <select class="form-select" asp-for="Input.MailboxId" asp-items="@(new SelectList(Model.Mailboxes, "Id", "DisplayName"))"><option value="">Toutes les boîtes</option></select></div>
+    </div>
+    <div class="row">
+        <div class="col-md-4 mb-3"><label class="form-label" asp-for="Input.MatchMode">Correspondance</label>
+            <select class="form-select" asp-for="Input.MatchMode">
+                <option value="@MatchMode.All">Toutes les conditions</option>
+                <option value="@MatchMode.Any">Au moins une condition</option>
+            </select></div>
+        <div class="col-md-4 mb-3 d-flex align-items-end"><div class="form-check"><input class="form-check-input" asp-for="Input.StopProcessing" /><label class="form-check-label" asp-for="Input.StopProcessing">Arrêter le traitement ensuite</label></div></div>
+        <div class="col-md-4 mb-3 d-flex align-items-end"><div class="form-check"><input class="form-check-input" asp-for="Input.IsActive" /><label class="form-check-label" asp-for="Input.IsActive">Active</label></div></div>
+    </div>
+
+    <h2 class="h5">Conditions</h2>
+    <div id="conditions">
+        @foreach (var c in Model.Input.Conditions)
+        {
+            <partial name="_ConditionRow" model="@(new ConditionRowVm(Guid.NewGuid().ToString("N"), c))" />
+        }
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-secondary mb-4" hx-post="@Url.Page("/Rules/Edit", "AddCondition")" hx-target="#conditions" hx-swap="beforeend">Ajouter une condition</button>
+
+    <h2 class="h5">Actions</h2>
+    <div id="actions">
+        @foreach (var a in Model.Input.Actions)
+        {
+            <partial name="_ActionRow" model="@(new ActionRowVm(Guid.NewGuid().ToString("N"), a, Model.Categories, Model.Printers))" />
+        }
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-secondary mb-4" hx-post="@Url.Page("/Rules/Edit", "AddAction")" hx-target="#actions" hx-swap="beforeend">Ajouter une action</button>
+
+    <div>
+        <button class="btn btn-primary" type="submit">Enregistrer</button>
+        <a class="btn btn-link" asp-page="Index">Annuler</a>
+        @if (editId is int tid)
+        {
+            <button type="button" class="btn btn-outline-secondary" hx-post="@Url.Page("/Rules/Edit", "Test", new { id = tid })" hx-target="#rule-test">Tester cette règle</button>
+        }
+    </div>
+    <div id="rule-test" class="mt-3"></div>
+</form>

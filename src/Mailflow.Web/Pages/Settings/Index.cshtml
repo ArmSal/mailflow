@@ -1,0 +1,44 @@
+@page
+@model Mailflow.Web.Pages.Settings.IndexModel
+@{ ViewData["Title"] = "Paramètres"; }
+<h1 class="h3 mb-3">Paramètres</h1>
+
+<form method="post" asp-page-handler="Settings" class="col-md-8 mb-4">
+    <h2 class="h5">Stockage</h2>
+    @if (Model.SettingsMessage is not null) { <div class="alert alert-success py-1">@Model.SettingsMessage</div> }
+    <div class="mb-3">
+        <label class="form-label" asp-for="Input.DocumentsRoot">Dossier des documents</label>
+        <input class="form-control" asp-for="Input.DocumentsRoot" />
+        <span class="text-danger" asp-validation-for="Input.DocumentsRoot"></span>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" asp-for="Input.FileNamePattern">Modèle de nom de fichier</label>
+        <input class="form-control" asp-for="Input.FileNamePattern" />
+        <div class="form-text">Doit contenir {OriginalName}. Jetons : {Category}, {Supplier}, {OriginalName}, {yyyy}, {MM}, {yyyy-MM-dd}.</div>
+        <span class="text-danger" asp-validation-for="Input.FileNamePattern"></span>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" asp-for="Input.PrintMaxAgeHours">Âge maximum d'impression (heures, 1 à 168)</label>
+        <input type="number" class="form-control" asp-for="Input.PrintMaxAgeHours" />
+        <span class="text-danger" asp-validation-for="Input.PrintMaxAgeHours"></span>
+    </div>
+    <button class="btn btn-primary" type="submit">Enregistrer</button>
+</form>
+
+<form method="post" asp-page-handler="Password" class="col-md-8 mb-4">
+    <h2 class="h5">Mot de passe administrateur</h2>
+    @if (Model.PasswordMessage is not null) { <div class="alert @(Model.PasswordOk ? "alert-success" : "alert-danger") py-1">@Model.PasswordMessage</div> }
+    <div class="mb-3"><label class="form-label" asp-for="Password.Current">Mot de passe actuel</label><input class="form-control" asp-for="Password.Current" autocomplete="current-password" /></div>
+    <div class="mb-3"><label class="form-label" asp-for="Password.New">Nouveau mot de passe (8 caractères minimum)</label><input class="form-control" asp-for="Password.New" autocomplete="new-password" /></div>
+    <div class="mb-3"><label class="form-label" asp-for="Password.Confirm">Confirmer le nouveau mot de passe</label><input class="form-control" asp-for="Password.Confirm" autocomplete="new-password" /></div>
+    <button class="btn btn-primary" type="submit">Changer le mot de passe</button>
+</form>
+
+<div class="col-md-8">
+    <h2 class="h5">Sauvegarde</h2>
+    <p class="text-muted">Une sauvegarde de la base est créée chaque nuit à 02:00 dans le dossier « backups » des documents (14 conservées).</p>
+    <form method="post" asp-page-handler="Backup" hx-post="@Url.Page("/Settings/Index", "Backup")" hx-target="#backup-result" hx-swap="innerHTML">
+        <button class="btn btn-outline-secondary" type="submit">Sauvegarder maintenant</button>
+    </form>
+    <div id="backup-result" class="mt-2"></div>
+</div>

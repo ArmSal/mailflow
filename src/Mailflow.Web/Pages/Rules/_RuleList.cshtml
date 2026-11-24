@@ -1,0 +1,33 @@
+@model Mailflow.Web.Pages.Rules.RuleListVm
+<table class="table align-middle">
+    <thead><tr><th>#</th><th>Nom</th><th>Boîte</th><th>Conditions</th><th>Actions</th><th>Actif</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var r in Model.Rules)
+    {
+        <tr>
+            <td>@r.Priority</td>
+            <td>@r.Name @if (r.StopProcessing) { <span class="badge bg-secondary">stop</span> }</td>
+            <td>@(r.MailboxId is int mid && Model.Mailboxes.TryGetValue(mid, out var mn) ? mn : "Toutes")</td>
+            <td>@r.Conditions.Count</td>
+            <td>@r.Actions.Count</td>
+            <td>
+                <form method="post" hx-post="@Url.Page("/Rules/Index", "Toggle", new { id = r.Id })" hx-target="#rule-list" hx-swap="innerHTML">
+                    <button class="btn btn-sm @(r.IsActive ? "btn-success" : "btn-outline-secondary")" type="submit">@(r.IsActive ? "Actif" : "Inactif")</button>
+                </form>
+            </td>
+            <td class="text-end">
+                <form method="post" class="d-inline" hx-post="@Url.Page("/Rules/Index", "Move", new { id = r.Id, dir = "up" })" hx-target="#rule-list" hx-swap="innerHTML">
+                    <button class="btn btn-sm btn-outline-secondary" type="submit" aria-label="Monter">&#9650;</button>
+                </form>
+                <form method="post" class="d-inline" hx-post="@Url.Page("/Rules/Index", "Move", new { id = r.Id, dir = "down" })" hx-target="#rule-list" hx-swap="innerHTML">
+                    <button class="btn btn-sm btn-outline-secondary" type="submit" aria-label="Descendre">&#9660;</button>
+                </form>
+                <a class="btn btn-sm btn-outline-primary" asp-page="/Rules/Edit" asp-route-id="@r.Id">Modifier</a>
+                <form method="post" class="d-inline" hx-post="@Url.Page("/Rules/Index", "Delete", new { id = r.Id })" hx-target="#rule-list" hx-swap="innerHTML" hx-confirm="Supprimer cette règle ?">
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Supprimer</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

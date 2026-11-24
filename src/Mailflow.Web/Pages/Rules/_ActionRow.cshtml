@@ -1,0 +1,26 @@
+@using Mailflow.Web.Pages.Rules
+@model ActionRowVm
+@{ var p = $"Input.Actions[{Model.Key}]"; }
+<div class="row g-2 mb-2 align-items-center row-item">
+    <input type="hidden" name="Input.Actions.Index" value="@Model.Key" />
+    <div class="col-md-3">
+        <select class="form-select" name="@(p).Type" aria-label="Type">
+            @foreach (var kv in RuleLabels.Actions) { <option value="@kv.Key" selected="@(kv.Key == Model.A.Type)">@kv.Value</option> }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" name="@(p).CategoryId" aria-label="Catégorie">
+            <option value="">Catégorie…</option>
+            @foreach (var c in Model.Categories) { <option value="@c.Id" selected="@(c.Id == Model.A.CategoryId)">@c.Name</option> }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" name="@(p).PrinterId" aria-label="Imprimante">
+            <option value="">Imprimante…</option>
+            @foreach (var pr in Model.Printers) { <option value="@pr.Id" selected="@(pr.Id == Model.A.PrinterId)">@pr.DisplayName</option> }
+        </select>
+    </div>
+    <div class="col-md-1"><input type="number" min="1" max="99" class="form-control" name="@(p).Copies" value="@Model.A.Copies" placeholder="Ex." aria-label="Copies" /></div>
+    <div class="col-md-3"><input class="form-control" name="@(p).ImapFolder" value="@Model.A.ImapFolder" placeholder="Dossier IMAP" aria-label="Dossier IMAP" /></div>
+    <div class="col-md-1"><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.row-item').remove()" aria-label="Retirer">&times;</button></div>
+</div>

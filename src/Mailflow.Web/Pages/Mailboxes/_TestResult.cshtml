@@ -1,0 +1,15 @@
+@model Mailflow.Application.Abstractions.ConnectionTestResult
+@if (Model.Success)
+{
+    <div class="alert alert-success">
+        Connexion réussie : @Model.MessageCount message(s) dans la boîte.
+        @if (Model.Folders.Count > 0)
+        {
+            <div class="small mt-1">Dossiers : @string.Join(", ", Model.Folders)</div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-danger">Échec de la connexion : @Model.Error</div>
+}

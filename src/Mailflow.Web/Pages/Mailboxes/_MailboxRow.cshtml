@@ -1,0 +1,21 @@
+@model Mailflow.Domain.Entities.Mailbox
+<tr>
+    <td>@Model.DisplayName
+        @if (ViewData["Error"] is string err) { <div class="text-danger small">@err</div> }
+        @if (!string.IsNullOrEmpty(Model.LastError)) { <div class="text-warning small">@Model.LastError</div> }
+    </td>
+    <td>@Model.Email</td>
+    <td>@ViewData["StoreName"]</td>
+    <td>@(Model.LastCheckAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
+    <td>
+        <form method="post" hx-post="@Url.Page("/Mailboxes/Index", "Toggle", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML">
+            <button class="btn btn-sm @(Model.IsActive ? "btn-success" : "btn-outline-secondary")" type="submit">@(Model.IsActive ? "Actif" : "Inactif")</button>
+        </form>
+    </td>
+    <td class="text-end">
+        <a class="btn btn-sm btn-outline-primary" asp-page="/Mailboxes/Edit" asp-route-id="@Model.Id">Modifier</a>
+        <form method="post" class="d-inline" hx-post="@Url.Page("/Mailboxes/Index", "Delete", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Supprimer cette boîte mail ?">
+            <button class="btn btn-sm btn-outline-danger" type="submit">Supprimer</button>
+        </form>
+    </td>
+</tr>

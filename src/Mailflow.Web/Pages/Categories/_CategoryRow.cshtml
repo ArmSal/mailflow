@@ -1,0 +1,15 @@
+@model Mailflow.Domain.Entities.Category
+<tr>
+    <td>@Model.SortOrder</td>
+    <td><span class="badge" style="background-color:@(System.Text.RegularExpressions.Regex.IsMatch(Model.Color ?? "", "^#[0-9a-fA-F]{6}$") ? Model.Color : "#6c757d")">@Model.Name</span>
+        @if (ViewData["Error"] is string err) { <div class="text-danger small">@err</div> }
+    </td>
+    <td>@Model.LocalSubfolder</td>
+    <td>@Model.ImapFolder</td>
+    <td class="text-end">
+        <a class="btn btn-sm btn-outline-primary" asp-page="/Categories/Edit" asp-route-id="@Model.Id">Modifier</a>
+        <form method="post" class="d-inline" hx-post="@Url.Page("/Categories/Index", "Delete", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Supprimer cette catégorie ?">
+            <button class="btn btn-sm btn-outline-danger" type="submit">Supprimer</button>
+        </form>
+    </td>
+</tr>

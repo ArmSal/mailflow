@@ -1,0 +1,12 @@
+@page "{id:int?}"
+@model Mailflow.Web.Pages.Stores.EditModel
+@{ ViewData["Title"] = "Magasin"; }
+<h1 class="h3 mb-3">Magasin</h1>
+<form method="post" class="col-md-6">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="mb-3"><label class="form-label" asp-for="Input.Name">Nom</label><input class="form-control" asp-for="Input.Name" /><span class="text-danger" asp-validation-for="Input.Name"></span></div>
+    <div class="mb-3"><label class="form-label" asp-for="Input.Address">Adresse</label><input class="form-control" asp-for="Input.Address" /></div>
+    <div class="form-check mb-3"><input class="form-check-input" asp-for="Input.IsActive" /><label class="form-check-label" asp-for="Input.IsActive">Actif</label></div>
+    <button class="btn btn-primary" type="submit">Enregistrer</button>
+    <a class="btn btn-link" asp-page="Index">Annuler</a>
+</form>

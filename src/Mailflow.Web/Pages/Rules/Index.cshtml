@@ -1,0 +1,11 @@
+@page
+@model Mailflow.Web.Pages.Rules.IndexModel
+@{ ViewData["Title"] = "Règles"; }
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3">Règles</h1>
+    <div>
+        <a class="btn btn-outline-secondary" asp-page="AllowedSenders">Expéditeurs autorisés</a>
+        <a class="btn btn-primary" asp-page="Edit">Ajouter une règle</a>
+    </div>
+</div>
+<div id="rule-list"><partial name="_RuleList" model="Model.List" /></div>

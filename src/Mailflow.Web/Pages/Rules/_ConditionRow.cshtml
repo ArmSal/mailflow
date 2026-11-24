@@ -1,0 +1,22 @@
+@using Mailflow.Domain.Enums
+@using Mailflow.Web.Pages.Rules
+@model ConditionRowVm
+@{ var p = $"Input.Conditions[{Model.Key}]"; }
+<div class="row g-2 mb-2 align-items-center row-item">
+    <input type="hidden" name="Input.Conditions.Index" value="@Model.Key" />
+    <div class="col-md-3">
+        <select class="form-select" name="@(p).Field" aria-label="Champ">
+            @foreach (var kv in RuleLabels.Fields) { <option value="@kv.Key" selected="@(kv.Key == Model.C.Field)">@kv.Value</option> }
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" name="@(p).Operator" aria-label="Opérateur">
+            @foreach (var kv in RuleLabels.Operators) { <option value="@kv.Key" selected="@(kv.Key == Model.C.Operator)">@kv.Value</option> }
+        </select>
+    </div>
+    <div class="col-md-3"><input class="form-control" name="@(p).Value" value="@Model.C.Value" aria-label="Valeur" /></div>
+    <div class="col-md-2">
+        <div class="form-check"><input type="checkbox" class="form-check-input" name="@(p).CaseSensitive" value="true" checked="@Model.C.CaseSensitive" /><input type="hidden" name="@(p).CaseSensitive" value="false" /><label class="form-check-label">Casse</label></div>
+    </div>
+    <div class="col-md-1"><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.row-item').remove()" aria-label="Retirer">&times;</button></div>
+</div>

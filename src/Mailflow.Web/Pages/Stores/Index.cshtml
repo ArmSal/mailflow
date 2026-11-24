@@ -1,0 +1,17 @@
+@page
+@using Mailflow.Domain.Entities
+@model Mailflow.Web.Pages.Stores.IndexModel
+@{ ViewData["Title"] = "Magasins"; }
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3">Magasins</h1>
+    <a class="btn btn-primary" asp-page="Edit">Ajouter un magasin</a>
+</div>
+<table class="table align-middle">
+    <thead><tr><th>Nom</th><th>Adresse</th><th>Actif</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var s in Model.Items)
+    {
+        <partial name="_StoreRow" model="s" />
+    }
+    </tbody>
+</table>

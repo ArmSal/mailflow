@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Mailflow</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    @{
+        var path = Context.Request.Path.Value ?? "/";
+        var sections = new (string Url, string Label)[]
+        {
+            ("/", "Accueil"), ("/Stores", "Magasins"), ("/Mailboxes", "Boîtes mail"),
+            ("/Printers", "Imprimantes"), ("/Categories", "Catégories"), ("/Rules", "Règles"), ("/Rules/AllowedSenders", "Expéditeurs autorisés"),
+            ("/History", "Historique"), ("/Journal", "Journal"), ("/Settings", "Paramètres"),
+        };
+    }
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-3">
+            <div class="container">
+                <a class="navbar-brand" href="~/">Mailflow</a>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav"
+                            aria-expanded="false" aria-label="Afficher le menu">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="mainNav">
+                        <ul class="navbar-nav me-auto">
+                            @foreach (var s in sections)
+                            {
+                                var active = s.Url == "/" ? path == "/" : path.StartsWith(s.Url, StringComparison.OrdinalIgnoreCase);
+                                <li class="nav-item">
+                                    <a class="nav-link @(active ? "active" : "")" href="~@s.Url">@s.Label</a>
+                                </li>
+                            }
+                        </ul>
+                        <form method="post" asp-page="/Logout" class="d-flex">
+                            <button type="submit" class="btn btn-outline-light btn-sm">Déconnexion</button>
+                        </form>
+                    </div>
+                }
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">Mailflow</div>
+    </footer>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/htmx/htmx.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,4 @@
+@model Mailflow.Web.Backup.BackupResult
+<div class="alert @(Model.Ok ? "alert-success" : "alert-danger") py-1 mb-0">
+    @(Model.Ok ? "Sauvegarde créée : " + Model.FileName : "Échec de la sauvegarde : " + Model.Error)
+</div>

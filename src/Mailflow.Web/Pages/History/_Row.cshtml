@@ -1,0 +1,37 @@
+@model Mailflow.Web.Pages.History.HistoryRowModel
+@{ var r = Model.Row; }
+<tr>
+    <td>@r.ReceivedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+    <td>@r.From</td>
+    <td>@r.Subject</td>
+    <td>@r.OriginalName</td>
+    <td>@r.Category</td>
+    <td>@r.Store</td>
+    <td>
+        @if (r.PrintedAt is { } p) { <span>@p.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span> }
+        else { <span class="text-muted">Non imprimé</span> }
+        @if (!string.IsNullOrEmpty(r.PrintError)) { <div class="text-danger small">@r.PrintError</div> }
+        @if (Model.Message is not null) { <div class="small @(Model.Ok ? "text-success" : "text-danger")">@Model.Message</div> }
+    </td>
+    <td class="text-end">
+        <a class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener" href="@Url.Page("/History/Index", "Pdf", new { id = r.DocumentId })">Ouvrir le PDF</a>
+        <form method="post" class="d-inline-flex gap-1 mt-1" hx-post="@Url.Page("/History/Index", "Reprint", new { id = r.DocumentId })" hx-target="closest tr" hx-swap="outerHTML">
+            <select name="printerId" class="form-select form-select-sm" aria-label="Imprimante">
+                @foreach (var pr in Model.Printers)
+                {
+                    <option value="@pr.Id">@pr.DisplayName</option>
+                }
+            </select>
+            <button class="btn btn-sm btn-outline-secondary" type="submit">Réimprimer</button>
+        </form>
+        <form method="post" class="d-inline-flex gap-1 mt-1" hx-post="@Url.Page("/History/Index", "Reclassify", new { id = r.DocumentId })" hx-target="closest tr" hx-swap="outerHTML">
+            <select name="categoryId" class="form-select form-select-sm" aria-label="Catégorie">
+                @foreach (var c in Model.Categories)
+                {
+                    <option value="@c.Id" selected="@(c.Id == r.CategoryId)">@c.Name</option>
+                }
+            </select>
+            <button class="btn btn-sm btn-outline-secondary" type="submit">Changer de catégorie</button>
+        </form>
+    </td>
+</tr>
