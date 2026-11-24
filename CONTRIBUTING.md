@@ -55,10 +55,11 @@ Implémentez l'interface correspondante (dans [`Abstractions.cs`](src/Mailflow.A
 ## Modifier la base de données
 
 ```powershell
-dotnet ef migrations add NomDeLaMigration -p src/Mailflow.Infrastructure -s src/Mailflow.Web
+dotnet tool restore
+dotnet tool run dotnet-ef migrations add NomDeLaMigration -p src/Mailflow.Infrastructure -s src/Mailflow.Infrastructure
 ```
 
-Les migrations s'appliquent automatiquement au démarrage. Ne modifiez jamais une migration déjà publiée.
+Les migrations s'appliquent automatiquement au démarrage. Ne modifiez jamais une migration déjà publiée. **Toute modification d'une entité du domaine exige sa migration** : sans elle l'application refuse de démarrer (les tests d'intégration le détectent). Pour une nouvelle colonne obligatoire, donnez une valeur par défaut qui convient aux lignes existantes.
 
 ## Sécurité : à ne pas casser
 
