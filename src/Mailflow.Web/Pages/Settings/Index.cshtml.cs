@@ -19,16 +19,21 @@ public class IndexModel(
 {
     public class SettingsInput
     {
+        [Required(ErrorMessage = "Le dossier des documents est requis.")]
         public string DocumentsRoot { get; set; } = "";
+        [Required(ErrorMessage = "Le modèle de nom de fichier est requis.")]
         public string FileNamePattern { get; set; } = "";
         public int PrintMaxAgeHours { get; set; } = 24;
     }
 
     public class PasswordInput
     {
-        [DataType(DataType.Password)] public string Current { get; set; } = "";
-        [DataType(DataType.Password)] public string New { get; set; } = "";
-        [DataType(DataType.Password)] public string Confirm { get; set; } = "";
+        [DataType(DataType.Password), Required(ErrorMessage = "Le mot de passe actuel est requis.")]
+        public string Current { get; set; } = "";
+        [DataType(DataType.Password), Required(ErrorMessage = "Le nouveau mot de passe est requis.")]
+        public string New { get; set; } = "";
+        [DataType(DataType.Password), Required(ErrorMessage = "La confirmation est requise.")]
+        public string Confirm { get; set; } = "";
     }
 
     [BindProperty] public SettingsInput Input { get; set; } = new();
