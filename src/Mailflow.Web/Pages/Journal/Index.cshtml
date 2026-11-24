@@ -1,9 +1,14 @@
 @page
 @model Mailflow.Web.Pages.Journal.IndexModel
 @{ ViewData["Title"] = "Journal"; }
-<h1 class="h3 mb-3">Journal</h1>
-<form method="get" class="row g-2 align-items-end mb-3">
-    <div class="col-auto">
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Journal</h1>
+        <p class="page-subtitle">Chaque relève de boîte mail, avec sa durée et son résultat.</p>
+    </div>
+</div>
+<form method="get" class="toolbar" role="search" aria-label="Filtrer le journal">
+    <div class="field">
         <label class="form-label" for="MailboxId">Boîte mail</label>
         <select class="form-select" id="MailboxId" name="MailboxId">
             <option value="">Toutes</option>
@@ -13,30 +18,47 @@
             }
         </select>
     </div>
-    <div class="col-auto form-check ms-2 mb-2">
-        <input class="form-check-input" type="checkbox" id="ErrorsOnly" name="ErrorsOnly" value="true" checked="@Model.ErrorsOnly" />
+    <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" role="switch" id="ErrorsOnly" name="ErrorsOnly" value="true" checked="@Model.ErrorsOnly" />
         <label class="form-check-label" for="ErrorsOnly">Erreurs seulement</label>
     </div>
-    <div class="col-auto"><button class="btn btn-primary" type="submit">Filtrer</button></div>
+    <div class="toolbar-end"><button class="btn btn-primary" type="submit">Filtrer</button></div>
 </form>
-<table class="table table-sm align-middle">
-    <thead><tr><th>Date</th><th>Boîte mail</th><th>Durée</th><th>Messages</th><th>Documents</th><th>Imprimés</th><th>Erreur</th></tr></thead>
-    <tbody>
-    @foreach (var r in Model.Rows)
-    {
-        <tr>
-            <td>@r.Log.StartedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
-            <td>@r.Mailbox</td>
-            <td>@Mailflow.Web.Pages.Journal.IndexModel.FormatDuration(r.Log.Duration)</td>
-            <td>@r.Log.MessagesHandled</td>
-            <td>@r.Log.DocumentsSaved</td>
-            <td>@r.Log.Printed</td>
-            <td class="text-danger small">@r.Log.Error</td>
-        </tr>
-    }
-    @if (Model.Rows.Count == 0) { <tr><td colspan="7" class="text-muted">Aucune entrée.</td></tr> }
-    </tbody>
-</table>
+@if (Model.Rows.Count == 0)
+{
+    <div class="card">
+        <div class="empty-state">
+            <span class="empty-state-icon"><svg class="icon" aria-hidden="true"><use href="#i-list" /></svg></span>
+            <h2 class="empty-state-title">Aucune entrée</h2>
+            <p>Aucune relève ne correspond à ces filtres.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table class="table align-middle">
+            <thead><tr><th scope="col">Date</th><th scope="col">Boîte mail</th><th scope="col" class="num">Durée</th><th scope="col" class="num">Messages</th><th scope="col" class="num">Documents</th><th scope="col" class="num">Imprimés</th><th scope="col">Résultat</th></tr></thead>
+            <tbody>
+            @foreach (var r in Model.Rows)
+            {
+                <tr>
+                    <td class="text-nowrap">@r.Log.StartedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
+                    <td class="text-nowrap">@r.Mailbox</td>
+                    <td class="num text-nowrap">@Mailflow.Web.Pages.Journal.IndexModel.FormatDuration(r.Log.Duration)</td>
+                    <td class="num">@r.Log.MessagesHandled</td>
+                    <td class="num">@r.Log.DocumentsSaved</td>
+                    <td class="num">@r.Log.Printed</td>
+                    <td class="cell-result">
+                        @if (string.IsNullOrEmpty(r.Log.Error)) { <span class="badge badge-ok">OK</span> }
+                        else { <span class="badge badge-error">Erreur</span><span class="cell-sub">@r.Log.Error</span> }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
 @if (Model.TotalPages > 1)
 {
     <nav aria-label="Pagination">
