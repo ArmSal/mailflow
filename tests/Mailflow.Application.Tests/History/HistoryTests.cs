@@ -54,10 +54,10 @@ public sealed class HistoryFixture : IDisposable
     public void Dispose() => _conn.Dispose();
 
     /// <summary>Adds a message + document; returns the document id.</summary>
-    public int AddDoc(int mailboxId, DateTime receivedAt, string from, int categoryId = 1, string? printError = null, int? printerId = null, string path = "C:/docs/Factures/a.pdf")
+    public int AddDoc(int mailboxId, DateTime receivedAt, string from, int categoryId = 1, string? printError = null, int? printerId = null, string path = "C:/docs/Factures/a.pdf", Mailflow.Domain.Enums.SenderVerification verification = Mailflow.Domain.Enums.SenderVerification.Unknown)
     {
         using var db = NewDb();
-        var pm = new ProcessedMessage { MailboxId = mailboxId, MessageId = Guid.NewGuid().ToString(), ReceivedAt = receivedAt, From = from, Subject = "S", ProcessedAt = receivedAt };
+        var pm = new ProcessedMessage { MailboxId = mailboxId, MessageId = Guid.NewGuid().ToString(), ReceivedAt = receivedAt, From = from, Subject = "S", ProcessedAt = receivedAt, SenderVerification = verification };
         db.ProcessedMessages.Add(pm);
         db.SaveChanges();
         var d = new Document { ProcessedMessageId = pm.Id, Sha256 = "x", OriginalName = "f.pdf", StoredPath = path, CategoryId = categoryId, PrintError = printError, PrinterId = printerId };
@@ -112,6 +112,27 @@ public class DocumentSearchTests
         Assert.Equal("boom", e.PrintError);
         Assert.Equal("Store A", e.Store);
         Assert.Equal("Factures", e.Category);
+    }
+
+    [Fact]
+    public async Task Rows_expose_sender_verification_and_unverified_filter_excludes_only_pass()
+    {
+        using var fx = new HistoryFixture();
+        var t = new DateTime(2026, 3, 1, 8, 0, 0, DateTimeKind.Utc);
+        var pass = fx.AddDoc(1, t, "a@supplier.example", verification: Mailflow.Domain.Enums.SenderVerification.Pass);
+        var unknown = fx.AddDoc(1, t.AddMinutes(1), "b@supplier.example");
+        var fail = fx.AddDoc(1, t.AddMinutes(2), "c@supplier.example", verification: Mailflow.Domain.Enums.SenderVerification.Fail);
+        using var db = fx.NewDb();
+        var s = new DocumentSearch(db);
+
+        var all = (await s.SearchAsync(new())).Items.ToDictionary(r => r.DocumentId, r => r.SenderVerification);
+        Assert.Equal(Mailflow.Domain.Enums.SenderVerification.Pass, all[pass]);
+        Assert.Equal(Mailflow.Domain.Enums.SenderVerification.Unknown, all[unknown]);
+        Assert.Equal(Mailflow.Domain.Enums.SenderVerification.Fail, all[fail]);
+        Assert.Equal(Mailflow.Domain.Enums.SenderVerification.Fail, (await s.GetRowAsync(fail))!.SenderVerification);
+
+        var unverified = (await s.SearchAsync(new(UnverifiedOnly: true))).Items.Select(r => r.DocumentId).ToHashSet();
+        Assert.Equal(new[] { unknown, fail }.ToHashSet(), unverified);
     }
 
     [Fact]

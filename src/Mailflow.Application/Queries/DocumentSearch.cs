@@ -1,5 +1,6 @@
 using Mailflow.Application.Abstractions;
 using Mailflow.Domain.Entities;
+using Mailflow.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Mailflow.Application.Queries;
@@ -11,7 +12,8 @@ public sealed record DocumentSearchFilter(
     int? CategoryId = null,
     int? StoreId = null,
     bool PrintErrorsOnly = false,
-    int Page = 1);
+    int Page = 1,
+    bool UnverifiedOnly = false);
 
 public sealed record DocumentRow(
     int DocumentId,
@@ -24,7 +26,8 @@ public sealed record DocumentRow(
     int StoreId,
     string Store,
     DateTime? PrintedAt,
-    string? PrintError);
+    string? PrintError,
+    SenderVerification SenderVerification = SenderVerification.Unknown);
 
 public sealed record PagedResult<T>(IReadOnlyList<T> Items, int Total, int Page, int PageSize)
 {
@@ -52,7 +55,7 @@ public sealed class DocumentSearch(IAppDbContext db)
     }
 
     private static DocumentRow ToRow(Joined j) => new(j.D.Id, j.Pm.ReceivedAt, j.Pm.From, j.Pm.Subject, j.D.OriginalName,
-        j.C.Id, j.C.Name, j.St.Id, j.St.Name, j.D.PrintedAt, j.D.PrintError);
+        j.C.Id, j.C.Name, j.St.Id, j.St.Name, j.D.PrintedAt, j.D.PrintError, j.Pm.SenderVerification);
 
     public async Task<DocumentRow?> GetRowAsync(int documentId, CancellationToken ct = default)
     {
@@ -73,6 +76,8 @@ public sealed class DocumentSearch(IAppDbContext db)
         if (f.CategoryId is { } cat) q = q.Where(r => r.C.Id == cat);
         if (f.StoreId is { } store) q = q.Where(r => r.St.Id == store);
         if (f.PrintErrorsOnly) q = q.Where(r => r.D.PrintError != null && r.D.PrintError != "");
+
+        if (f.UnverifiedOnly) q = q.Where(r => r.Pm.SenderVerification != SenderVerification.Pass);
 
         var total = await q.CountAsync(ct);
         var page = Math.Max(1, f.Page);

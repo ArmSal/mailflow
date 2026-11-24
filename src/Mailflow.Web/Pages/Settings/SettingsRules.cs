@@ -1,12 +1,13 @@
 using Mailflow.Application.Abstractions;
 using Mailflow.Domain.Entities;
+using Mailflow.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Mailflow.Web.Pages.Settings;
 
 public static class SettingsRules
 {
-    public const string RootKey = "DocumentsRoot", PatternKey = "FileNamePattern", HoursKey = "PrintMaxAgeHours", OAuthClientIdKey = "OAuthMicrosoftClientId";
+    public const string RootKey = "DocumentsRoot", PatternKey = "FileNamePattern", HoursKey = "PrintMaxAgeHours", OAuthClientIdKey = "OAuthMicrosoftClientId", SenderCheckKey = "PrintSenderCheck";
 
     private static bool HasTraversal(string s) => s.Split('/', '\\').Any(p => p == "..");
 
@@ -47,6 +48,13 @@ public static class SettingsRules
     /// <summary>Empty (not configured) or a GUID.</summary>
     public static string? ValidateClientId(string? clientId)
         => string.IsNullOrWhiteSpace(clientId) || Guid.TryParse(clientId.Trim(), out _) ? null : "L'identifiant d'application doit être un GUID (par exemple 00000000-0000-0000-0000-000000000000).";
+
+    /// <summary>Stored enum name; missing or unknown values mean Warn.</summary>
+    public static SenderCheckMode ParseSenderCheck(string? value)
+        => Enum.TryParse<SenderCheckMode>(value, out var m) && Enum.IsDefined(m) && !int.TryParse(value, out _) ? m : SenderCheckMode.Warn;
+
+    public static string? ValidateSenderCheck(string? value)
+        => Enum.TryParse<SenderCheckMode>(value, out var m) && Enum.IsDefined(m) && !int.TryParse(value, out _) ? null : "Choisissez un mode de vérification valide.";
 
     public static string? ValidateNewPassword(string? password, string? confirm)
     {

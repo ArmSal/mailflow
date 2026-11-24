@@ -99,3 +99,4 @@ tr.is-inactive .chip--action { background: var(--neutral-bg); color: var(--text-
   .action-menu-panel { position: absolute; right: 0; top: 100%; z-index: 5; width: 17rem; box-shadow: var(--shadow-2); background: var(--surface); }
 }
 
+.sender-badge { margin-top: .25rem; white-space: normal; text-align: left; }

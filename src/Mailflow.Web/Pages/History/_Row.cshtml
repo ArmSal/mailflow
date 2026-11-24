@@ -14,6 +14,18 @@
         else if (!string.IsNullOrEmpty(r.PrintError)) { <span class="badge badge-error">Erreur</span> }
         else { <span class="badge badge-neutral">Non imprimé</span> }
         @if (!string.IsNullOrEmpty(r.PrintError)) { <span class="print-error">@r.PrintError</span> }
+        @switch (r.SenderVerification)
+        {
+            case Mailflow.Domain.Enums.SenderVerification.Pass:
+                <span class="badge badge-ok sender-badge" title="Le serveur de messagerie a vérifié l'expéditeur (DKIM/DMARC)." aria-label="Expéditeur vérifié (DKIM/DMARC)">Vérifié</span>
+                break;
+            case Mailflow.Domain.Enums.SenderVerification.Fail:
+                <span class="badge badge-error sender-badge" title="Le serveur de messagerie a signalé un échec DKIM/DMARC : l'expéditeur est peut-être usurpé." aria-label="Vérification de l'expéditeur échouée (DKIM/DMARC)">Vérification échouée</span>
+                break;
+            default:
+                <span class="badge badge-warn sender-badge" title="Le serveur de messagerie n'a pas fourni de verdict DKIM/DMARC : l'expéditeur n'est pas vérifié." aria-label="Expéditeur non vérifié (aucun verdict DKIM/DMARC)">Non vérifié</span>
+                break;
+        }
         @if (Model.Message is not null) { <span class="row-msg @(Model.Ok ? "is-ok" : "is-error")" role="status">@Model.Message</span> }
     </td>
     <td>
