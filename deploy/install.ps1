@@ -80,6 +80,9 @@ foreach ($dir in @($DocumentsDir, $DataDir)) {
     Set-Acl -Path $dir -AclObject $acl
     Step "ACL set on $dir"
 }
+# Tell the app to store documents in $DocumentsDir (read at startup; can be changed later in the dashboard).
+@{ Storage = @{ DocumentsRoot = $DocumentsDir } } | ConvertTo-Json | Set-Content -Path (Join-Path $InstallDir 'appsettings.Production.json') -Encoding UTF8
+
 # Binaries: no inheritance (C:\ lets Authenticated Users write, which would allow replacing the exe).
 # Administrators + SYSTEM full control; the service account may only read and execute.
 & icacls.exe $InstallDir /inheritance:r /grant:r '*S-1-5-32-544:(OI)(CI)F' '*S-1-5-18:(OI)(CI)F' "${Account}:(OI)(CI)RX" | Out-Null

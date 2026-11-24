@@ -401,8 +401,10 @@ Les PDF d'exemple (anonymisés) vont dans `tests/fixtures/`.
 **Construire** (poste de développement) :
 
 ```powershell
-dotnet publish src/Mailflow.Web -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+.\deploy\build-release.ps1 -Version 1.0.0
 ```
+
+Le script produit `dist\Mailflow-1.0.0-win-x64.zip` (application autonome, aucun .NET à installer sur le PC du magasin). Ajoutez ensuite `SumatraPDF.exe` (version portable) dans `tools\SumatraPDF\` : voir [tools/SumatraPDF/README.md](tools/SumatraPDF/README.md).
 
 **Installer** (PC du magasin, PowerShell **administrateur**) :
 
@@ -419,7 +421,7 @@ flowchart LR
 
 **Mise à jour :** arrêter le service → remplacer l'exécutable → redémarrer (les migrations EF s'appliquent au démarrage).
 
-**Objectifs de ressources :** RAM au repos ≤ 120 Mo · CPU ~0 % entre deux relevés · passage sans nouveau mail < 3 s · ~80 Mo de disque pour l'application · ~1–2 Go/an/magasin pour les documents · priorité du service « inférieure à la normale » (la caisse reste prioritaire).
+**Objectifs de ressources :** RAM au repos ≤ 120 Mo · CPU ~0 % entre deux relevés · passage sans nouveau mail < 3 s · ~125 Mo de disque pour l'application (autonome, avec le runtime .NET) · ~1–2 Go/an/magasin pour les documents · priorité du service « inférieure à la normale » (la caisse reste prioritaire).
 
 ---
 

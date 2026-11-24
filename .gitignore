@@ -486,3 +486,6 @@ $RECYCLE.BIN/
 
 # Web/Backup is source code (nightly backup service), not a backup folder
 !src/Mailflow.Web/Backup/
+
+# release output
+dist/
