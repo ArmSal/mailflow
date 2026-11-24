@@ -3,48 +3,71 @@
 @using Mailflow.Web.Pages.Mailboxes
 @model Mailflow.Web.Pages.Mailboxes.EditModel
 @{ ViewData["Title"] = "Boîte mail"; }
-<h1 class="h3 mb-3">Boîte mail</h1>
-<form method="post" class="col-md-7" id="mailbox-form">
-    <div class="mb-3"><label class="form-label" asp-for="Input.StoreId">Magasin</label>
-        <select class="form-select" asp-for="Input.StoreId" asp-items="@(new SelectList(Model.Stores, "Id", "Name"))"></select>
-        <span class="text-danger" asp-validation-for="Input.StoreId"></span></div>
-    <div class="mb-3"><label class="form-label" asp-for="Input.DisplayName">Nom affiché</label><input class="form-control" asp-for="Input.DisplayName" /><span class="text-danger" asp-validation-for="Input.DisplayName"></span></div>
-    <div class="mb-3"><label class="form-label" asp-for="Input.Email">Adresse e-mail</label><input class="form-control" asp-for="Input.Email" /><span class="text-danger" asp-validation-for="Input.Email"></span></div>
-    <div class="mb-3"><label class="form-label" for="preset">Fournisseur</label>
-        <select class="form-select" id="preset">
-            <option value="">Choisir…</option>
-            @foreach (var p in ProviderPresets.All)
-            {
-                <option value="@p.Key" data-host="@p.Host" data-port="@p.Port" data-ssl="@(p.UseSsl ? "1" : "0")">@p.Label</option>
-            }
-        </select>
-        <div class="form-text">Mot de passe d'application requis pour iCloud, Gmail et Yahoo.</div></div>
-    <div class="row">
-        <div class="col-md-6 mb-3"><label class="form-label" asp-for="Input.Host">Serveur IMAP</label><input class="form-control" asp-for="Input.Host" /><span class="text-danger" asp-validation-for="Input.Host"></span></div>
-        <div class="col-md-3 mb-3"><label class="form-label" asp-for="Input.Port">Port</label><input type="number" class="form-control" asp-for="Input.Port" /><span class="text-danger" asp-validation-for="Input.Port"></span></div>
-        <div class="col-md-3 mb-3 d-flex align-items-end"><div class="form-check"><input class="form-check-input" asp-for="Input.UseSsl" /><label class="form-check-label" asp-for="Input.UseSsl">SSL</label></div></div>
+<link rel="stylesheet" href="~/css/page-config.css" asp-append-version="true" />
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Boîte mail</h1>
+        <p class="page-subtitle">Connexion IMAP et réglages de la relève.</p>
     </div>
-    <div class="mb-3"><label class="form-label" asp-for="Input.Username">Identifiant</label><input class="form-control" asp-for="Input.Username" autocomplete="off" /><span class="text-danger" asp-validation-for="Input.Username"></span></div>
-    <div class="mb-3"><label class="form-label" for="Input_Password">Mot de passe</label>
-        <input type="password" class="form-control" id="Input_Password" name="Input.Password" autocomplete="new-password" placeholder="@(Request.RouteValues["id"] is null ? "" : "Laisser vide pour conserver l'actuel")" />
-        <span class="text-danger" asp-validation-for="Input.Password"></span></div>
-    <div class="mb-3">
-        <button type="button" class="btn btn-outline-secondary" hx-post="@Url.Page("/Mailboxes/Edit", "Test", new { id = Request.RouteValues["id"] })" hx-include="#mailbox-form" hx-target="#test-result">Tester la connexion</button>
-        <div id="test-result" class="mt-2"></div></div>
-    <div class="row">
-        <div class="col-md-4 mb-3"><label class="form-label" asp-for="Input.InboxFolder">Dossier à relever</label><input class="form-control" asp-for="Input.InboxFolder" /></div>
-        <div class="col-md-4 mb-3"><label class="form-label" asp-for="Input.CheckIntervalMinutes">Intervalle (min)</label><input type="number" class="form-control" asp-for="Input.CheckIntervalMinutes" /><span class="text-danger" asp-validation-for="Input.CheckIntervalMinutes"></span></div>
-        <div class="col-md-4 mb-3"><label class="form-label" asp-for="Input.LookbackDays">Historique (jours)</label><input type="number" class="form-control" asp-for="Input.LookbackDays" /><span class="text-danger" asp-validation-for="Input.LookbackDays"></span></div>
-    </div>
-    <div class="mb-3"><label class="form-label" asp-for="Input.DefaultAfterProcessing">Après traitement</label>
-        <select class="form-select" asp-for="Input.DefaultAfterProcessing">
-            <option value="@AfterProcessing.Leave">Laisser tel quel</option>
-            <option value="@AfterProcessing.MarkRead">Marquer comme lu</option>
-            <option value="@AfterProcessing.Move">Déplacer</option>
-        </select></div>
-    <div class="form-check mb-3"><input class="form-check-input" asp-for="Input.IsActive" /><label class="form-check-label" asp-for="Input.IsActive">Actif</label></div>
-    <button class="btn btn-primary" type="submit">Enregistrer</button>
-    <a class="btn btn-link" asp-page="Index">Annuler</a>
+</div>
+<form method="post" id="mailbox-form">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+    <section class="form-section">
+        <h2 class="form-section-title">Identité</h2>
+        <p class="form-section-hint">À quel magasin appartient cette boîte et comment l'afficher.</p>
+        <div class="form-grid">
+            <div class="field"><label class="form-label" asp-for="Input.StoreId">Magasin</label>
+                <select class="form-select" asp-for="Input.StoreId" asp-items="@(new SelectList(Model.Stores, "Id", "Name"))"></select>
+                <span class="field-validation-error" asp-validation-for="Input.StoreId"></span></div>
+            <div class="field"><label class="form-label" asp-for="Input.DisplayName">Nom affiché</label><input class="form-control" asp-for="Input.DisplayName" /><span class="field-validation-error" asp-validation-for="Input.DisplayName"></span></div>
+        </div>
+        <div class="field"><label class="form-label" asp-for="Input.Email">Adresse e-mail</label><input class="form-control" asp-for="Input.Email" /><span class="field-validation-error" asp-validation-for="Input.Email"></span></div>
+    </section>
+    <section class="form-section">
+        <h2 class="form-section-title">Connexion</h2>
+        <p class="form-section-hint">Le mot de passe n'est jamais réaffiché une fois enregistré.</p>
+        <div class="field"><label class="form-label" for="preset">Fournisseur</label>
+            <select class="form-select" id="preset">
+                <option value="">Choisir…</option>
+                @foreach (var p in ProviderPresets.All)
+                {
+                    <option value="@p.Key" data-host="@p.Host" data-port="@p.Port" data-ssl="@(p.UseSsl ? "1" : "0")">@p.Label</option>
+                }
+            </select>
+            <span class="form-text">Remplit le serveur, le port et le SSL. Mot de passe d'application requis pour iCloud, Gmail et Yahoo.</span></div>
+        <div class="form-grid">
+            <div class="field"><label class="form-label" asp-for="Input.Host">Serveur IMAP</label><input class="form-control" asp-for="Input.Host" /><span class="field-validation-error" asp-validation-for="Input.Host"></span></div>
+            <div class="field"><label class="form-label" asp-for="Input.Port">Port</label><input type="number" class="form-control" asp-for="Input.Port" /><span class="field-validation-error" asp-validation-for="Input.Port"></span></div>
+        </div>
+        <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" asp-for="Input.UseSsl" /><label class="form-check-label" asp-for="Input.UseSsl">Connexion sécurisée (SSL)</label></div>
+        <div class="form-grid">
+            <div class="field"><label class="form-label" asp-for="Input.Username">Identifiant</label><input class="form-control" asp-for="Input.Username" autocomplete="off" /><span class="field-validation-error" asp-validation-for="Input.Username"></span></div>
+            <div class="field"><label class="form-label" for="Input_Password">Mot de passe</label>
+                <input type="password" class="form-control" id="Input_Password" name="Input.Password" autocomplete="new-password" placeholder="@(Request.RouteValues["id"] is null ? "" : "Laisser vide pour conserver l'actuel")" />
+                <span class="field-validation-error" asp-validation-for="Input.Password"></span></div>
+        </div>
+        <div class="field">
+            <div><button type="button" class="btn btn-secondary" hx-post="@Url.Page("/Mailboxes/Edit", "Test", new { id = Request.RouteValues["id"] })" hx-include="#mailbox-form" hx-target="#test-result">Tester la connexion</button></div>
+            <div id="test-result" class="mt-2" aria-live="polite"></div>
+        </div>
+    </section>
+    <section class="form-section">
+        <h2 class="form-section-title">Relève</h2>
+        <p class="form-section-hint">Quand et comment les messages sont traités.</p>
+        <div class="form-grid form-grid-2">
+            <div class="field"><label class="form-label" asp-for="Input.InboxFolder">Dossier à relever</label><input class="form-control" asp-for="Input.InboxFolder" /></div>
+            <div class="field"><label class="form-label" asp-for="Input.DefaultAfterProcessing">Après traitement</label>
+                <select class="form-select" asp-for="Input.DefaultAfterProcessing">
+                    <option value="@AfterProcessing.Leave">Laisser tel quel</option>
+                    <option value="@AfterProcessing.MarkRead">Marquer comme lu</option>
+                    <option value="@AfterProcessing.Move">Déplacer</option>
+                </select></div>
+            <div class="field"><label class="form-label" asp-for="Input.CheckIntervalMinutes">Intervalle (min)</label><input type="number" class="form-control" asp-for="Input.CheckIntervalMinutes" /><span class="field-validation-error" asp-validation-for="Input.CheckIntervalMinutes"></span></div>
+            <div class="field"><label class="form-label" asp-for="Input.LookbackDays">Historique (jours)</label><input type="number" class="form-control" asp-for="Input.LookbackDays" /><span class="form-text">Ancienneté maximale des messages relevés.</span><span class="field-validation-error" asp-validation-for="Input.LookbackDays"></span></div>
+        </div>
+        <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" asp-for="Input.IsActive" /><label class="form-check-label" asp-for="Input.IsActive">Actif</label></div>
+    </section>
+    <div class="form-actions form-actions-sticky"><button class="btn btn-primary" type="submit">Enregistrer</button><a class="btn btn-ghost" asp-page="Index">Annuler</a></div>
 </form>
 @section Scripts {
 <script>
@@ -57,3 +80,7 @@ document.getElementById('preset').addEventListener('change', function () {
 });
 </script>
 }
+
+
+
+

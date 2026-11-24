@@ -1,0 +1,26 @@
+/* Page-specific styles for the configuration pages (Stores, Mailboxes, Printers, Categories). Tokens only. */
+.swatch { display: inline-block; flex: none; width: .9rem; height: .9rem; border-radius: 50%; border: 1px solid var(--border-strong); vertical-align: -.1em; }
+.cell-name { display: flex; align-items: center; gap: var(--sp-2); font-weight: 600; }
+.badge-toggle { border: 0; cursor: pointer; font: inherit; font-size: var(--fs-xs); font-weight: 600; padding: .3em .7em; border-radius: 999px; }
+.badge-toggle:hover { filter: brightness(.95); }
+.badge-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.row-actions-nowrap { flex-wrap: nowrap; }
+.cell-inline-error { color: var(--error); font-size: var(--fs-sm); display: block; }
+.cell-inline-warn { color: var(--warn); font-size: var(--fs-sm); display: block; }
+.test-result:empty { display: none; }
+.test-result { margin-top: var(--sp-1); text-align: left; font-size: var(--fs-sm); }
+.form-actions-sticky { position: sticky; bottom: 0; z-index: 5; background: var(--bg); padding: var(--sp-3) 0; border-top: 1px solid var(--border); margin-top: var(--sp-2); }
+.field-inline { display: flex; gap: var(--sp-2); align-items: stretch; }
+.field-inline .form-control { flex: 1; min-width: 0; }
+.chip-list { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin-top: var(--sp-2); padding: 0; list-style: none; }
+.chip { display: inline-block; padding: .15rem .55rem; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-size: var(--fs-sm); }
+.alert .alert-title { font-weight: 650; display: block; }
+.detected-list { display: grid; gap: var(--sp-1); margin-top: var(--sp-2); }
+.detected-list .btn { justify-content: flex-start; text-align: left; }
+.color-field { display: flex; align-items: center; gap: var(--sp-3); }
+.color-field .form-control-color { width: 4rem; padding: .25rem; }
+.form-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 40rem) { .form-grid-2 { grid-template-columns: 1fr; } }
+.row-actions .btn { white-space: nowrap; }
+.text-nowrap-cell { white-space: nowrap; }
+.test-result .alert:empty { display: none; }

@@ -1,21 +1,22 @@
 @model Mailflow.Domain.Entities.Mailbox
 <tr>
-    <td>@Model.DisplayName
-        @if (ViewData["Error"] is string err) { <div class="text-danger small">@err</div> }
-        @if (!string.IsNullOrEmpty(Model.LastError)) { <div class="text-warning small">@Model.LastError</div> }
+    <td><strong>@Model.DisplayName</strong><span class="cell-sub">@Model.Email</span>
+        @if (ViewData["Error"] is string err) { <span class="cell-inline-error" role="alert">@err</span> }
+        @if (!string.IsNullOrEmpty(Model.LastError)) { <span class="cell-inline-warn">@Model.LastError</span> }
     </td>
-    <td>@Model.Email</td>
     <td>@ViewData["StoreName"]</td>
-    <td>@(Model.LastCheckAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
+    <td class="text-nowrap">@(Model.LastCheckAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
     <td>
         <form method="post" hx-post="@Url.Page("/Mailboxes/Index", "Toggle", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML">
-            <button class="btn btn-sm @(Model.IsActive ? "btn-success" : "btn-outline-secondary")" type="submit">@(Model.IsActive ? "Actif" : "Inactif")</button>
+            <button class="badge-toggle @(Model.IsActive ? "badge-ok" : "badge-neutral")" type="submit" title="@(Model.IsActive ? "Cliquer pour désactiver" : "Cliquer pour activer")">@(Model.IsActive ? "Actif" : "Inactif")</button>
         </form>
     </td>
-    <td class="text-end">
-        <a class="btn btn-sm btn-outline-primary" asp-page="/Mailboxes/Edit" asp-route-id="@Model.Id">Modifier</a>
-        <form method="post" class="d-inline" hx-post="@Url.Page("/Mailboxes/Index", "Delete", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Supprimer cette boîte mail ?">
-            <button class="btn btn-sm btn-outline-danger" type="submit">Supprimer</button>
-        </form>
+    <td>
+        <div class="row-actions row-actions-nowrap">
+            <a class="btn btn-sm btn-secondary" asp-page="/Mailboxes/Edit" asp-route-id="@Model.Id">Modifier</a>
+            <form method="post" hx-post="@Url.Page("/Mailboxes/Index", "Delete", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Supprimer cette boîte mail ?">
+                <button class="btn btn-sm btn-danger" type="submit">Supprimer</button>
+            </form>
+        </div>
     </td>
 </tr>

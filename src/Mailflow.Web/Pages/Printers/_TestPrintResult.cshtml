@@ -1,1 +1,1 @@
-<div class="alert @((ViewData["Ok"] as bool? ?? false) ? "alert-success" : "alert-danger") py-1 mb-0">@ViewData["Message"]</div>
+<div class="alert @((ViewData["Ok"] as bool? ?? false) ? "alert-success" : "alert-danger") py-1 mb-0" role="@((ViewData["Ok"] as bool? ?? false) ? "status" : "alert")">@ViewData["Message"]</div>

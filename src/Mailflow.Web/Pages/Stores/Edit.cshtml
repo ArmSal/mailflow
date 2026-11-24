@@ -1,12 +1,23 @@
 @page "{id:int?}"
 @model Mailflow.Web.Pages.Stores.EditModel
 @{ ViewData["Title"] = "Magasin"; }
-<h1 class="h3 mb-3">Magasin</h1>
-<form method="post" class="col-md-6">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    <div class="mb-3"><label class="form-label" asp-for="Input.Name">Nom</label><input class="form-control" asp-for="Input.Name" /><span class="text-danger" asp-validation-for="Input.Name"></span></div>
-    <div class="mb-3"><label class="form-label" asp-for="Input.Address">Adresse</label><input class="form-control" asp-for="Input.Address" /></div>
-    <div class="form-check mb-3"><input class="form-check-input" asp-for="Input.IsActive" /><label class="form-check-label" asp-for="Input.IsActive">Actif</label></div>
-    <button class="btn btn-primary" type="submit">Enregistrer</button>
-    <a class="btn btn-link" asp-page="Index">Annuler</a>
+<link rel="stylesheet" href="~/css/page-config.css" asp-append-version="true" />
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Magasin</h1>
+        <p class="page-subtitle">Un magasin regroupe des boîtes mail et des imprimantes.</p>
+    </div>
+</div>
+<form method="post">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+    <section class="form-section">
+        <h2 class="form-section-title">Identité</h2>
+        <p class="form-section-hint">Ces informations apparaissent dans les listes et le journal.</p>
+        <div class="form-grid">
+            <div class="field"><label class="form-label" asp-for="Input.Name">Nom</label><input class="form-control" asp-for="Input.Name" /><span class="form-text">Nom court du magasin.</span><span class="field-validation-error" asp-validation-for="Input.Name"></span></div>
+            <div class="field"><label class="form-label" asp-for="Input.Address">Adresse</label><input class="form-control" asp-for="Input.Address" /><span class="form-text">Facultatif.</span></div>
+        </div>
+        <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" asp-for="Input.IsActive" /><label class="form-check-label" asp-for="Input.IsActive">Actif</label></div>
+    </section>
+    <div class="form-actions form-actions-sticky"><button class="btn btn-primary" type="submit">Enregistrer</button><a class="btn btn-ghost" asp-page="Index">Annuler</a></div>
 </form>
