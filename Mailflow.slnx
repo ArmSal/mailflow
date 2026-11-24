@@ -3,10 +3,12 @@
     <Project Path="src/Mailflow.Application/Mailflow.Application.csproj" />
     <Project Path="src/Mailflow.Domain/Mailflow.Domain.csproj" />
     <Project Path="src/Mailflow.Infrastructure/Mailflow.Infrastructure.csproj" />
+    <Project Path="src/Mailflow.Desktop/Mailflow.Desktop.csproj" />
     <Project Path="src/Mailflow.Web/Mailflow.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Mailflow.Application.Tests/Mailflow.Application.Tests.csproj" />
+    <Project Path="tests/Mailflow.Desktop.Tests/Mailflow.Desktop.Tests.csproj" />
     <Project Path="tests/Mailflow.Domain.Tests/Mailflow.Domain.Tests.csproj" />
     <Project Path="tests/Mailflow.Integration.Tests/Mailflow.Integration.Tests.csproj" />
   </Folder>

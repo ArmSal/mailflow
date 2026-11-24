@@ -20,7 +20,7 @@ Gratuit, léger, open source (licence MIT).
 8. [Sécurité](#8-sécurité)
 9. [Pile technique](#9-pile-technique)
 10. [Prérequis](#10-prérequis)
-11. [Démarrage rapide (développement)](#11-démarrage-rapide-développement)
+11. [Démarrage rapide](#11-démarrage-rapide)
 12. [Configuration](#12-configuration)
 13. [Tests](#13-tests)
 14. [Déploiement en service Windows](#14-déploiement-en-service-windows)
@@ -337,7 +337,11 @@ Principes d'interface : Bootstrap 5, HTMX pour les actions en ligne (tests, inte
 
 ---
 
-## 11. Démarrage rapide (développement)
+## 11. Démarrage rapide
+
+**Utilisateur** : décompressez la version et double-cliquez sur `Mailflow.exe`. Une fenêtre affiche le tableau de bord (Microsoft Edge WebView2 requis, présent par défaut sur Windows 11) et une icône apparaît dans la zone de notification. Fermer la fenêtre la masque : Mailflow continue de travailler en arrière-plan. Clic droit sur l'icône : ouvrir, lancer le traitement maintenant, mettre en pause / reprendre, quitter. Une seule instance à la fois ; si le service Windows tourne déjà, la fenêtre s'y connecte (pause et traitement immédiat se font alors depuis le tableau de bord). `Mailflow.exe --minimized` démarre directement dans la zone de notification ; `--headless` (ou le mode service) lance le serveur sans fenêtre.
+
+**Développeur** :
 
 ```powershell
 git clone https://github.com/<votre-compte>/mailflow.git
