@@ -294,7 +294,8 @@ Principes d'interface : Bootstrap 5, HTMX pour les actions en ligne (tests, inte
 
 | Risque | Parade |
 |---|---|
-| Accès au tableau de bord par le personnel / le réseau | Lié à `127.0.0.1`, mot de passe haché, session de 30 min, jetons anti-falsification sur tous les formulaires |
+| Accès au tableau de bord par le personnel / le réseau | Lié à `127.0.0.1`, mot de passe haché, session de 30 min, jetons anti-falsification sur tous les formulaires, 5 tentatives de connexion par minute, hôtes autorisés limités à `localhost` (`AllowedHosts`), assistant de premier lancement accessible uniquement depuis la machine locale |
+| Usurpation de l'expéditeur (en-tête `From` falsifiable) | L'adresse est analysée strictement (toute adresse ambiguë est ignorée). La vérification DKIM/DMARC avant impression n'est **pas encore** en place : ne mettez dans les expéditeurs autorisés que des fournisseurs de confiance |
 | Mots de passe des boîtes | Chiffrés avec **DPAPI** (portée : compte du service), jamais affichés |
 | Impression sauvage | Impression uniquement depuis les **expéditeurs autorisés**, âge maximal 24 h |
 | PDF malveillants | Jamais ouverts ni exécutés : seul le texte est lu (PdfPig) ; SumatraPDF ne fait qu'imprimer |

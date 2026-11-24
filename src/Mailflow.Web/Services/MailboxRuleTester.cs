@@ -26,7 +26,7 @@ public sealed class MailboxRuleTester(
             var messages = await mail.FetchSinceAsync(connection, mb.InboxFolder, clock.UtcNow.AddDays(-mb.LookbackDays), ct);
             foreach (var m in messages.OrderByDescending(x => x.ReceivedAt).Take(lastEmails))
             {
-                var context = new MatchContext(MessagePipeline.ExtractAddress(m.From), MessagePipeline.ExtractAddress(m.To),
+                var context = new MatchContext(MessagePipeline.ExtractAddress(m.From), MessagePipeline.ExtractRecipient(m.To),
                     m.Subject, m.Body, m.Pdfs.Select(p => p.FileName).ToList(),
                     string.Join("\n", m.Pdfs.Select(p => pdfReader.ReadText(p.Content))), m.Pdfs.Count > 0);
                 if (engine.Evaluate([rule], context, mb.Id).MatchedRules.Count > 0)

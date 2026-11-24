@@ -28,7 +28,7 @@ public sealed class MessagePipeline(
         var maxAge = await MaxAgeHoursAsync(ct);
 
         var from = ExtractAddress(message.From);
-        var context = new MatchContext(from, ExtractAddress(message.To), message.Subject, message.Body,
+        var context = new MatchContext(from, ExtractRecipient(message.To), message.Subject, message.Body,
             message.Pdfs.Select(p => p.FileName).ToList(), ReadPdfText(message), message.Pdfs.Count > 0);
         var evaluation = ruleEngine.Evaluate(rules, context, mailbox.Id);
 
@@ -149,11 +149,32 @@ public sealed class MessagePipeline(
         return s != null && int.TryParse(s.Value, out var h) ? h : PrintPolicy.DefaultMaxAgeHours;
     }
 
-    public static string ExtractAddress(string s)
+    /// <summary>Lenient parsing for the To field (it may list several recipients); never used for security decisions.</summary>
+    public static string ExtractRecipient(string s)
     {
         var lt = s.LastIndexOf('<');
         var gt = s.LastIndexOf('>');
         return (lt >= 0 && gt > lt ? s[(lt + 1)..gt] : s).Trim();
+    }
+
+    /// <summary>
+    /// Returns the bare address of a "Name &lt;addr&gt;" or "addr" sender, or "" when the text is ambiguous or
+    /// malformed, so that nothing (allow-list, rules) can match a half-parsed address.
+    /// </summary>
+    public static string ExtractAddress(string s)
+    {
+        s = s.Trim();
+        var candidate = s;
+        if (s.Contains('<') || s.Contains('>'))
+        {
+            var lt = s.LastIndexOf('<');
+            if (lt < 0 || !s.EndsWith('>')) return "";
+            candidate = s[(lt + 1)..^1].Trim();
+        }
+        return candidate.Length > 0
+            && candidate.Count(c => c == '@') == 1
+            && candidate.IndexOfAny(['<', '>', ' ', '\t', '\r', '\n']) < 0
+            ? candidate : "";
     }
 
     static string DomainOf(string address)

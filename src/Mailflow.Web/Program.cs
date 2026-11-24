@@ -15,6 +15,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Serilog;
+using System.Net;
+using System.Threading.RateLimiting;
 
 // As a Windows service the working directory is System32: anchor everything to the exe folder.
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -49,6 +51,16 @@ services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
         o.Cookie.HttpOnly = true;
         o.Cookie.SameSite = SameSiteMode.Strict;
     });
+// Slow down password guessing: at most 5 login attempts per minute per client address.
+services.AddRateLimiter(o =>
+{
+    o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(ctx =>
+        ctx.Request.Method == HttpMethods.Post && ctx.Request.Path.StartsWithSegments("/Login")
+            ? RateLimitPartition.GetFixedWindowLimiter(ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 })
+            : RateLimitPartition.GetNoLimiter("other"));
+});
 services.AddAuthorizationBuilder()
     .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
 services.AddSingleton<IPasswordHasher<object>, PasswordHasher<object>>();
@@ -96,6 +108,7 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
 
 app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthentication();
 
 // First run: no admin password yet -> force the setup page.
@@ -103,6 +116,12 @@ var configured = false;
 app.Use(async (ctx, next) =>
 {
     var path = ctx.Request.Path;
+    // First-run setup is open to anyone until a password exists, so only the machine itself may reach it.
+    if (path.StartsWithSegments("/Setup") && !IPAddress.IsLoopback(ctx.Connection.RemoteIpAddress ?? IPAddress.None))
+    {
+        ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+        return;
+    }
     if (!configured && !path.StartsWithSegments("/Setup") && !path.StartsWithSegments("/lib")
         && !path.StartsWithSegments("/css") && !path.StartsWithSegments("/js") && path != "/favicon.ico")
     {
