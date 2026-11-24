@@ -34,6 +34,17 @@ public static class MailflowHost
         });
         var dataDir = Path.Combine(AppContext.BaseDirectory, "data");
 
+        // Build output (dotnet run, Debug) has no copy of wwwroot: static files come from the build's runtime manifest,
+        // which ASP.NET only loads by itself in Development (otherwise every asset is served empty). A published
+        // release ships wwwroot next to the exe and has no such manifest, so this does nothing there.
+        var staticAssetsManifest = Path.Combine(AppContext.BaseDirectory,
+            System.Reflection.Assembly.GetEntryAssembly()!.GetName().Name + ".staticwebassets.runtime.json");
+        if (File.Exists(staticAssetsManifest))
+        {
+            builder.Configuration["StaticWebAssets"] = staticAssetsManifest;
+            builder.WebHost.UseStaticWebAssets();
+        }
+
         builder.Host.UseWindowsService(o => o.ServiceName = "Mailflow");
         builder.Host.UseSerilog((ctx, cfg) => cfg
             .ReadFrom.Configuration(ctx.Configuration)
