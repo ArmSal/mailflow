@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Mailflow.Application.Processing;
 
-public sealed class MailboxProcessor(IAppDbContext db, IMailClient mail, ISecretStore secrets, MessagePipeline pipeline, IClock clock)
+public sealed class MailboxProcessor(IAppDbContext db, IMailClient mail, IMailboxConnectionFactory connections, MessagePipeline pipeline, IClock clock)
 {
     /// <summary>Runs every active mailbox; one failing mailbox never stops the others.</summary>
     public async Task<IReadOnlyList<RunLog>> RunAllAsync(CancellationToken ct)
@@ -23,7 +23,7 @@ public sealed class MailboxProcessor(IAppDbContext db, IMailClient mail, ISecret
         var errors = new List<string>();
         try
         {
-            var connection = new MailboxConnection(mailbox.Host, mailbox.Port, mailbox.UseSsl, mailbox.Username, secrets.Unprotect(mailbox.EncryptedPassword));
+            var connection = await connections.CreateAsync(mailbox, ct);
             var messages = await mail.FetchSinceAsync(connection, mailbox.InboxFolder, started.AddDays(-mailbox.LookbackDays), ct);
             foreach (var message in messages)
             {
@@ -41,6 +41,10 @@ public sealed class MailboxProcessor(IAppDbContext db, IMailClient mail, ISecret
                     errors.Add($"Message '{message.Subject}' will be retried: {ex.Message}");
                 }
             }
+        }
+        catch (OAuthReconnectRequiredException ex)
+        {
+            errors.Add(ex.Message);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

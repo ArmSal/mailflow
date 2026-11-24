@@ -8,7 +8,7 @@ namespace Mailflow.Web.Services;
 
 /// <summary>Read-only dry run: fetches recent emails (flags untouched) and reports which ones the saved rule matches.</summary>
 public sealed class MailboxRuleTester(
-    IAppDbContext db, IMailClient mail, ISecretStore secrets, IPdfTextReader pdfReader, RuleEngine engine, IClock clock) : IRuleTester
+    IAppDbContext db, IMailClient mail, IMailboxConnectionFactory connections, IPdfTextReader pdfReader, RuleEngine engine, IClock clock) : IRuleTester
 {
     public async Task<IReadOnlyList<RuleTestMatch>> TestAsync(int ruleId, int lastEmails, CancellationToken ct)
     {
@@ -22,7 +22,7 @@ public sealed class MailboxRuleTester(
         var matches = new List<RuleTestMatch>();
         foreach (var mb in mailboxes)
         {
-            var connection = new MailboxConnection(mb.Host, mb.Port, mb.UseSsl, mb.Username, secrets.Unprotect(mb.EncryptedPassword));
+            var connection = await connections.CreateAsync(mb, ct);
             var messages = await mail.FetchSinceAsync(connection, mb.InboxFolder, clock.UtcNow.AddDays(-mb.LookbackDays), ct);
             foreach (var m in messages.OrderByDescending(x => x.ReceivedAt).Take(lastEmails))
             {

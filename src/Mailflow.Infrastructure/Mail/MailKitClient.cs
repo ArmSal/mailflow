@@ -118,6 +118,10 @@ public sealed class MailKitClient : IMailClient
         return loopback ? SecureSocketOptions.None : SecureSocketOptions.StartTls;
     }
 
+    /// <summary>XOAUTH2 when the connection carries an access token (only ever sent over the link chosen by <see cref="SocketOptionsFor"/>).</summary>
+    internal static SaslMechanism? OAuthMechanismFor(MailboxConnection c) =>
+        c.AccessToken is null ? null : new SaslMechanismOAuth2(c.Username, c.AccessToken);
+
     private static async Task<ImapClient> ConnectAsync(MailboxConnection c, CancellationToken ct)
     {
         var client = new ImapClient();
@@ -125,7 +129,8 @@ public sealed class MailKitClient : IMailClient
         {
             await client.ConnectAsync(c.Host, c.Port,
                 SocketOptionsFor(c), ct);
-            await client.AuthenticateAsync(c.Username, c.Password, ct);
+            if (OAuthMechanismFor(c) is { } oauth) await client.AuthenticateAsync(oauth, ct);
+            else await client.AuthenticateAsync(c.Username, c.Password, ct);
             return client;
         }
         catch { client.Dispose(); throw; }
