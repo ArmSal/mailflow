@@ -3,6 +3,7 @@ using Mailflow.Application.Commands;
 using Mailflow.Application.Queries;
 using Mailflow.Domain.Entities;
 using Mailflow.Infrastructure.Storage;
+using Mailflow.Web.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -33,7 +34,7 @@ public class IndexModel(
 
     public async Task OnGetAsync(CancellationToken ct)
     {
-        if (From is { } f && To is { } t && f > t) ModelState.AddModelError(nameof(To), "La date de fin doit suivre la date de début.");
+        if (From is { } f && To is { } t && f > t) ModelState.AddModelError(nameof(To), Loc.T("La date de fin doit suivre la date de début."));
         Supplier = Supplier?.Trim();
         if (Supplier is { Length: > 200 }) Supplier = Supplier[..200];
         await LoadLookups(ct);
@@ -44,13 +45,13 @@ public class IndexModel(
     public async Task<IActionResult> OnPostReprintAsync(int id, int? printerId, CancellationToken ct)
     {
         var r = await reprint.ExecuteAsync(id, printerId, ct);
-        return await RowResult(id, r.Success ? "Document envoyé à l'imprimante." : "Échec de l'impression : " + r.Error, r.Success, ct);
+        return await RowResult(id, r.Success ? Loc.T("Document envoyé à l'imprimante.") : Loc.T("Échec de l'impression : {0}", Loc.T(r.Error ?? "")), r.Success, ct);
     }
 
     public async Task<IActionResult> OnPostReclassifyAsync(int id, int categoryId, CancellationToken ct)
     {
         var r = await reclassify.ExecuteAsync(id, categoryId, ct);
-        return await RowResult(id, r.Success ? "Catégorie modifiée." : r.Error, r.Success, ct);
+        return await RowResult(id, r.Success ? Loc.T("Catégorie modifiée.") : (r.Error is null ? null : Loc.T(r.Error)), r.Success, ct);
     }
 
     public async Task<IActionResult> OnGetPdfAsync(int id, CancellationToken ct)

@@ -1,14 +1,14 @@
 @page
 @model Mailflow.Web.Pages.Rules.IndexModel
-@{ ViewData["Title"] = "Règles"; }
+@{ ViewData["Title"] = T("Règles"); }
 <link rel="stylesheet" href="~/css/page-activity.css" asp-append-version="true" />
 <div class="page-header">
     <div>
-        <h1 class="page-title">Règles</h1>
-        <p class="page-subtitle">Elles s'appliquent dans l'ordre de la liste : la première règle est la plus prioritaire.</p>
+        <h1 class="page-title">@T("Règles")</h1>
+        <p class="page-subtitle">@T("Elles s'appliquent dans l'ordre de la liste : la première règle est la plus prioritaire.")</p>
     </div>
     <div class="page-actions">
-        <a class="btn btn-primary" asp-page="Edit"><svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg>Ajouter une règle</a>
+        <a class="btn btn-primary" asp-page="Edit"><svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg>@T("Ajouter une règle")</a>
     </div>
 </div>
 <div id="rule-list"><partial name="_RuleList" model="Model.List" /></div>

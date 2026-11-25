@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Mailflow.Application.Abstractions;
 using Mailflow.Domain.Entities;
 using Mailflow.Domain.Enums;
+using Mailflow.Web.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -51,34 +52,34 @@ public class EditModel(IAppDbContext db, IRuleTester tester) : PageModel
         Input.Name = (Input.Name ?? "").Trim();
         Input.Conditions ??= [];
         Input.Actions ??= [];
-        if (Input.Name.Length == 0) ModelState.AddModelError("Input.Name", "Le nom est requis.");
-        if (!Enum.IsDefined(Input.MatchMode)) ModelState.AddModelError("Input.MatchMode", "Mode invalide.");
-        if (Input.MailboxId is int mb && !await db.Mailboxes.AnyAsync(m => m.Id == mb)) ModelState.AddModelError("Input.MailboxId", "Boîte mail invalide.");
-        if (Input.Actions.Count == 0) ModelState.AddModelError("", "Ajoutez au moins une action.");
+        if (Input.Name.Length == 0) ModelState.AddModelError("Input.Name", Loc.T("Le nom est requis."));
+        if (!Enum.IsDefined(Input.MatchMode)) ModelState.AddModelError("Input.MatchMode", Loc.T("Mode invalide."));
+        if (Input.MailboxId is int mb && !await db.Mailboxes.AnyAsync(m => m.Id == mb)) ModelState.AddModelError("Input.MailboxId", Loc.T("Boîte mail invalide."));
+        if (Input.Actions.Count == 0) ModelState.AddModelError("", Loc.T("Ajoutez au moins une action."));
 
         for (var i = 0; i < Input.Conditions.Count; i++)
         {
             var c = Input.Conditions[i];
-            var n = $"Condition {i + 1} : ";
-            if (!Enum.IsDefined(c.Field) || !Enum.IsDefined(c.Operator)) { ModelState.AddModelError("", n + "champ ou opérateur invalide."); continue; }
+            var n = Loc.T("Condition {0} : ", i + 1);
+            if (!Enum.IsDefined(c.Field) || !Enum.IsDefined(c.Operator)) { ModelState.AddModelError("", n + Loc.T("champ ou opérateur invalide.")); continue; }
             c.Value = (c.Value ?? "").Trim();
-            if (c.Field != ConditionField.HasPdf && c.Value.Length == 0) ModelState.AddModelError("", n + "la valeur est requise.");
-            if (c.Value.Length > 500) ModelState.AddModelError("", n + "valeur trop longue.");
-            if (c.Operator == ConditionOperator.Regex && !IsValidRegex(c.Value)) ModelState.AddModelError("", n + "expression régulière invalide.");
+            if (c.Field != ConditionField.HasPdf && c.Value.Length == 0) ModelState.AddModelError("", n + Loc.T("la valeur est requise."));
+            if (c.Value.Length > 500) ModelState.AddModelError("", n + Loc.T("valeur trop longue."));
+            if (c.Operator == ConditionOperator.Regex && !IsValidRegex(c.Value)) ModelState.AddModelError("", n + Loc.T("expression régulière invalide."));
         }
 
         for (var i = 0; i < Input.Actions.Count; i++)
         {
             var a = Input.Actions[i];
-            var n = $"Action {i + 1} : ";
-            if (!Enum.IsDefined(a.Type)) { ModelState.AddModelError("", n + "type invalide."); continue; }
+            var n = Loc.T("Action {0} : ", i + 1);
+            if (!Enum.IsDefined(a.Type)) { ModelState.AddModelError("", n + Loc.T("type invalide.")); continue; }
             if (a.Type == ActionType.SaveToCategory && (a.CategoryId is null || !await db.Categories.AnyAsync(x => x.Id == a.CategoryId)))
-                ModelState.AddModelError("", n + "choisissez une catégorie.");
+                ModelState.AddModelError("", n + Loc.T("choisissez une catégorie."));
             if (a.Type == ActionType.Print && (a.PrinterId is null || !await db.Printers.AnyAsync(x => x.Id == a.PrinterId)))
-                ModelState.AddModelError("", n + "choisissez une imprimante.");
-            if (a.Type == ActionType.Print && a.Copies is < 1 or > 99) ModelState.AddModelError("", n + "copies : 1 à 99.");
+                ModelState.AddModelError("", n + Loc.T("choisissez une imprimante."));
+            if (a.Type == ActionType.Print && a.Copies is < 1 or > 99) ModelState.AddModelError("", n + Loc.T("copies : 1 à 99."));
             a.ImapFolder = string.IsNullOrWhiteSpace(a.ImapFolder) ? null : a.ImapFolder.Trim();
-            if (a.Type == ActionType.MoveToFolder && a.ImapFolder is null) ModelState.AddModelError("", n + "dossier IMAP requis.");
+            if (a.Type == ActionType.MoveToFolder && a.ImapFolder is null) ModelState.AddModelError("", n + Loc.T("dossier IMAP requis."));
         }
         if (!ModelState.IsValid) { await LoadListsAsync(); return Page(); }
 

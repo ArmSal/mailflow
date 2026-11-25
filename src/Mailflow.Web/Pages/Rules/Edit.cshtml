@@ -2,66 +2,66 @@
 @using Mailflow.Domain.Enums
 @using Mailflow.Web.Pages.Rules
 @model Mailflow.Web.Pages.Rules.EditModel
-@{ ViewData["Title"] = "Règle"; var editId = Model.RuleId; }
+@{ ViewData["Title"] = T("Règle"); var editId = Model.RuleId; }
 <link rel="stylesheet" href="~/css/page-activity.css" asp-append-version="true" />
 <div class="page-header">
     <div>
-        <h1 class="page-title">@(editId is null ? "Nouvelle règle" : "Modifier la règle")</h1>
-        <p class="page-subtitle">Si les conditions sont remplies, les actions sont exécutées sur le document.</p>
+        <h1 class="page-title">@(editId is null ? T("Nouvelle règle") : T("Modifier la règle"))</h1>
+        <p class="page-subtitle">@T("Si les conditions sont remplies, les actions sont exécutées sur le document.")</p>
     </div>
 </div>
 <form method="post" id="rule-form">
     <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
     <section class="form-section">
-        <h2 class="form-section-title">Général</h2>
+        <h2 class="form-section-title">@T("Général")</h2>
         <div class="form-grid">
-            <div class="field"><label class="form-label" asp-for="Input.Name">Nom</label><input class="form-control" asp-for="Input.Name" />
+            <div class="field"><label class="form-label" asp-for="Input.Name">@T("Nom")</label><input class="form-control" asp-for="Input.Name" />
                 <span class="field-validation-error" asp-validation-for="Input.Name"></span></div>
-            <div class="field"><label class="form-label" asp-for="Input.MailboxId">Boîte mail</label>
-                <select class="form-select" asp-for="Input.MailboxId" asp-items="@(new SelectList(Model.Mailboxes, "Id", "DisplayName"))"><option value="">Toutes les boîtes</option></select></div>
-            <div class="field"><label class="form-label" asp-for="Input.MatchMode">Correspondance</label>
+            <div class="field"><label class="form-label" asp-for="Input.MailboxId">@T("Boîte mail")</label>
+                <select class="form-select" asp-for="Input.MailboxId" asp-items="@(new SelectList(Model.Mailboxes, "Id", "DisplayName"))"><option value="">@T("Toutes les boîtes")</option></select></div>
+            <div class="field"><label class="form-label" asp-for="Input.MatchMode">@T("Correspondance")</label>
                 <select class="form-select" asp-for="Input.MatchMode">
-                    <option value="@MatchMode.All">Toutes les conditions</option>
-                    <option value="@MatchMode.Any">Au moins une condition</option>
+                    <option value="@MatchMode.All">@T("Toutes les conditions")</option>
+                    <option value="@MatchMode.Any">@T("Au moins une condition")</option>
                 </select></div>
         </div>
         <div class="form-switches">
-            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" asp-for="Input.IsActive" /><label class="form-check-label" asp-for="Input.IsActive">Active</label></div>
-            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" asp-for="Input.StopProcessing" /><label class="form-check-label" asp-for="Input.StopProcessing">Arrêter le traitement ensuite</label></div>
+            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" asp-for="Input.IsActive" /><label class="form-check-label" asp-for="Input.IsActive">@T("Active")</label></div>
+            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" asp-for="Input.StopProcessing" /><label class="form-check-label" asp-for="Input.StopProcessing">@T("Arrêter le traitement ensuite")</label></div>
         </div>
     </section>
 
     <section class="form-section">
-        <h2 class="form-section-title">Conditions</h2>
-        <p class="form-section-hint">Ce que le message ou le document doit contenir pour déclencher la règle.</p>
+        <h2 class="form-section-title">@T("Conditions")</h2>
+        <p class="form-section-hint">@T("Ce que le message ou le document doit contenir pour déclencher la règle.")</p>
         <div id="conditions" class="repeat-list">
             @foreach (var c in Model.Input.Conditions)
             {
                 <partial name="_ConditionRow" model="@(new ConditionRowVm(Guid.NewGuid().ToString("N"), c))" />
             }
         </div>
-        <button type="button" class="btn btn-sm btn-secondary add-row" hx-post="@Url.Page("/Rules/Edit", "AddCondition")" hx-target="#conditions" hx-swap="beforeend"><svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg>Ajouter une condition</button>
+        <button type="button" class="btn btn-sm btn-secondary add-row" hx-post="@Url.Page("/Rules/Edit", "AddCondition")" hx-target="#conditions" hx-swap="beforeend"><svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg>@T("Ajouter une condition")</button>
     </section>
 
     <section class="form-section">
-        <h2 class="form-section-title">Actions</h2>
-        <p class="form-section-hint">Ce qui est fait lorsque la règle correspond (au moins une action est requise).</p>
+        <h2 class="form-section-title">@T("Actions")</h2>
+        <p class="form-section-hint">@T("Ce qui est fait lorsque la règle correspond (au moins une action est requise).")</p>
         <div id="actions" class="repeat-list">
             @foreach (var a in Model.Input.Actions)
             {
                 <partial name="_ActionRow" model="@(new ActionRowVm(Guid.NewGuid().ToString("N"), a, Model.Categories, Model.Printers))" />
             }
         </div>
-        <button type="button" class="btn btn-sm btn-secondary add-row" hx-post="@Url.Page("/Rules/Edit", "AddAction")" hx-target="#actions" hx-swap="beforeend"><svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg>Ajouter une action</button>
+        <button type="button" class="btn btn-sm btn-secondary add-row" hx-post="@Url.Page("/Rules/Edit", "AddAction")" hx-target="#actions" hx-swap="beforeend"><svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg>@T("Ajouter une action")</button>
     </section>
 
     <div class="form-actions">
-        <button class="btn btn-primary" type="submit">Enregistrer</button>
-        <a class="btn btn-ghost" asp-page="Index">Annuler</a>
+        <button class="btn btn-primary" type="submit">@T("Enregistrer")</button>
+        <a class="btn btn-ghost" asp-page="Index">@T("Annuler")</a>
         @if (editId is int tid)
         {
-            <button type="button" class="btn btn-secondary ms-auto" hx-post="@Url.Page("/Rules/Edit", "Test", new { id = tid })" hx-target="#rule-test">Tester cette règle</button>
+            <button type="button" class="btn btn-secondary ms-auto" hx-post="@Url.Page("/Rules/Edit", "Test", new { id = tid })" hx-target="#rule-test">@T("Tester cette règle")</button>
         }
     </div>
     <div id="rule-test" class="test-result" aria-live="polite"></div>

@@ -5,34 +5,34 @@
     <input type="hidden" name="Input.Actions.Index" value="@Model.Key" />
     <div class="repeat-fields repeat-fields--action">
         <div>
-            <label class="form-label" for="@(k)-type">Type</label>
+            <label class="form-label" for="@(k)-type">@T("Type")</label>
             <select class="form-select" id="@(k)-type" name="@(p).Type">
                 @foreach (var kv in RuleLabels.Actions) { <option value="@kv.Key" selected="@(kv.Key == Model.A.Type)">@kv.Value</option> }
             </select>
         </div>
         <div>
-            <label class="form-label" for="@(k)-cat">Catégorie</label>
+            <label class="form-label" for="@(k)-cat">@T("Catégorie")</label>
             <select class="form-select" id="@(k)-cat" name="@(p).CategoryId">
-                <option value="">Catégorie…</option>
+                <option value="">@T("Catégorie…")</option>
                 @foreach (var c in Model.Categories) { <option value="@c.Id" selected="@(c.Id == Model.A.CategoryId)">@c.Name</option> }
             </select>
         </div>
         <div>
-            <label class="form-label" for="@(k)-printer">Imprimante</label>
+            <label class="form-label" for="@(k)-printer">@T("Imprimante")</label>
             <select class="form-select" id="@(k)-printer" name="@(p).PrinterId">
-                <option value="">Imprimante…</option>
+                <option value="">@T("Imprimante…")</option>
                 @foreach (var pr in Model.Printers) { <option value="@pr.Id" selected="@(pr.Id == Model.A.PrinterId)">@pr.DisplayName</option> }
             </select>
         </div>
         <div>
-            <label class="form-label" for="@(k)-copies">Copies</label>
-            <input type="number" min="1" max="99" class="form-control" id="@(k)-copies" name="@(p).Copies" value="@Model.A.Copies" placeholder="Ex." />
+            <label class="form-label" for="@(k)-copies">@T("Copies")</label>
+            <input type="number" min="1" max="99" class="form-control" id="@(k)-copies" name="@(p).Copies" value="@Model.A.Copies" placeholder="@T("Ex.")" />
         </div>
         <div>
-            <label class="form-label" for="@(k)-folder">Dossier IMAP</label>
-            <input class="form-control" id="@(k)-folder" name="@(p).ImapFolder" value="@Model.A.ImapFolder" placeholder="Dossier IMAP" />
+            <label class="form-label" for="@(k)-folder">@T("Dossier IMAP")</label>
+            <input class="form-control" id="@(k)-folder" name="@(p).ImapFolder" value="@Model.A.ImapFolder" placeholder="@T("Dossier IMAP")" />
         </div>
     </div>
-    <button type="button" class="btn btn-sm btn-danger repeat-remove" onclick="this.closest('.row-item').remove()" aria-label="Retirer l'action" title="Retirer l'action"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></svg>Retirer</button>
+    <button type="button" class="btn btn-sm btn-danger repeat-remove" onclick="this.closest('.row-item').remove()" aria-label="@T("Retirer l'action")" title="@T("Retirer l'action")"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></svg>@T("Retirer")</button>
 </div>
 

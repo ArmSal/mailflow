@@ -1,56 +1,56 @@
 @page
 @model Mailflow.Web.Pages.History.IndexModel
-@{ ViewData["Title"] = "Historique"; }
+@{ ViewData["Title"] = T("Historique"); }
 <link rel="stylesheet" href="~/css/page-activity.css" asp-append-version="true" />
 <div class="page-header">
     <div>
-        <h1 class="page-title">Historique</h1>
-        <p class="page-subtitle">Les documents reçus : ouvrez le PDF, réimprimez-le ou changez sa catégorie.</p>
+        <h1 class="page-title">@T("Historique")</h1>
+        <p class="page-subtitle">@T("Les documents reçus : ouvrez le PDF, réimprimez-le ou changez sa catégorie.")</p>
     </div>
 </div>
-<form method="get" class="toolbar" role="search" aria-label="Filtrer l'historique">
+<form method="get" class="toolbar" role="search" aria-label="@T("Filtrer l'historique")">
     <div class="field field-sm">
-        <label class="form-label" asp-for="From">Du</label>
+        <label class="form-label" asp-for="From">@T("Du")</label>
         <input class="form-control" type="date" asp-for="From" />
     </div>
     <div class="field field-sm">
-        <label class="form-label" asp-for="To">Au</label>
+        <label class="form-label" asp-for="To">@T("Au")</label>
         <input class="form-control" type="date" asp-for="To" />
     </div>
     <div class="field field-md">
-        <label class="form-label" asp-for="Supplier">Fournisseur</label>
-        <input class="form-control" asp-for="Supplier" maxlength="200" placeholder="domaine ou adresse" />
+        <label class="form-label" asp-for="Supplier">@T("Fournisseur")</label>
+        <input class="form-control" asp-for="Supplier" maxlength="200" placeholder="@T("domaine ou adresse")" />
     </div>
     <div class="field field-md">
-        <label class="form-label" asp-for="CategoryId">Catégorie</label>
+        <label class="form-label" asp-for="CategoryId">@T("Catégorie")</label>
         <select class="form-select" asp-for="CategoryId">
-            <option value="">Toutes</option>
+            <option value="">@T("Toutes")</option>
             @foreach (var c in Model.Categories) { <option value="@c.Id" selected="@(c.Id == Model.CategoryId)">@c.Name</option> }
         </select>
     </div>
     <div class="form-check form-switch">
         <input class="form-check-input" type="checkbox" role="switch" asp-for="ErrorsOnly" value="true" />
-        <label class="form-check-label" asp-for="ErrorsOnly">Erreurs d'impression seulement</label>
+        <label class="form-check-label" asp-for="ErrorsOnly">@T("Erreurs d'impression seulement")</label>
     </div>
     <div class="form-check form-switch">
         <input class="form-check-input" type="checkbox" role="switch" asp-for="UnverifiedOnly" value="true" />
-        <label class="form-check-label" asp-for="UnverifiedOnly">Expéditeurs non vérifiés seulement</label>
+        <label class="form-check-label" asp-for="UnverifiedOnly">@T("Expéditeurs non vérifiés seulement")</label>
     </div>
-    <div class="toolbar-end"><button class="btn btn-primary" type="submit">Rechercher</button></div>
+    <div class="toolbar-end"><button class="btn btn-primary" type="submit">@T("Rechercher")</button></div>
 </form>
 @if (!ViewData.ModelState.IsValid)
 {
     <div class="alert alert-danger" role="alert"><span asp-validation-for="To"></span></div>
 }
 
-<p class="result-count" role="status">@Model.Result.Total document(s)</p>
+<p class="result-count" role="status">@T("{0} document(s)", Model.Result.Total)</p>
 @if (Model.Result.Items.Count == 0)
 {
     <div class="card">
         <div class="empty-state">
             <span class="empty-state-icon"><svg class="icon" aria-hidden="true"><use href="#i-inbox" /></svg></span>
-            <h2 class="empty-state-title">Aucun document</h2>
-            <p>Aucun document ne correspond à ces filtres.</p>
+            <h2 class="empty-state-title">@T("Aucun document")</h2>
+            <p>@T("Aucun document ne correspond à ces filtres.")</p>
         </div>
     </div>
 }
@@ -58,7 +58,7 @@ else
 {
     <div class="table-wrap table-wrap--menu">
         <table class="table align-middle">
-            <thead><tr><th scope="col">Reçu le</th><th scope="col">Document</th><th scope="col">Catégorie</th><th scope="col">Impression</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+            <thead><tr><th scope="col">@T("Reçu le")</th><th scope="col">@T("Document")</th><th scope="col">@T("Catégorie")</th><th scope="col">@T("Impression")</th><th scope="col"><span class="visually-hidden">@T("Actions")</span></th></tr></thead>
             <tbody>
             @foreach (var row in Model.Result.Items)
             {
@@ -71,7 +71,7 @@ else
 
 @if (Model.Result.PageCount > 1)
 {
-    <nav aria-label="Pagination">
+    <nav aria-label="@T("Pagination")">
         <ul class="pagination">
             @for (var i = 1; i <= Model.Result.PageCount; i++)
             {
