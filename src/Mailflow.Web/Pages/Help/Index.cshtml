@@ -1,3 +1,6 @@
 @page
+@using Mailflow.Web.Localization
 @{ ViewData["Title"] = T("Aide"); }
+<link rel="stylesheet" href="~/css/page-help.css" asp-append-version="true" />
 <div class="page-header"><div><h1 class="page-title">@T("Aide")</h1></div></div>
+@if (Loc.IsEnglish) { <partial name="_En" /> } else { <partial name="_Fr" /> }

@@ -1,0 +1,329 @@
+<div class="help-layout">
+<nav class="help-toc" aria-label="Sommaire">
+    <p class="help-toc-title">Sommaire</p>
+    <ol>
+        <li><a href="#what">1. Ce qu'est Mailflow</a></li>
+        <li><a href="#pipeline">2. Le traitement d'un e-mail</a></li>
+        <li><a href="#pages">3. Les pages, champ par champ</a></li>
+        <li><a href="#security">4. Sécurité et confidentialité</a></li>
+        <li><a href="#files">5. Fichiers et dossiers</a></li>
+        <li><a href="#faq">6. Dépannage et questions fréquentes</a></li>
+        <li><a href="#glossary">7. Glossaire</a></li>
+    </ol>
+</nav>
+<div class="help-body">
+
+<section class="help-section" id="what">
+    <h2>1. Ce qu'est Mailflow</h2>
+    <p>Mailflow est une application Windows qui tourne sur un PC resté allumé. Elle lit une ou plusieurs boîtes mail, repère les documents PDF joints aux e-mails reçus (factures, bons de livraison, avoirs, commandes...), en range une copie dans une arborescence de dossiers organisée et, si vous le demandez, les imprime automatiquement sur une imprimante locale.</p>
+    <p><strong>Le problème résolu.</strong> Sans Mailflow, quelqu'un doit ouvrir chaque e-mail, enregistrer la pièce jointe sous un nom clair, la ranger dans le bon dossier puis l'imprimer. Mailflow le fait à votre place, toujours de la même façon, selon des règles que vous définissez une fois pour toutes.</p>
+    <ul>
+        <li><strong>Lire</strong> les boîtes mail en IMAP (OVH, iCloud, Gmail, Yahoo ou tout serveur IMAP).</li>
+        <li><strong>Trier</strong> chaque e-mail avec vos règles (expéditeur, objet, texte du PDF...).</li>
+        <li><strong>Enregistrer</strong> chaque PDF dans le dossier de sa catégorie, avec un nom de fichier construit à partir d'un modèle.</li>
+        <li><strong>Imprimer</strong> les documents choisis par vos règles.</li>
+        <li><strong>Ranger la boîte mail</strong> : laisser l'e-mail tel quel, le marquer comme lu ou le déplacer dans un dossier IMAP.</li>
+        <li><strong>Garder un historique</strong> de tout, pour ouvrir, réimprimer ou reclasser un document plus tard.</li>
+    </ul>
+    <p>Tout se pilote depuis cette interface web, accessible uniquement depuis le PC lui-même. Rien n'est envoyé à un service extérieur : vos e-mails, mots de passe et documents restent sur le PC.</p>
+</section>
+
+<section class="help-section" id="pipeline">
+    <h2>2. Le traitement d'un e-mail</h2>
+    <ol class="help-flow">
+        <li><strong>Relève</strong>Mailflow se connecte à chaque boîte active en IMAP.</li>
+        <li><strong>Sélection</strong>Il liste les messages du dossier surveillé reçus dans la période d'historique.</li>
+        <li><strong>Doublons</strong>Un message déjà vu est ignoré.</li>
+        <li><strong>Règles</strong>Les règles sont testées dans l'ordre.</li>
+        <li><strong>Enregistrement</strong>Chaque PDF est rangé dans le dossier de sa catégorie.</li>
+        <li><strong>Impression</strong>Si une règle le demande et que les contrôles sont réussis.</li>
+        <li><strong>Boîte mail</strong>L'e-mail est laissé, marqué comme lu ou déplacé.</li>
+        <li><strong>Historique</strong>Le résultat est noté dans l'Historique et le Journal.</li>
+    </ol>
+
+    <h3>Étape par étape</h3>
+    <h4>1. La relève</h4>
+    <p>Une tâche de fond démarre avec l'application puis se répète à intervalle régulier (toutes les minutes par défaut). Elle parcourt les boîtes <em>actives</em> l'une après l'autre ; une boîte en erreur ne bloque jamais les autres. Sur l'Accueil, <strong>Lancer maintenant</strong> déclenche une relève immédiate, et <strong>Pause</strong> / <strong>Reprendre</strong> arrête et relance les relèves programmées.</p>
+    <h4>2. La période d'historique</h4>
+    <p>Seuls les e-mails du dossier surveillé (par défaut la boîte de réception) reçus durant les derniers <strong>Historique (jours)</strong> sont pris en compte. Les messages plus anciens ne sont jamais touchés.</p>
+    <h4>3. La détection des doublons</h4>
+    <p>Deux protections évitent de traiter une chose deux fois :</p>
+    <ul>
+        <li><strong>Par identifiant de message</strong> : Mailflow mémorise le Message-ID de chaque e-mail traité pour une boîte. Un e-mail déjà enregistré est ignoré, même s'il est toujours dans la boîte. (Sans Message-ID, le numéro du message sur le serveur et sa date servent d'identifiant.)</li>
+        <li><strong>Par contenu (SHA-256)</strong> : une empreinte de chaque PDF est calculée. Si un fichier identique est déjà archivé, il n'est pas enregistré une seconde fois : la même facture envoyée deux fois donne un seul document.</li>
+    </ul>
+    <h4>4. Le moteur de règles</h4>
+    <p>Les règles actives qui s'appliquent à la boîte relevée (ou à toutes les boîtes) sont testées dans l'ordre de la liste des Règles, de haut en bas. Une règle correspond quand ses conditions sont remplies (toutes, ou au moins une, selon la règle). Les actions de <em>toutes</em> les règles correspondantes sont cumulées, sauf si une règle correspondante porte <strong>Arrêter le traitement ensuite</strong> : les règles suivantes ne sont alors pas examinées. Quand plusieurs règles donnent le même type d'action, la première l'emporte (première catégorie, première imprimante, première action sur la boîte).</p>
+    <p>Si aucune règle ne correspond, le comportement par défaut s'applique : les PDF vont dans la catégorie <code>A trier</code>, rien n'est imprimé et l'e-mail reste non lu.</p>
+    <p>Une règle avec l'action <strong>Ignorer</strong> fait ignorer totalement l'e-mail : rien n'est enregistré, imprimé ni modifié dans la boîte, et l'e-mail n'est plus réexaminé.</p>
+    <h4>5. Catégories et sous-dossiers</h4>
+    <p>L'action <strong>Classer dans une catégorie</strong> d'une règle choisit une catégorie. Chaque catégorie a un sous-dossier local dans le dossier des documents ; les PDF de cette catégorie y sont rangés.</p>
+    <h4>6. Enregistrement des PDF et nom de fichier</h4>
+    <p>Chaque PDF joint est enregistré selon le <strong>modèle de nom de fichier</strong> des Paramètres. Par défaut :</p>
+    <p><code>{Category}/{yyyy}/{MM}/{yyyy-MM-dd}_{Supplier}_{OriginalName}.pdf</code></p>
+    <p>Pour un PDF nommé <code>facture 1042.pdf</code> reçu de <code>fournisseur@example.com</code> le 14 mars 2026 dans une catégorie dont le sous-dossier est <code>Factures</code>, on obtient <code>Factures/2026/03/2026-03-14_example.com_facture 1042.pdf</code>. Le fournisseur est le domaine de l'expéditeur. Les caractères interdits sont remplacés par <code>_</code> et, si un fichier de ce nom existe déjà, un numéro est ajouté : <code>(2)</code>, <code>(3)</code>... Rien n'est jamais écrasé.</p>
+    <p>Si un e-mail n'a pas de PDF mais qu'une règle demande de l'imprimer, et que l'option <em>Imprimer le contenu de l'e-mail lorsqu'aucun PDF n'est joint</em> est activée (c'est le cas par défaut), Mailflow génère un PDF (<code>email.pdf</code>) à partir du texte de l'e-mail et le traite comme un autre document.</p>
+    <h4>7. L'impression</h4>
+    <p>Un document est imprimé quand une règle correspondante a une action <strong>Imprimer</strong> avec une imprimante, et que ces contrôles sont réussis :</p>
+    <ul>
+        <li>l'imprimante existe et est <strong>active</strong> ;</li>
+        <li>l'e-mail n'est pas plus ancien que l'<strong>âge maximum d'impression</strong> (24 heures par défaut ; cela évite une rafale d'anciens documents après un long arrêt) ;</li>
+        <li>en mode Stricte, l'expéditeur est <strong>vérifié</strong> (voir Paramètres et section 4).</li>
+    </ul>
+    <p>L'impression est silencieuse, via l'outil SumatraPDF fourni. Le nombre de copies est celui de l'action s'il est renseigné, sinon celui de l'imprimante ; le recto-verso suit l'imprimante. Si un contrôle bloque l'impression ou si l'imprimante échoue, le document est quand même enregistré et l'Historique indique la raison ; vous pouvez le réimprimer à la main.</p>
+    <h4>8. Ce qu'il advient de l'e-mail ensuite</h4>
+    <p>Mailflow n'agit sur la boîte qu'une fois les documents enregistrés. L'action de la règle décide : <strong>Marquer comme lu</strong>, <strong>Déplacer vers un dossier IMAP</strong> (le dossier indiqué dans l'action, sinon le dossier IMAP de la catégorie) ou <strong>Laisser non lu</strong>. Si aucune règle ne donne une telle action, le réglage <strong>Après traitement</strong> de la boîte s'applique (Laisser tel quel, Marquer comme lu, Déplacer). Si l'enregistrement d'un document échoue, rien n'est noté et l'e-mail est réessayé à la relève suivante. Si seule l'action sur la boîte échoue, les documents sont conservés et un avertissement apparaît dans le Journal.</p>
+    <h4>9. Historique et Journal</h4>
+    <p>Chaque document traité apparaît dans l'<strong>Historique</strong> ; chaque relève d'une boîte apparaît dans le <strong>Journal</strong> avec sa durée et ses résultats.</p>
+</section>
+
+<section class="help-section" id="pages">
+    <h2>3. Les pages, champ par champ</h2>
+
+    <h3 id="p-home">Accueil</h3>
+    <p>Le tableau de bord. Le panneau d'état indique si Mailflow relève, est en pause ou au repos, l'heure de la dernière relève et de la prochaine, et la dernière erreur éventuelle. Boutons : <strong>Lancer maintenant</strong>, <strong>Pause</strong> et <strong>Reprendre</strong>. En dessous, les chiffres du jour (messages traités, documents enregistrés, imprimés, erreurs). La page se rafraîchit toute seule toutes les 10 secondes.</p>
+
+    <h3 id="p-mailboxes">Boîtes mail</h3>
+    <p>La liste montre chaque boîte, sa dernière relève, son statut (cliquez sur le badge pour l'activer ou la désactiver) et sa dernière erreur éventuelle, avec une piste quand l'erreur est connue. <strong>Ajouter une boîte mail</strong> ouvre le formulaire.</p>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th scope="col">Champ</th><th scope="col">Signification</th></tr></thead>
+        <tbody>
+            <tr><td>Adresse e-mail</td><td>L'adresse de la boîte. C'est aussi l'identifiant de connexion.</td></tr>
+            <tr><td>Mot de passe</td><td>Le mot de passe de la boîte. Il n'est jamais réaffiché une fois enregistré ; en modification, laissez le champ vide pour conserver l'actuel. Il est stocké chiffré (section 4).</td></tr>
+            <tr><td>Nom affiché</td><td>Le nom montré dans les listes. Il suit l'adresse e-mail tant que vous n'en saisissez pas un autre.</td></tr>
+            <tr><td>Options avancées</td><td>Affiche la liste des fournisseurs, le serveur IMAP et le port. S'ouvre toute seule si le fournisseur n'est pas reconnu.</td></tr>
+            <tr><td>Fournisseur, Serveur IMAP, Port</td><td>Détectés automatiquement d'après le domaine de l'adresse pour iCloud, Gmail et Yahoo (OVH MX Plan, OVH Email Pro et IMAP personnalisé se choisissent à la main). Pour un autre fournisseur, choisissez IMAP personnalisé et saisissez le serveur et le port (en général 993 avec SSL).</td></tr>
+            <tr><td>Dossier à relever</td><td>Le dossier IMAP à lire (la boîte de réception par défaut).</td></tr>
+            <tr><td>Après traitement</td><td>Réglage par défaut de la boîte quand aucune règle n'en décide autrement : laisser tel quel, marquer comme lu ou déplacer.</td></tr>
+            <tr><td>Intervalle (min)</td><td>Intervalle de relève de la boîte, de 1 à 1440 minutes. Utilisez Lancer maintenant sur l'Accueil pour relever tout de suite.</td></tr>
+            <tr><td>Historique (jours)</td><td>Ancienneté maximale des messages relevés.</td></tr>
+            <tr><td>Actif</td><td>Une boîte inactive n'est pas relevée.</td></tr>
+        </tbody>
+    </table></div>
+    <p><strong>Tester la connexion</strong> vérifie le serveur, l'identifiant et le mot de passe sans rien enregistrer, et indique le problème le cas échéant.</p>
+    <div class="help-note help-note--warn"><p><strong>Mots de passe d'application.</strong> Gmail, iCloud et Yahoo refusent votre mot de passe habituel pour ce type d'accès. Dans les paramètres de sécurité de votre compte, créez un <em>mot de passe d'application</em> (iCloud : mot de passe spécifique à l'application), activez l'accès IMAP si le fournisseur l'exige, puis saisissez ce mot de passe dans Mailflow.</p></div>
+
+    <h3 id="p-printers">Imprimantes</h3>
+    <p>Liste les imprimantes utilisables par les règles, avec leurs copies, le recto-verso et le statut (cliquez sur le badge pour activer ou désactiver).</p>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th scope="col">Champ</th><th scope="col">Signification</th></tr></thead>
+        <tbody>
+            <tr><td>Nom affiché</td><td>Le nom montré dans Mailflow et dans la liste d'imprimantes des règles.</td></tr>
+            <tr><td>Imprimante Windows</td><td>Le nom Windows exact de l'imprimante. <strong>Détecter les imprimantes</strong> liste celles installées sur le PC ; cliquez sur l'une d'elles pour remplir le champ.</td></tr>
+            <tr><td>Type</td><td>Le type d'imprimante. Choisissez Local pour une imprimante installée sur ce PC.</td></tr>
+            <tr><td>Copies par défaut</td><td>Nombre de copies, de 1 à 99, sauf si l'action de la règle fixe son propre nombre.</td></tr>
+            <tr><td>Recto-verso</td><td>Impression des deux côtés de la feuille.</td></tr>
+            <tr><td>Actif</td><td>Une imprimante inactive n'imprime jamais : le document est enregistré et l'Historique en donne la raison.</td></tr>
+        </tbody>
+    </table></div>
+    <p>Le bouton <strong>Test d'impression</strong> de la liste envoie une page de test à l'imprimante : faites-le une fois après l'avoir ajoutée.</p>
+
+    <h3 id="p-categories">Catégories</h3>
+    <p>Une catégorie décide où un document est rangé. Mailflow crée <code>A trier</code> pour les e-mails qu'aucune règle ne reconnaît.</p>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th scope="col">Champ</th><th scope="col">Signification</th></tr></thead>
+        <tbody>
+            <tr><td>Nom, Couleur</td><td>Servent à repérer la catégorie dans les listes.</td></tr>
+            <tr><td>Sous-dossier local</td><td>Dossier créé dans le dossier des documents, utilisé pour <code>{Category}</code> dans le modèle de nom de fichier.</td></tr>
+            <tr><td>Dossier IMAP (optionnel)</td><td>Où déplacer les e-mails traités quand une règle ou la boîte dit « Déplacer ».</td></tr>
+            <tr><td>Ordre d'affichage</td><td>Position dans les listes.</td></tr>
+        </tbody>
+    </table></div>
+    <p>Une catégorie utilisée par des documents ou des règles ne peut pas être supprimée.</p>
+
+    <h3 id="p-rules">Règles</h3>
+    <p>La liste est ordonnée : les règles sont testées de haut en bas, et les flèches montent ou descendent une règle. Chaque règle comporte ces éléments.</p>
+    <h4>Général</h4>
+    <ul>
+        <li><strong>Nom</strong> : texte libre.</li>
+        <li><strong>Boîte mail</strong> : une boîte précise, ou toutes.</li>
+        <li><strong>Correspondance</strong> : <em>Toutes les conditions</em> (ET) ou <em>Au moins une condition</em> (OU). Une règle sans condition ne correspond jamais.</li>
+        <li><strong>Active</strong> : une règle inactive est ignorée.</li>
+        <li><strong>Arrêter le traitement ensuite</strong> : si cette règle correspond, les règles situées en dessous ne sont pas examinées.</li>
+    </ul>
+    <h4>Conditions</h4>
+    <p>Une condition associe un <em>champ</em>, un <em>opérateur</em> et une <em>valeur</em>. La casse et les accents sont ignorés, sauf si <strong>Respecter la casse</strong> est cochée.</p>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th scope="col">Champ</th><th scope="col">Ce qui est testé</th></tr></thead>
+        <tbody>
+            <tr><td>Expéditeur (adresse)</td><td>L'adresse complète, par exemple <code>fournisseur@example.com</code>.</td></tr>
+            <tr><td>Expéditeur (domaine)</td><td>Uniquement la partie après le @@, par exemple <code>example.com</code>.</td></tr>
+            <tr><td>Destinataire</td><td>L'adresse à laquelle l'e-mail a été envoyé.</td></tr>
+            <tr><td>Objet</td><td>La ligne d'objet.</td></tr>
+            <tr><td>Corps du message</td><td>Le texte de l'e-mail.</td></tr>
+            <tr><td>Nom de la pièce jointe</td><td>Le nom de fichier de chaque pièce jointe (vrai si l'une d'elles correspond).</td></tr>
+            <tr><td>Texte du PDF</td><td>Le texte contenu dans le PDF (un PDF scanné sans texte ne peut pas être recherché).</td></tr>
+            <tr><td>Contient un PDF</td><td>Si l'e-mail a une pièce jointe PDF (valeur <code>true</code> ou <code>false</code>).</td></tr>
+        </tbody>
+    </table></div>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th scope="col">Opérateur</th><th scope="col">Signification</th></tr></thead>
+        <tbody>
+            <tr><td>contient / ne contient pas</td><td>Le texte apparaît (ou n'apparaît pas) n'importe où dans le champ.</td></tr>
+            <tr><td>est égal à</td><td>Le champ est exactement la valeur. C'est l'opérateur à utiliser pour un expéditeur exact.</td></tr>
+            <tr><td>commence par / se termine par</td><td>Le champ commence ou se termine par la valeur.</td></tr>
+            <tr><td>expression régulière</td><td>Un motif avancé ; un motif invalide ou trop lent ne correspond simplement pas.</td></tr>
+        </tbody>
+    </table></div>
+    <p>Quand plusieurs règles correspondent via <em>Texte du PDF contient</em>, seule la règle dont le mot-clé apparaît le plus près du haut du document est conservée. Cela aide à distinguer une facture qui mentionne un « avoir » d'un véritable avoir.</p>
+    <h4>Actions</h4>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th scope="col">Action</th><th scope="col">Effet</th></tr></thead>
+        <tbody>
+            <tr><td>Classer dans une catégorie</td><td>Choisit la catégorie où les PDF sont rangés.</td></tr>
+            <tr><td>Imprimer</td><td>Choisit l'imprimante et, en option, le nombre de copies.</td></tr>
+            <tr><td>Marquer comme lu</td><td>Marque l'e-mail comme lu dans la boîte.</td></tr>
+            <tr><td>Déplacer vers un dossier IMAP</td><td>Déplace l'e-mail vers le dossier indiqué dans l'action (ou vers le dossier IMAP de la catégorie s'il est laissé vide).</td></tr>
+            <tr><td>Laisser non lu</td><td>Ne touche pas à l'e-mail.</td></tr>
+            <tr><td>Ignorer</td><td>Ignore totalement l'e-mail.</td></tr>
+        </tbody>
+    </table></div>
+    <h4>Tester une règle</h4>
+    <p>Sur une règle enregistrée, <strong>Tester cette règle</strong> la confronte aux 50 derniers e-mails déjà relevés et liste ceux qui correspondent. Rien n'est exécuté : ni enregistrement, ni impression, ni modification de la boîte.</p>
+
+    <h4>Exemple 1 : imprimer les factures venant d'un expéditeur exact</h4>
+    <div class="help-example">
+        <p>Objectif : imprimer les factures PDF de <code>fournisseur@example.com</code> et les ranger dans Factures.</p>
+        <ol>
+            <li>Créez une catégorie <strong>Factures</strong> et une imprimante (et lancez son test d'impression).</li>
+            <li>Créez une règle « Factures - Fournisseur » avec la correspondance <em>Toutes les conditions</em> et ces conditions :
+                <ul>
+                    <li>Expéditeur (adresse) <em>est égal à</em> <code>fournisseur@example.com</code> ;</li>
+                    <li>Contient un PDF <em>est égal à</em> <code>true</code> ;</li>
+                    <li>facultatif : Nom de la pièce jointe <em>contient</em> <code>facture</code>.</li>
+                </ul></li>
+            <li>Actions : <em>Classer dans une catégorie</em> = Factures ; <em>Imprimer</em> = votre imprimante ; éventuellement <em>Marquer comme lu</em>.</li>
+            <li>Enregistrez, puis utilisez <strong>Tester cette règle</strong> pour voir quels e-mails récents elle aurait retenus.</li>
+        </ol>
+        <p>La condition d'expéditeur exact est essentielle : voir la section 4 sur l'usurpation d'expéditeur.</p>
+    </div>
+    <h4>Exemple 2 : ranger tous les e-mails d'un domaine, sans imprimer</h4>
+    <div class="help-example">
+        <ol>
+            <li>Créez une catégorie <strong>Fournisseur X</strong>.</li>
+            <li>Règle avec la condition Expéditeur (domaine) <em>est égal à</em> <code>example.com</code>.</li>
+            <li>Une seule action : <em>Classer dans une catégorie</em> = Fournisseur X. Ajoutez <em>Marquer comme lu</em> si vous le souhaitez.</li>
+        </ol>
+        <p>Placez les règles plus précises (comme l'exemple 1) au-dessus de celle-ci : elles sont testées en premier. Ajoutez <em>Arrêter le traitement ensuite</em> à la règle précise si la règle générale ne doit pas s'appliquer aux mêmes e-mails.</p>
+    </div>
+
+    <h3 id="p-history">Historique</h3>
+    <p>Une ligne par document enregistré : date de réception, objet, expéditeur, nom du fichier, catégorie et état d'impression. Filtres : dates <strong>Du</strong> et <strong>Au</strong>, <strong>Fournisseur</strong> (domaine ou adresse), <strong>Catégorie</strong>, <strong>Erreurs d'impression seulement</strong> et <strong>Expéditeurs non vérifiés seulement</strong>.</p>
+    <ul>
+        <li>Le bouton fichier <strong>ouvre le PDF</strong> dans un nouvel onglet.</li>
+        <li>Le menu <strong>Plus d'actions</strong> propose <strong>Réimprimer</strong> (au choix une imprimante) et <strong>Changer de catégorie</strong>, qui déplace aussi le fichier dans le dossier de la nouvelle catégorie.</li>
+        <li>La colonne <strong>Impression</strong> indique Imprimé (avec la date), Erreur (avec la raison) ou Non imprimé.</li>
+        <li>Le badge d'expéditeur indique <strong>Vérifié</strong>, <strong>Vérification échouée</strong> ou <strong>Non vérifié</strong> (voir la vérification de l'expéditeur dans les Paramètres).</li>
+    </ul>
+
+    <h3 id="p-log">Journal</h3>
+    <p>Une ligne par relève de boîte : date, boîte mail, durée, nombre de messages traités, de documents enregistrés et imprimés, et le résultat (OK ou le message d'erreur). Filtrez par boîte ou n'affichez que les erreurs. C'est le premier endroit à consulter quand quelque chose ne fonctionne pas.</p>
+
+    <h3 id="p-settings">Paramètres</h3>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th scope="col">Paramètre</th><th scope="col">Signification</th></tr></thead>
+        <tbody>
+            <tr><td>Dossier des documents</td><td>Où les PDF sont archivés. Saisissez un chemin ou utilisez <strong>Parcourir...</strong> pour choisir un dossier. Les sauvegardes sont dans un sous-dossier <code>backups</code>.</td></tr>
+            <tr><td>Modèle de nom de fichier</td><td>Doit contenir <code>{OriginalName}</code>. Jetons : <code>{Category}</code>, <code>{Supplier}</code>, <code>{OriginalName}</code>, et les dates <code>{yyyy}</code>, <code>{MM}</code>, <code>{yyyy-MM-dd}</code>. Utilisez <code>/</code> pour séparer les dossiers. S'applique aux documents enregistrés à partir de maintenant.</td></tr>
+            <tr><td>Âge maximum d'impression (heures)</td><td>De 1 à 168. Un e-mail plus ancien est enregistré mais pas imprimé automatiquement.</td></tr>
+            <tr><td>Imprimer le contenu de l'e-mail lorsqu'aucun PDF n'est joint</td><td>Si une règle d'impression correspond à un e-mail sans PDF, Mailflow imprime un PDF fait de son texte.</td></tr>
+            <tr><td>Vérification de l'expéditeur</td><td>Désactivée, Avertir (recommandé) ou Stricte ; voir ci-dessous.</td></tr>
+            <tr><td>Mot de passe administrateur</td><td>Change le mot de passe qui protège cette interface (8 caractères minimum).</td></tr>
+            <tr><td>Sauvegarde</td><td>Une copie de la base est faite chaque nuit à 02:00 et 14 sont conservées. <strong>Sauvegarder maintenant</strong> en crée une immédiatement.</td></tr>
+        </tbody>
+    </table></div>
+    <h4>Vérification de l'expéditeur : Désactivée, Avertir, Stricte</h4>
+    <p>L'adresse « De » d'un e-mail peut être falsifiée. À l'arrivée d'un message, le serveur de messagerie qui le reçoit le contrôle en général avec <strong>DKIM</strong> (une signature cryptographique ajoutée par le domaine de l'expéditeur) et <strong>DMARC</strong> (la politique du domaine sur la conduite à tenir quand ce contrôle échoue), et inscrit le verdict dans l'e-mail. Mailflow lit ce verdict.</p>
+    <ul>
+        <li><strong>Désactivée</strong> : aucune vérification, l'impression fonctionne comme avant.</li>
+        <li><strong>Avertir</strong> (recommandé) : l'impression fonctionne comme avant, mais l'Historique signale les expéditeurs non vérifiés.</li>
+        <li><strong>Stricte</strong> : seuls les expéditeurs vérifiés sont imprimés. Les autres documents sont archivés sans impression et peuvent être réimprimés à la main.</li>
+    </ul>
+    <p>Si un serveur de messagerie ne fournit aucun verdict, l'expéditeur est « Non vérifié » : en mode Stricte, aucune impression automatique ne partirait pour cette boîte. Essayez d'abord Avertir et consultez la colonne Impression de l'Historique. Le verdict n'est fiable que dans la mesure où le serveur qui reçoit les messages l'est.</p>
+</section>
+
+<section class="help-section" id="security">
+    <h2>4. Sécurité et confidentialité</h2>
+    <ul>
+        <li><strong>Mot de passe administrateur.</strong> Vous le choisissez au premier lancement. Sans lui, rien n'est accessible. Les tentatives de connexion sont limitées à cinq par minute, et la session se termine après 30 minutes d'inactivité.</li>
+        <li><strong>Accès local uniquement.</strong> L'interface écoute sur <code>127.0.0.1</code> (ce PC seulement) et n'est pas accessible depuis le réseau par défaut.</li>
+        <li><strong>Mots de passe de boîtes chiffrés.</strong> Ils sont protégés par Windows (DPAPI) pour l'utilisateur Windows courant et ne sont jamais réaffichés. Une copie de la base restaurée sur un autre PC ou un autre compte ne peut pas les déchiffrer : il faudrait ressaisir les mots de passe.</li>
+        <li><strong>Les données restent sur le PC.</strong> E-mails, documents et base de données ne sont envoyés nulle part. Les seules connexions sortantes sont celles vers vos serveurs de messagerie.</li>
+    </ul>
+    <h3>Usurpation d'expéditeur : ajoutez une condition d'expéditeur exact à chaque règle d'impression</h3>
+    <div class="help-note help-note--warn">
+        <p>Mailflow décide de ce qui s'imprime avec <strong>vos règles</strong>. Une règle comme « l'objet contient facture » correspond à un e-mail de n'importe qui, et n'importe qui peut écrire une adresse « De » falsifiée. Un e-mail malveillant pourrait alors faire imprimer votre imprimante.</p>
+        <p><strong>Mettez toujours une condition Expéditeur (adresse) <em>est égal à</em> dans chaque règle qui imprime</strong>, et réglez la vérification de l'expéditeur sur <strong>Avertir</strong> ou <strong>Stricte</strong>. Préférez « est égal à » à « contient » ou « se termine par » : un domaine comme <code>example.com.evil.net</code> satisferait aussi un test trop large.</p>
+    </div>
+    <p>Gardez aussi le mot de passe administrateur secret, installez les mises à jour de Windows et n'exposez pas l'interface en dehors du PC.</p>
+</section>
+
+<section class="help-section" id="files">
+    <h2>5. Fichiers et dossiers</h2>
+    <p>L'application s'installe par utilisateur, par défaut dans <code>%LOCALAPPDATA%\Programs\Mailflow</code>. Ses données se trouvent dans le sous-dossier <code>data</code> :</p>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th scope="col">Quoi</th><th scope="col">Où</th></tr></thead>
+        <tbody>
+            <tr><td>Base de données (boîtes, règles, historique, paramètres)</td><td><code>data\mailflow.db</code></td></tr>
+            <tr><td>PDF archivés</td><td><code>data\documents</code> par défaut ; modifiable dans les Paramètres (Dossier des documents)</td></tr>
+            <tr><td>Sauvegardes nocturnes (14 conservées)</td><td><code>backups</code> dans le dossier des documents, fichiers nommés <code>mailflow-AAAAMMJJ-HHMM.db</code></td></tr>
+            <tr><td>Journaux techniques (30 jours)</td><td><code>data\logs\mailflow-AAAAMMJJ.log</code></td></tr>
+            <tr><td>Clés de chiffrement</td><td><code>data\keys</code> : à ne pas supprimer</td></tr>
+            <tr><td>État de la fenêtre et composant navigateur</td><td><code>%LOCALAPPDATA%\Mailflow</code></td></tr>
+        </tbody>
+    </table></div>
+    <p>Pour restaurer une sauvegarde, arrêtez Mailflow, remplacez <code>data\mailflow.db</code> par le fichier de sauvegarde renommé, puis relancez-le.</p>
+</section>
+
+<section class="help-section" id="faq">
+    <h2>6. Dépannage et questions fréquentes</h2>
+    <h4>Le test de connexion échoue</h4>
+    <p>Vérifiez l'adresse et le mot de passe, le serveur et le port (en général 993 avec SSL), et que le PC est connecté à internet. Mailflow affiche une piste pour les erreurs courantes. Vérifiez aussi que l'accès IMAP est activé sur le compte et qu'un pare-feu ou un antivirus ne bloque pas la connexion.</p>
+    <h4>Gmail, iCloud ou Yahoo refusent mon mot de passe</h4>
+    <p>Ces fournisseurs exigent un <strong>mot de passe d'application</strong> (voir Boîtes mail), pas votre mot de passe habituel. Gmail demande aussi que l'accès IMAP soit activé dans ses paramètres.</p>
+    <h4>Un document est enregistré mais rien ne s'imprime</h4>
+    <ol>
+        <li>Retrouvez le document dans l'Historique : la colonne Impression donne la raison.</li>
+        <li>« Imprimante inactive ou introuvable » : vérifiez que l'imprimante est active et que son nom Windows est exact (utilisez Détecter les imprimantes).</li>
+        <li>« E-mail trop ancien » : l'e-mail dépasse l'âge maximum d'impression des Paramètres.</li>
+        <li>« Expéditeur non vérifié » : la vérification est Stricte ; passez à Avertir ou réimprimez à la main.</li>
+        <li>Aucune raison affichée : la règle n'a probablement pas d'action Imprimer, ou ne correspond pas. Utilisez Tester cette règle.</li>
+        <li>Essayez le Test d'impression de l'imprimante, et le menu Réimprimer de l'Historique.</li>
+    </ol>
+    <h4>« SumatraPDF introuvable » ou l'imprimante échoue</h4>
+    <p>L'impression utilise SumatraPDF, installé dans le dossier <code>tools\SumatraPDF</code> à côté de l'application. Si le fichier manque (supprimé par un antivirus, par exemple), relancez l'installateur : vos données sont conservées.</p>
+    <h4>Un document s'est retrouvé dans « A trier »</h4>
+    <p>Aucune règle n'a reconnu l'e-mail. Créez ou ajustez une règle, et utilisez <strong>Changer de catégorie</strong> dans l'Historique pour déplacer le document existant.</p>
+    <h4>Un e-mail n'est pas traité</h4>
+    <p>Un e-mail n'est traité qu'une fois par boîte. Il est ignoré s'il est plus ancien que la période d'historique, si la boîte est inactive, si la relève est en pause, ou si une règle Ignorer lui correspond.</p>
+    <h4>L'application indique que le port est occupé</h4>
+    <p>L'interface utilise le port 5088 sur ce PC. Si un autre programme, ou une autre instance de Mailflow, l'occupe déjà, Mailflow vérifie qui le détient : il réutilise un Mailflow déjà lancé, sinon il signale le conflit. Fermez l'autre programme puis relancez Mailflow.</p>
+    <h4>La fenêtre reste vide et mentionne WebView2</h4>
+    <p>La fenêtre utilise le composant Microsoft Edge WebView2. S'il est absent, installez le « WebView2 Runtime » de Microsoft, puis relancez Mailflow.</p>
+    <h4>Une mise à jour ou une désinstallation supprime-t-elle mes données ?</h4>
+    <p>Non. Mettre à jour en relançant l'installateur conserve le dossier <code>data</code>, donc vos paramètres, règles et historique. Par prudence, gardez une copie du dossier <code>data</code> avant de désinstaller.</p>
+</section>
+
+<section class="help-section" id="glossary">
+    <h2>7. Glossaire</h2>
+    <dl class="help-glossary">
+        <dt>IMAP</dt><dd>Le protocole que Mailflow utilise pour lire une boîte mail. Les e-mails restent sur le serveur de messagerie.</dd>
+        <dt>Mot de passe d'application</dt><dd>Un mot de passe généré dans votre compte mail pour une seule application, exigé par Gmail, iCloud et Yahoo.</dd>
+        <dt>Relève</dt><dd>Un passage de Mailflow dans une boîte mail pour chercher de nouveaux e-mails.</dd>
+        <dt>Période d'historique</dt><dd>Le nombre de jours en arrière pour lesquels les e-mails sont pris en compte.</dd>
+        <dt>Message-ID</dt><dd>L'identifiant unique d'un e-mail, utilisé pour ne pas le traiter deux fois.</dd>
+        <dt>SHA-256</dt><dd>Une empreinte du contenu d'un fichier. Deux fichiers identiques ont la même.</dd>
+        <dt>Règle</dt><dd>Des conditions plus des actions : « si l'e-mail ressemble à ceci, faire cela ».</dd>
+        <dt>Catégorie</dt><dd>Une destination nommée (un dossier) pour les documents.</dd>
+        <dt>Modèle de nom de fichier</dt><dd>Le gabarit qui donne le nom et le dossier de chaque PDF enregistré.</dd>
+        <dt>Recto-verso</dt><dd>Impression des deux côtés de la feuille.</dd>
+        <dt>DKIM</dt><dd>Une signature numérique ajoutée aux e-mails par le domaine de l'expéditeur, prouvant que le contenu vient de lui et n'a pas été modifié.</dd>
+        <dt>DMARC</dt><dd>Une politique publiée par un domaine qui indique que faire des e-mails qui échouent aux contrôles DKIM ou SPF.</dd>
+        <dt>Usurpation</dt><dd>Falsification de l'adresse d'expéditeur d'un e-mail.</dd>
+        <dt>DPAPI</dt><dd>Le service de Windows qui chiffre des données pour un utilisateur Windows. Mailflow l'utilise pour les mots de passe des boîtes.</dd>
+        <dt>SumatraPDF</dt><dd>Le petit lecteur PDF utilisé en silence pour envoyer les documents à l'imprimante.</dd>
+    </dl>
+</section>
+
+</div>
+</div>

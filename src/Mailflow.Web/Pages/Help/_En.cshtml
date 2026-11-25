@@ -1,0 +1,329 @@
+<div class="help-layout">
+<nav class="help-toc" aria-label="Table of contents">
+    <p class="help-toc-title">Contents</p>
+    <ol>
+        <li><a href="#what">1. What Mailflow is</a></li>
+        <li><a href="#pipeline">2. How an email is processed</a></li>
+        <li><a href="#pages">3. The pages, field by field</a></li>
+        <li><a href="#security">4. Security and privacy</a></li>
+        <li><a href="#files">5. Files and folders</a></li>
+        <li><a href="#faq">6. Troubleshooting and FAQ</a></li>
+        <li><a href="#glossary">7. Glossary</a></li>
+    </ol>
+</nav>
+<div class="help-body">
+
+<section class="help-section" id="what">
+    <h2>1. What Mailflow is</h2>
+    <p>Mailflow is a Windows application that runs on a PC that stays on. It reads one or more mailboxes, finds the PDF documents attached to incoming emails (invoices, delivery notes, credit notes, orders...), files a copy of each one in an organised folder tree and, if you ask it to, prints them automatically on a local printer.</p>
+    <p><strong>The problem it solves.</strong> Without it, someone has to open each email, save the attachment under a sensible name, put it in the right folder and print it. Mailflow does this for you, the same way every time, according to rules you define once.</p>
+    <ul>
+        <li><strong>Read</strong> the mailboxes over IMAP (OVH, iCloud, Gmail, Yahoo or any IMAP server).</li>
+        <li><strong>Sort</strong> each email with your rules (sender, subject, text of the PDF...).</li>
+        <li><strong>Save</strong> every PDF into a category folder, with a file name built from a pattern.</li>
+        <li><strong>Print</strong> the documents chosen by your rules.</li>
+        <li><strong>Tidy up the mailbox</strong>: leave the email alone, mark it as read or move it to an IMAP folder.</li>
+        <li><strong>Keep a history</strong> of everything so you can open, reprint or reclassify a document later.</li>
+    </ul>
+    <p>Everything is driven from this web interface, which is only reachable from the PC itself. Nothing is sent to an outside service: your emails, passwords and documents stay on the PC.</p>
+</section>
+
+<section class="help-section" id="pipeline">
+    <h2>2. How an email is processed</h2>
+    <ol class="help-flow">
+        <li><strong>Poll</strong>Mailflow connects to each active mailbox over IMAP.</li>
+        <li><strong>Select</strong>It lists the messages of the watched folder received within the lookback period.</li>
+        <li><strong>Skip duplicates</strong>A message already seen is ignored.</li>
+        <li><strong>Apply rules</strong>The rules are tested in order.</li>
+        <li><strong>Save</strong>Each PDF is stored in its category folder.</li>
+        <li><strong>Print</strong>If a rule asks for it and the checks pass.</li>
+        <li><strong>Mailbox</strong>The email is left, marked as read or moved.</li>
+        <li><strong>History</strong>The result is recorded in History and Log.</li>
+    </ol>
+
+    <h3>Step by step</h3>
+    <h4>1. Polling</h4>
+    <p>A background task runs when the application starts and then repeats on a regular cycle (every minute by default). It goes through all <em>active</em> mailboxes one after the other; a mailbox in error never blocks the others. On Home, <strong>Run now</strong> starts a poll immediately and <strong>Pause</strong> / <strong>Resume</strong> stops and restarts the scheduled polls.</p>
+    <h4>2. Lookback</h4>
+    <p>Only emails of the watched folder (by default the Inbox) received in the last <strong>Lookback (days)</strong> are considered. Older messages are never touched.</p>
+    <h4>3. Duplicate detection</h4>
+    <p>Two protections prevent processing something twice:</p>
+    <ul>
+        <li><strong>By message identifier</strong>: Mailflow remembers the Message-ID of every email it processed for a mailbox. An email already recorded is skipped, even if it is still in the mailbox. (If an email has no Message-ID, its server number and date are used instead.)</li>
+        <li><strong>By content (SHA-256)</strong>: a fingerprint of each PDF is computed. If an identical file is already archived, it is not saved a second time, so the same invoice sent twice gives a single document.</li>
+    </ul>
+    <h4>4. The rule engine</h4>
+    <p>Active rules that apply to the mailbox being polled (or to all mailboxes) are tested in the order of the Rules list, top to bottom. A rule matches when its conditions hold (all of them, or at least one, depending on the rule). The actions of <em>all</em> matching rules are combined, unless a matching rule has <strong>Stop processing afterwards</strong>, in which case the following rules are not examined. When several rules give the same kind of action, the first one wins (the first category, the first printer, the first mailbox action).</p>
+    <p>If no rule matches, the default behaviour applies: the PDFs go to the category <code>A trier</code>, nothing is printed and the email is left unread.</p>
+    <p>A rule with a <strong>Skip</strong> action makes Mailflow ignore the email completely: nothing is saved, printed or changed in the mailbox, and the email is not examined again.</p>
+    <h4>5. Categories and subfolders</h4>
+    <p>The rule's <strong>Save to a category</strong> action selects a category. Each category has a local subfolder inside the documents folder; PDFs of that category are filed there.</p>
+    <h4>6. Saving the PDFs and the file name</h4>
+    <p>Each attached PDF is saved under the path given by the <strong>file name pattern</strong> of Settings. The default is:</p>
+    <p><code>{Category}/{yyyy}/{MM}/{yyyy-MM-dd}_{Supplier}_{OriginalName}.pdf</code></p>
+    <p>For a PDF named <code>invoice 1042.pdf</code> received from <code>supplier@example.com</code> on 14 March 2026 in a category whose subfolder is <code>Invoices</code>, that gives <code>Invoices/2026/03/2026-03-14_example.com_invoice 1042.pdf</code>. The supplier is the domain of the sender. Forbidden characters are replaced by <code>_</code>, and if a file with that name already exists a number is added: <code>(2)</code>, <code>(3)</code>... Nothing is ever overwritten.</p>
+    <p>If an email has no PDF but a rule asks to print it, and the setting <em>Print the email body when no PDF is attached</em> is on (it is on by default), Mailflow generates a PDF (<code>email.pdf</code>) from the text of the email and processes it like any other document.</p>
+    <h4>7. Printing</h4>
+    <p>A document is printed when a matching rule has a <strong>Print</strong> action with a printer, and when these checks pass:</p>
+    <ul>
+        <li>the printer exists and is <strong>active</strong>;</li>
+        <li>the email is not older than the <strong>maximum print age</strong> (24 hours by default; this avoids a burst of old documents after a long stop);</li>
+        <li>in Strict mode, the sender is <strong>verified</strong> (see Settings and section 4).</li>
+    </ul>
+    <p>Printing is silent, through the bundled SumatraPDF tool. The number of copies is the one of the action if filled in, otherwise the printer's default; duplex follows the printer. If a check blocks printing or the printer fails, the document is still saved and History shows the reason; you can reprint it by hand.</p>
+    <h4>8. What happens to the email afterwards</h4>
+    <p>Only after the documents are saved, Mailflow acts on the mailbox. The matching rule's action decides: <strong>Mark as read</strong>, <strong>Move to an IMAP folder</strong> (the folder named in the action, otherwise the IMAP folder of the category) or <strong>Leave unread</strong>. When no rule gives such an action, the mailbox's <strong>After processing</strong> setting applies (Leave as is, Mark as read, Move). If saving a document fails, nothing is recorded and the email is retried at the next poll. If only the mailbox action fails, the documents are kept and a warning appears in the Log.</p>
+    <h4>9. History and Log</h4>
+    <p>Every processed document appears in <strong>History</strong>; every poll of a mailbox appears in the <strong>Log</strong> with its duration and results.</p>
+</section>
+
+<section class="help-section" id="pages">
+    <h2>3. The pages, field by field</h2>
+
+    <h3 id="p-home">Home</h3>
+    <p>The dashboard. The status panel shows whether Mailflow is polling, paused or idle, the time of the last poll and of the next one, and the last error if any. Buttons: <strong>Run now</strong>, <strong>Pause</strong> and <strong>Resume</strong>. Below, the figures for today (messages processed, documents saved, documents printed, errors). The page refreshes by itself every 10 seconds.</p>
+
+    <h3 id="p-mailboxes">Mailboxes</h3>
+    <p>The list shows each mailbox, its last poll, its status (click the badge to enable or disable it) and any last error, with a hint when the error is a known one. <strong>Add a mailbox</strong> opens the form.</p>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th scope="col">Field</th><th scope="col">Meaning</th></tr></thead>
+        <tbody>
+            <tr><td>Email address</td><td>The address of the mailbox. It is also the login.</td></tr>
+            <tr><td>Password</td><td>The mailbox password. It is never shown again once saved; leave the field empty when editing to keep the current one. It is stored encrypted (section 4).</td></tr>
+            <tr><td>Display name</td><td>The name shown in lists. It follows the email address until you type your own.</td></tr>
+            <tr><td>Advanced options</td><td>Reveals the provider list, the IMAP server and the port. It opens by itself if the provider is not recognised.</td></tr>
+            <tr><td>Provider, IMAP server, Port</td><td>Detected automatically from the email domain for iCloud, Gmail and Yahoo (OVH MX Plan, OVH Email Pro and a custom IMAP server are chosen by hand). For another provider choose the custom IMAP entry and type the server and port (usually 993 with SSL).</td></tr>
+            <tr><td>Folder to poll</td><td>The IMAP folder to read (Inbox by default).</td></tr>
+            <tr><td>After processing</td><td>Default for the mailbox when no rule says otherwise: leave as is, mark as read or move.</td></tr>
+            <tr><td>Interval (min)</td><td>Polling interval of the mailbox, from 1 to 1440 minutes. Use Run now on Home to poll immediately.</td></tr>
+            <tr><td>Lookback (days)</td><td>Maximum age of the emails that are read.</td></tr>
+            <tr><td>Active</td><td>An inactive mailbox is not polled.</td></tr>
+        </tbody>
+    </table></div>
+    <p><strong>Test connection</strong> checks the server, the login and the password without saving anything, and reports the problem if there is one.</p>
+    <div class="help-note help-note--warn"><p><strong>App passwords.</strong> Gmail, iCloud and Yahoo refuse your usual password for this kind of access. In your account's security settings, create an <em>app password</em> (iCloud: app-specific password), enable IMAP access if the provider requires it, and enter that password in Mailflow.</p></div>
+
+    <h3 id="p-printers">Printers</h3>
+    <p>Lists the printers that rules can use, with their copies, duplex and status (click the badge to enable or disable).</p>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th scope="col">Field</th><th scope="col">Meaning</th></tr></thead>
+        <tbody>
+            <tr><td>Display name</td><td>The name shown in Mailflow and in the rule's printer list.</td></tr>
+            <tr><td>Windows printer</td><td>The exact Windows name of the printer. <strong>Detect printers</strong> lists those installed on the PC; click one to fill the field.</td></tr>
+            <tr><td>Type</td><td>The kind of printer. Use Local for a printer installed on this PC.</td></tr>
+            <tr><td>Default copies</td><td>Number of copies, from 1 to 99, unless the rule's action sets its own number.</td></tr>
+            <tr><td>Duplex</td><td>Print on both sides.</td></tr>
+            <tr><td>Active</td><td>An inactive printer never prints: the document is saved and History says why.</td></tr>
+        </tbody>
+    </table></div>
+    <p>The <strong>Print test</strong> button of the list sends a test page to that printer: do it once after adding a printer.</p>
+
+    <h3 id="p-categories">Categories</h3>
+    <p>A category decides where a document is filed. Mailflow creates <code>A trier</code> ("to sort") for emails that no rule recognises.</p>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th scope="col">Field</th><th scope="col">Meaning</th></tr></thead>
+        <tbody>
+            <tr><td>Name, Colour</td><td>Used to recognise the category in lists.</td></tr>
+            <tr><td>Local subfolder</td><td>Folder created inside the documents folder, used for <code>{Category}</code> in the file name pattern.</td></tr>
+            <tr><td>IMAP folder (optional)</td><td>Where processed emails are moved when a rule or the mailbox says "Move".</td></tr>
+            <tr><td>Display order</td><td>Position in the lists.</td></tr>
+        </tbody>
+    </table></div>
+    <p>A category used by documents or rules cannot be deleted.</p>
+
+    <h3 id="p-rules">Rules</h3>
+    <p>The list is ordered: rules are tested from top to bottom, and the arrows move a rule up or down. Each rule has these parts.</p>
+    <h4>General</h4>
+    <ul>
+        <li><strong>Name</strong>: free text.</li>
+        <li><strong>Mailbox</strong>: one mailbox, or all.</li>
+        <li><strong>Matching</strong>: <em>All the conditions</em> (AND) or <em>At least one condition</em> (OR). A rule without conditions never matches.</li>
+        <li><strong>Active</strong>: an inactive rule is ignored.</li>
+        <li><strong>Stop processing afterwards</strong>: if this rule matches, the rules below it are not examined.</li>
+    </ul>
+    <h4>Conditions</h4>
+    <p>A condition is a <em>field</em>, an <em>operator</em> and a <em>value</em>. Case and accents are ignored unless <strong>Match case</strong> is ticked.</p>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th scope="col">Field</th><th scope="col">What is tested</th></tr></thead>
+        <tbody>
+            <tr><td>Sender (address)</td><td>The full address, e.g. <code>supplier@example.com</code>.</td></tr>
+            <tr><td>Sender (domain)</td><td>Only the part after the @@, e.g. <code>example.com</code>.</td></tr>
+            <tr><td>Recipient</td><td>The address the email was sent to.</td></tr>
+            <tr><td>Subject</td><td>The subject line.</td></tr>
+            <tr><td>Message body</td><td>The text of the email.</td></tr>
+            <tr><td>Attachment name</td><td>The file name of each attachment (true if any attachment matches).</td></tr>
+            <tr><td>PDF text</td><td>The text inside the PDF (scanned images without text cannot be searched).</td></tr>
+            <tr><td>Contains a PDF</td><td>Whether the email has a PDF attachment (value <code>true</code> or <code>false</code>).</td></tr>
+        </tbody>
+    </table></div>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th scope="col">Operator</th><th scope="col">Meaning</th></tr></thead>
+        <tbody>
+            <tr><td>contains / does not contain</td><td>The text appears (or does not appear) anywhere in the field.</td></tr>
+            <tr><td>is equal to</td><td>The field is exactly the value. This is the one to use for an exact sender.</td></tr>
+            <tr><td>starts with / ends with</td><td>The field begins or ends with the value.</td></tr>
+            <tr><td>regular expression</td><td>An advanced pattern; an invalid or very slow one simply does not match.</td></tr>
+        </tbody>
+    </table></div>
+    <p>When several rules match through <em>PDF text contains</em>, only the rule whose keyword appears closest to the top of the document is kept. This helps tell an invoice that mentions a "credit note" from a real credit note.</p>
+    <h4>Actions</h4>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th scope="col">Action</th><th scope="col">Effect</th></tr></thead>
+        <tbody>
+            <tr><td>Save to a category</td><td>Choose the category where the PDFs are filed.</td></tr>
+            <tr><td>Print</td><td>Choose the printer and, optionally, the number of copies.</td></tr>
+            <tr><td>Mark as read</td><td>Marks the email as read in the mailbox.</td></tr>
+            <tr><td>Move to an IMAP folder</td><td>Moves the email to the folder named in the action (or to the category's IMAP folder if left empty).</td></tr>
+            <tr><td>Leave unread</td><td>Leaves the email untouched.</td></tr>
+            <tr><td>Skip</td><td>Ignores the email completely.</td></tr>
+        </tbody>
+    </table></div>
+    <h4>Test a rule</h4>
+    <p>On a saved rule, <strong>Test this rule</strong> checks it against the 50 most recent emails already read and lists those that match. Nothing is executed: no saving, printing or mailbox change.</p>
+
+    <h4>Worked example 1: print the invoices that come from exactly one sender</h4>
+    <div class="help-example">
+        <p>Goal: print the PDF invoices from <code>supplier@example.com</code> and file them under Invoices.</p>
+        <ol>
+            <li>Create a category <strong>Invoices</strong> and a printer (and run its print test).</li>
+            <li>Create a rule named "Invoices - Supplier" with matching <em>All the conditions</em> and these conditions:
+                <ul>
+                    <li>Sender (address) <em>is equal to</em> <code>supplier@example.com</code>;</li>
+                    <li>Contains a PDF <em>is equal to</em> <code>true</code>;</li>
+                    <li>optional: Attachment name <em>contains</em> <code>invoice</code>.</li>
+                </ul></li>
+            <li>Actions: <em>Save to a category</em> = Invoices; <em>Print</em> = your printer; optionally <em>Mark as read</em>.</li>
+            <li>Save, then use <strong>Test this rule</strong> to see which recent emails it would have caught.</li>
+        </ol>
+        <p>The exact-sender condition matters: see section 4 on spoofed senders.</p>
+    </div>
+    <h4>Worked example 2: file all mail from a domain, without printing</h4>
+    <div class="help-example">
+        <ol>
+            <li>Create a category <strong>Supplier X</strong>.</li>
+            <li>Rule with the condition Sender (domain) <em>is equal to</em> <code>example.com</code>.</li>
+            <li>Single action: <em>Save to a category</em> = Supplier X. Add <em>Mark as read</em> if you wish.</li>
+        </ol>
+        <p>Put more specific rules (such as example 1) above this one: they are tested first. Add <em>Stop processing afterwards</em> to the specific rule if the general one must not apply to the same emails.</p>
+    </div>
+
+    <h3 id="p-history">History</h3>
+    <p>One line per saved document: date received, subject, sender, file name, category and print status. Filters: <strong>From</strong> and <strong>To</strong> dates, <strong>Supplier</strong> (domain or address), <strong>Category</strong>, <strong>Print errors only</strong> and <strong>Unverified senders only</strong>.</p>
+    <ul>
+        <li>The file button <strong>opens the PDF</strong> in a new tab.</li>
+        <li>The <strong>More actions</strong> menu has <strong>Reprint</strong> (choose a printer) and <strong>Change category</strong>, which also moves the file into the new category's folder.</li>
+        <li>The <strong>Printing</strong> column shows Printed (with the date), Error (with the reason) or Not printed.</li>
+        <li>The sender badge shows <strong>Verified</strong>, <strong>Verification failed</strong> or <strong>Not verified</strong> (see the sender check in Settings).</li>
+    </ul>
+
+    <h3 id="p-log">Log</h3>
+    <p>One line per mailbox poll: date, mailbox, duration, number of messages handled, documents saved and documents printed, and the result (OK or the error message). Filter by mailbox or show errors only. This is the first place to look when something does not work.</p>
+
+    <h3 id="p-settings">Settings</h3>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th scope="col">Setting</th><th scope="col">Meaning</th></tr></thead>
+        <tbody>
+            <tr><td>Documents folder</td><td>Where PDFs are archived. Type a path or use <strong>Browse...</strong> to pick a folder. Backups go in a <code>backups</code> subfolder of it.</td></tr>
+            <tr><td>File name pattern</td><td>Must contain <code>{OriginalName}</code>. Tokens: <code>{Category}</code>, <code>{Supplier}</code>, <code>{OriginalName}</code>, and dates <code>{yyyy}</code>, <code>{MM}</code>, <code>{yyyy-MM-dd}</code>. Use <code>/</code> to separate folders. Applies to documents saved from now on.</td></tr>
+            <tr><td>Maximum print age (hours)</td><td>From 1 to 168. An email older than this is saved but not printed automatically.</td></tr>
+            <tr><td>Print the email body when no PDF is attached</td><td>If a print rule matches an email without PDF, Mailflow prints a PDF made from its text.</td></tr>
+            <tr><td>Sender check</td><td>Off, Warn (recommended) or Strict; see below.</td></tr>
+            <tr><td>Admin password</td><td>Change the password that protects this interface (8 characters minimum).</td></tr>
+            <tr><td>Backup</td><td>A copy of the database is made every night at 02:00 and 14 are kept. <strong>Back up now</strong> makes one immediately.</td></tr>
+        </tbody>
+    </table></div>
+    <h4>Sender check: Off, Warn, Strict</h4>
+    <p>The "From" address of an email can be forged. When a message arrives, the receiving mail server usually checks it with <strong>DKIM</strong> (a cryptographic signature added by the sender's domain) and <strong>DMARC</strong> (the domain's policy for what to do when that check fails), and writes the verdict in the email. Mailflow reads that verdict.</p>
+    <ul>
+        <li><strong>Off</strong>: no check, printing works as before.</li>
+        <li><strong>Warn</strong> (recommended): printing works as before, but History marks senders that are not verified.</li>
+        <li><strong>Strict</strong>: only verified senders are printed. The others are saved without printing and can be reprinted by hand.</li>
+    </ul>
+    <p>If a mail server gives no verdict, the sender is "Not verified": in Strict mode nothing would print automatically for that mailbox. Start with Warn and look at the Printing column of History. The verdict is only as reliable as the server that received the email.</p>
+</section>
+
+<section class="help-section" id="security">
+    <h2>4. Security and privacy</h2>
+    <ul>
+        <li><strong>Admin password.</strong> You choose it the first time the application runs. Without it nothing is accessible. Login attempts are limited to five per minute, and the session ends after 30 minutes of inactivity.</li>
+        <li><strong>Local only.</strong> The interface listens on <code>127.0.0.1</code> (this PC only) and is not reachable from the network by default.</li>
+        <li><strong>Encrypted mailbox passwords.</strong> They are protected with Windows (DPAPI) for the current Windows user and are never shown again. A copy of the database restored on another PC or user account cannot decrypt them: you would re-enter the passwords.</li>
+        <li><strong>Data stays on the PC.</strong> Emails, documents and the database are not sent anywhere. The only outgoing connections are those to your mail servers.</li>
+    </ul>
+    <h3>Spoofed senders: add an exact-sender condition to every print rule</h3>
+    <div class="help-note help-note--warn">
+        <p>Mailflow decides what to print with <strong>your rules</strong>. A rule such as "the subject contains invoice" matches an email from anyone, and anyone can write a forged "From" address. A malicious email could then make your printer print.</p>
+        <p><strong>Always include a Sender (address) <em>is equal to</em> condition in every rule that prints</strong>, and set the sender check to <strong>Warn</strong> or <strong>Strict</strong>. Prefer "is equal to" over "contains" or "ends with": a domain like <code>example.com.evil.net</code> would also match a loose test.</p>
+    </div>
+    <p>Also keep the admin password private, install Windows updates and do not expose the interface outside the PC.</p>
+</section>
+
+<section class="help-section" id="files">
+    <h2>5. Files and folders</h2>
+    <p>The application is installed per user, by default in <code>%LOCALAPPDATA%\Programs\Mailflow</code>. Its data lives in the <code>data</code> subfolder:</p>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th scope="col">What</th><th scope="col">Where</th></tr></thead>
+        <tbody>
+            <tr><td>Database (mailboxes, rules, history, settings)</td><td><code>data\mailflow.db</code></td></tr>
+            <tr><td>Archived PDFs</td><td><code>data\documents</code> by default; changeable in Settings (Documents folder)</td></tr>
+            <tr><td>Nightly backups (14 kept)</td><td><code>backups</code> inside the documents folder, files named <code>mailflow-YYYYMMDD-HHMM.db</code></td></tr>
+            <tr><td>Logs (30 days)</td><td><code>data\logs\mailflow-YYYYMMDD.log</code></td></tr>
+            <tr><td>Encryption keys</td><td><code>data\keys</code>: do not delete</td></tr>
+            <tr><td>Window state and browser component</td><td><code>%LOCALAPPDATA%\Mailflow</code></td></tr>
+        </tbody>
+    </table></div>
+    <p>To restore a backup, stop Mailflow, replace <code>data\mailflow.db</code> with the backup file renamed, and start it again.</p>
+</section>
+
+<section class="help-section" id="faq">
+    <h2>6. Troubleshooting and FAQ</h2>
+    <h4>The connection test fails</h4>
+    <p>Check the address and password, the server and the port (usually 993 with SSL), and that the PC is online. Mailflow shows a hint for common errors. Also check that IMAP access is enabled on the account and that a firewall or antivirus is not blocking the connection.</p>
+    <h4>Gmail, iCloud or Yahoo refuse my password</h4>
+    <p>These providers require an <strong>app password</strong> (see Mailboxes), not your usual one. Gmail also requires IMAP access to be enabled in its settings.</p>
+    <h4>A document was saved but nothing printed</h4>
+    <ol>
+        <li>Find the document in History: the Printing column gives the reason.</li>
+        <li>"Printer inactive or not found": check that the printer is active and that its Windows name is exact (use Detect printers).</li>
+        <li>"Email too old": the email exceeds the maximum print age in Settings.</li>
+        <li>"Sender not verified": the sender check is Strict; switch to Warn or reprint by hand.</li>
+        <li>No reason shown: the rule probably has no Print action, or did not match. Use Test this rule.</li>
+        <li>Try the printer's Print test, and the Reprint menu in History.</li>
+    </ol>
+    <h4>"SumatraPDF not found" or the printer fails</h4>
+    <p>Printing uses SumatraPDF, installed in the <code>tools\SumatraPDF</code> folder next to the application. If the file is missing (deleted by an antivirus, for instance), run the installer again: your data is kept.</p>
+    <h4>A document ended up in "A trier"</h4>
+    <p>No rule recognised the email. Create or adjust a rule, and use <strong>Change category</strong> in History to move the existing document.</p>
+    <h4>An email is not processed</h4>
+    <p>An email is processed once per mailbox. It is ignored if it is older than the lookback period, if the mailbox is inactive, if polling is paused, or if a Skip rule matched it.</p>
+    <h4>The application says the port is busy</h4>
+    <p>The interface uses port 5088 on this PC. If another program, or another instance of Mailflow, already holds it, Mailflow checks who owns the port: it reuses a running Mailflow, otherwise it reports the conflict. Close the other program and start Mailflow again.</p>
+    <h4>The window stays empty and mentions WebView2</h4>
+    <p>The window uses the Microsoft Edge WebView2 component. If it is missing, install the "WebView2 Runtime" from Microsoft, then restart Mailflow.</p>
+    <h4>Does an update or uninstall remove my data?</h4>
+    <p>No. Updating by running the installer again keeps the <code>data</code> folder, and with it your settings, rules and history. To be safe, keep a copy of the <code>data</code> folder before uninstalling.</p>
+</section>
+
+<section class="help-section" id="glossary">
+    <h2>7. Glossary</h2>
+    <dl class="help-glossary">
+        <dt>IMAP</dt><dd>The protocol Mailflow uses to read a mailbox. The emails stay on the mail server.</dd>
+        <dt>App password</dt><dd>A password generated in your mail account just for one application, required by Gmail, iCloud and Yahoo.</dd>
+        <dt>Poll</dt><dd>One pass of Mailflow through a mailbox to look for new emails.</dd>
+        <dt>Lookback</dt><dd>How many days back emails are considered.</dd>
+        <dt>Message-ID</dt><dd>The unique identifier of an email, used to avoid processing it twice.</dd>
+        <dt>SHA-256</dt><dd>A fingerprint of a file's content. Two identical files have the same one.</dd>
+        <dt>Rule</dt><dd>Conditions plus actions: "if the email looks like this, do that".</dd>
+        <dt>Category</dt><dd>A named destination (folder) for documents.</dd>
+        <dt>File name pattern</dt><dd>The template that gives the name and folder of each saved PDF.</dd>
+        <dt>Duplex</dt><dd>Printing on both sides of the sheet.</dd>
+        <dt>DKIM</dt><dd>A digital signature added to emails by the sender's domain, proving the content comes from it and was not altered.</dd>
+        <dt>DMARC</dt><dd>A policy published by a domain that says what to do with emails that fail DKIM or SPF checks.</dd>
+        <dt>Spoofing</dt><dd>Forging the sender address of an email.</dd>
+        <dt>DPAPI</dt><dd>The Windows facility that encrypts data for one Windows user. Mailflow uses it for mailbox passwords.</dd>
+        <dt>SumatraPDF</dt><dd>The small PDF reader used silently to send documents to the printer.</dd>
+    </dl>
+</section>
+
+</div>
+</div>
