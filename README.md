@@ -1,172 +1,101 @@
-# 📬 Mailflow
+# Mailflow
 
-**Tri des e-mails, archivage des PDF et impression automatique pour les petits commerces.**
-Gratuit, léger, open source (licence MIT).
+[Français](README.fr.md) | **English**
 
+**Sort incoming e-mail, archive PDF attachments and print the ones you choose, automatically.**
+Free, lightweight, open source (MIT). Windows, .NET 10.
 
-> **Statut : développement précoce.** Les contrats (entités, interfaces) sont figés (`contracts-v1`), la construction parallèle des briques est en cours. Ne pas utiliser en production.
+> **Status:** early release. Review the security model below before relying on automatic printing.
 
----
+## Contents
 
-## Sommaire
+1. [What it does](#what-it-does)
+2. [Features](#features)
+3. [How it works](#how-it-works)
+4. [Quick start](#quick-start)
+5. [Configuration](#configuration)
+6. [Rules](#rules)
+7. [Security model](#security-model)
+8. [Architecture and tech stack](#architecture-and-tech-stack)
+9. [Project layout](#project-layout)
+10. [Build, test, release](#build-test-release)
+11. [Roadmap](#roadmap)
+12. [Contributing and license](#contributing-and-license)
 
-1. [Présentation](#1-présentation)
-2. [Fonctionnalités](#2-fonctionnalités)
-3. [Architecture](#3-architecture)
-4. [Fonctionnement : le pipeline de traitement](#4-fonctionnement--le-pipeline-de-traitement)
-5. [Modèle de données](#5-modèle-de-données)
-6. [Moteur de règles](#6-moteur-de-règles)
-7. [Tableau de bord](#7-tableau-de-bord)
-8. [Sécurité](#8-sécurité)
-9. [Pile technique](#9-pile-technique)
-10. [Prérequis](#10-prérequis)
-11. [Démarrage rapide](#11-démarrage-rapide)
-12. [Configuration](#12-configuration)
-13. [Tests](#13-tests)
-14. [Déploiement en service Windows](#14-déploiement-en-service-windows)
-15. [Structure du dépôt](#15-structure-du-dépôt)
-16. [Plan de développement parallèle](#16-plan-de-développement-parallèle)
-17. [Feuille de route](#17-feuille-de-route)
-18. [Contribuer](#18-contribuer)
-19. [Licence](#19-licence)
+## What it does
 
----
+Mailflow runs on an always-on Windows PC. It:
 
-## 1. Présentation
+1. **Reads** one or more IMAP mailboxes (OVH, iCloud, Gmail, Yahoo, any IMAP server).
+2. **Sorts** incoming messages and their PDF attachments (invoices, delivery notes, credit notes, orders...) with configurable rules.
+3. **Saves** a renamed copy of each PDF in an organised folder tree.
+4. **Prints** the documents you choose on a local printer.
+5. **Marks messages as read**, moves them, or leaves them alone, depending on the rule.
+6. Is **managed from a local web dashboard**, available in French and English.
 
-Mailflow est une application Windows installée sur le PC toujours allumé d'un magasin. Elle :
-
-1. **Lit** une ou plusieurs boîtes mail (OVH, iCloud, Gmail, tout serveur IMAP).
-2. **Trie** les e-mails entrants et leurs PDF (factures, bons de livraison, avoirs, commandes…) selon des règles configurables.
-3. **Enregistre** une copie renommée de chaque PDF dans des dossiers organisés.
-4. **Imprime** les documents choisis sur l'imprimante locale du magasin.
-5. **Marque les e-mails comme lus**, les déplace, ou n'y touche pas, selon la règle.
-6. Se **pilote entièrement depuis un tableau de bord web** : boîtes, imprimantes, dossiers et règles se modifient sans toucher au code.
+It never deletes an e-mail and never opens or runs an attachment.
 
 ```mermaid
 flowchart LR
-    F[📧 Fournisseurs] -->|e-mail + PDF| B[(Boîte mail IMAP)]
-    B -->|lecture| M[⚙️ Mailflow<br/>service Windows]
-    M -->|PDF renommés| D[📁 Dossiers<br/>Factures / BL / Avoirs…]
-    M -->|impression| P[🖨️ Imprimante du magasin]
-    M -->|lu / déplacé| B
-    U[👤 Gérant] -->|règles, historique| W[🖥️ Tableau de bord<br/>http://127.0.0.1:5088]
+    S[Suppliers] -->|e-mail + PDF| B[(IMAP mailbox)]
+    B -->|read| M[Mailflow]
+    M -->|renamed PDFs| D[Folders<br/>Invoices / Delivery notes / ...]
+    M -->|print| P[Printer]
+    M -->|read / moved| B
+    U[User] -->|rules, history| W[Dashboard<br/>http://127.0.0.1:5088]
     W <--> M
 ```
 
-### Hors périmètre de la v1
+Mailflow is designed for a single site: one installation, one database, one set of printers. Which documents are printed is decided only by your rules.
 
-| Prévu | Version |
-|---|---|
-| Récapitulatif quotidien de ce qu'il faut lire | v2 |
-| Sauvegarde cloud (simple dossier Google Drive / OneDrive) | v2 |
-| Impression multi-magasins (PrintNode ou une installation par magasin) | v3 |
-| OCR des PDF scannés | v3 |
+## Features
 
-### Contraintes
+- Several IMAP mailboxes. Sign in with e-mail address and password; the provider is detected from the address (OVH MX Plan, OVH Email Pro, iCloud, Gmail, Yahoo), and an advanced toggle lets you set provider, server and port by hand. Gmail, iCloud and Yahoo need an app password.
+- Rule engine on sender, domain, recipient, subject, body, attachment name, **PDF text** and presence of a PDF. Case- and accent-insensitive; regular expressions with a time limit.
+- Archive layout driven by a file-name pattern, with SHA-256 de-duplication.
+- Silent printing through SumatraPDF, **only** for recent messages that a rule asks to print. To restrict printing to one sender, add an exact-sender condition to the print rule.
+- Optional printing of the e-mail body when a message has no PDF.
+- Per-rule mailbox action: mark as read, move to an IMAP folder, or leave unchanged.
+- History with search, PDF opening, **reprint** and re-categorisation; run log, per-mailbox errors, "Run now", pause/resume.
+- Folder picker for the documents folder; nightly SQLite backup (last 14 kept).
+- Bilingual interface (French by default, English through the FR | EN switch in the top bar) and a built-in **Help** page (`/Help`).
+- Light and dark theme.
 
-| Contrainte | Comment elle est respectée |
-|---|---|
-| Gratuit | .NET, toutes les bibliothèques et SumatraPDF sont libres |
-| Léger | Un seul service Windows, ~60–120 Mo de RAM, ~0 % CPU entre deux relevés |
-| Configurable | Tous les réglages sont en base de données, modifiables depuis le tableau de bord |
-| Sûr | Ne supprime jamais un e-mail, n'imprime que depuis des expéditeurs approuvés, mots de passe chiffrés |
+## How it works
 
----
-
-## 2. Fonctionnalités
-
-- 📥 Lecture IMAP multi-boîtes avec préréglages (OVH MX Plan, OVH Email Pro, iCloud, Gmail, Yahoo) et option « IMAP personnalisé »
-- 🔐 Connexion par adresse e-mail et mot de passe (mot de passe d'application pour Gmail, iCloud et Yahoo) ; le serveur est rempli automatiquement quand le fournisseur est connu. Les boîtes Outlook / Hotmail ne sont plus prises en charge.
-- 🧠 Moteur de règles : expéditeur, domaine, objet, corps, nom de pièce jointe, **texte du PDF** (insensible à la casse et aux accents, regex avec délai maximal)
-- 🗂️ Archivage : `{Catégorie}/{aaaa}/{MM}/{aaaa-MM-jj}_{Fournisseur}_{NomOriginal}.pdf`, dédoublonnage par SHA-256
-- 🖨️ Impression silencieuse via SumatraPDF, **uniquement** pour les e-mails récents qu'une règle demande d'imprimer (ajoutez une condition sur l'adresse de l'expéditeur pour limiter l'impression)
-- 📬 Action sur la boîte par règle : marquer comme lu, déplacer dans un dossier IMAP, ou laisser tel quel
-- 🔎 Historique : recherche, ouverture du PDF, **réimpression**, changement de catégorie
-- 📊 Journal d'exécution, erreurs par boîte, bouton « Lancer maintenant », pause / reprise
-- 💾 Sauvegarde nocturne de la base SQLite
-
----
-
-## 3. Architecture
-
-Architecture propre (*Clean Architecture*). Le domaine ne dépend de rien ; l'application définit des interfaces ; l'infrastructure les implémente ; le projet Web est le seul exécutable.
-
-```mermaid
-flowchart TB
-    subgraph Web["Mailflow.Web (hôte exécutable)"]
-        Pages[Pages Razor + HTMX + Bootstrap]
-        Auth[Authentification cookie]
-        Worker[MailflowWorker<br/>BackgroundService + PeriodicTimer]
-        Svc[Service Windows + Serilog]
-    end
-    subgraph App["Mailflow.Application"]
-        UC[Cas d'usage<br/>MailboxProcessor · MessagePipeline · PrintPolicy<br/>TestConnection · TestRule · Reprint · ImportYaml]
-        Abs[/Interfaces<br/>IMailClient · IPdfTextReader · IPrinterService<br/>IDocumentStore · ISecretStore · IClock · IAppDbContext/]
-    end
-    subgraph Infra["Mailflow.Infrastructure"]
-        EF[EF Core + SQLite]
-        Mail[MailKit IMAP]
-        Pdf[PdfPig]
-        Prn[Imprimantes Windows + SumatraPDF]
-        Sec[DPAPI]
-        Sto[Stockage fichiers]
-    end
-    subgraph Dom["Mailflow.Domain"]
-        Ent[Entités · Énumérations]
-        RE[RuleEngine · ConditionEvaluator · MatchContext]
-    end
-
-    Web --> App
-    Web -. injection de dépendances .-> Infra
-    Infra -->|implémente| Abs
-    App --> Dom
-    Infra --> App
-```
-
-**Règle d'or :** `Domain` ← `Application` ← `Infrastructure` ← `Web`. Aucune dépendance ne remonte.
-
----
-
-## 4. Fonctionnement : le pipeline de traitement
-
-Exécuté toutes les *N* minutes par boîte, et à la demande (« Lancer maintenant »).
+The pipeline runs every *N* minutes per mailbox, and on demand.
 
 ```mermaid
 flowchart TD
-    A[Pour chaque boîte active] --> B[Connexion IMAP SSL]
-    B --> C[Recherche SINCE aujourd'hui − LookbackDays]
-    C --> D{Message déjà dans<br/>ProcessedMessage ?}
-    D -- oui --> C
-    D -- non --> E[Analyse MimeKit, sans modifier les drapeaux<br/>BODY.PEEK]
-    E --> F[Extraction des PDF + texte des 2 premières pages]
-    F --> G[Construction du MatchContext]
-    G --> H[RuleEngine.Evaluate<br/>règles par priorité]
-    H --> I{Aucune règle ?}
-    I -- oui --> I1[Règle par défaut :<br/>catégorie « À trier », pas d'impression, non lu]
-    I -- non --> J
-    I1 --> J[SaveToCategory : enregistrer les PDF<br/>dédoublonnage SHA-256]
-    J --> K{Impression autorisée ?<br/>règle (dont l'expéditeur)<br/>+ âge ≤ 24 h + imprimante active}
-    K -- oui --> L[Imprimer via SumatraPDF]
-    K -- non --> M
-    L --> M{Enregistrement réussi ?}
-    M -- oui --> N[Action boîte :<br/>lu / déplacer / laisser]
-    M -- non --> R[Rien d'enregistré,<br/>nouvel essai au prochain passage]
-    N --> O[(Insertion ProcessedMessage<br/>1 transaction par message)]
+    A[For each active mailbox] --> B[IMAP connection over SSL]
+    B --> C[Search SINCE today - LookbackDays]
+    C --> D{Already in<br/>ProcessedMessage?}
+    D -- yes --> C
+    D -- no --> E[Parse with MimeKit<br/>BODY.PEEK, flags untouched]
+    E --> F[Extract PDFs + text of the first pages]
+    F --> G[Build MatchContext]
+    G --> H[RuleEngine.Evaluate<br/>rules by priority]
+    H --> I{No rule matched?}
+    I -- yes --> I1[Default: category "To sort",<br/>no print, leave unread]
+    I -- no --> J
+    I1 --> J[SaveToCategory: store PDFs<br/>SHA-256 de-duplication]
+    J --> K{Printing allowed?<br/>a rule asks for it<br/>+ age within limit + sender check + active printer}
+    K -- yes --> L[Print via SumatraPDF]
+    K -- no --> M
+    L --> M{Saved successfully?}
+    M -- yes --> N[Mailbox action:<br/>read / move / leave]
+    M -- no --> R[Nothing recorded,<br/>retried on the next pass]
+    N --> O[(Insert ProcessedMessage<br/>one transaction per message)]
     O --> C
-    C -->|fin| P[Écrire RunLog<br/>maj LastCheckAt / LastError]
+    C -->|done| P[Write RunLog,<br/>update LastCheckAt / LastError]
 ```
 
-### Comportement en cas d'échec
-
-| Situation | Résultat |
+| Situation | Result |
 |---|---|
-| Enregistrement impossible | Message non enregistré, **non marqué comme lu** → nouvel essai au prochain passage |
-| Impression en échec | Document enregistré, `PrintError` conservé, bouton **Réimprimer** dans l'historique |
-| Boîte injoignable | Erreur affichée sur l'accueil, les autres boîtes continuent |
-| Dans tous les cas | **Jamais** de suppression d'e-mail, **jamais** d'ouverture ni d'exécution de pièce jointe |
-
-### Séquence d'un message imprimé
+| Saving fails | Message not recorded and **not marked as read**: retried on the next pass |
+| Printing fails | Document saved, `PrintError` kept, **Reprint** button in History |
+| Mailbox unreachable | Error shown on the home page; other mailboxes continue |
+| Always | An e-mail is never deleted; an attachment is never opened or executed |
 
 ```mermaid
 sequenceDiagram
@@ -177,345 +106,205 @@ sequenceDiagram
     participant RE as RuleEngine
     participant DS as IDocumentStore
     participant PS as IPrinterService
-    participant DB as Base SQLite
+    participant DB as SQLite
 
-    W->>MC: FetchSince(boîte, dossier, date)
-    MC-->>W: messages + PDF
-    W->>PR: ReadText(pdf, 2 pages)
-    PR-->>W: texte
+    W->>MC: FetchSince(mailbox, folder, date)
+    MC-->>W: messages + PDFs
+    W->>PR: ReadText(pdf, first pages)
+    PR-->>W: text
     W->>RE: Evaluate(MatchContext)
-    RE-->>W: actions fusionnées
-    W->>DS: Save(pdf, catégorie, fournisseur, nom)
-    DS-->>W: chemin + SHA-256
-    W->>PS: Print(chemin, imprimante, copies)
-    PS-->>W: ok / erreur
+    RE-->>W: merged actions
+    W->>DS: Save(pdf, category, supplier, name)
+    DS-->>W: path + SHA-256
+    W->>PS: Print(path, printer, copies)
+    PS-->>W: ok / error
     W->>MC: MarkAsRead(uid)
     W->>DB: Insert ProcessedMessage + Document
 ```
 
----
+## Quick start
 
-## 5. Modèle de données
+### Install (Windows 10/11)
 
-```mermaid
-erDiagram
-    STORE ||--o{ MAILBOX : possède
-    STORE ||--o{ PRINTER : possède
-    STORE ||--o{ ALLOWED_SENDER : "autorise (optionnel)"
-    MAILBOX ||--o{ PROCESSED_MESSAGE : reçoit
-    MAILBOX ||--o{ RULE : "cible (optionnel)"
-    RULE ||--o{ RULE_CONDITION : contient
-    RULE ||--o{ RULE_ACTION : déclenche
-    RULE_ACTION }o--o| CATEGORY : "range dans"
-    RULE_ACTION }o--o| PRINTER : "imprime sur"
-    PROCESSED_MESSAGE ||--o{ DOCUMENT : produit
-    CATEGORY ||--o{ DOCUMENT : classe
-    PRINTER ||--o{ DOCUMENT : imprime
-    MAILBOX ||--o{ RUN_LOG : journalise
+Download `Mailflow-Setup-<version>-win-x64.exe` from the releases page and run it. The wizard (French or English) installs Mailflow for the current user, with an uninstaller, an optional start with Windows and an optional desktop shortcut. It can also run unattended; see [deploy/build-release.ps1](deploy/build-release.ps1) and [deploy/installer/SetupProgram.cs](deploy/installer/SetupProgram.cs) for how the installer is built and the switches it accepts.
 
-    STORE { int Id string Name string Address bool IsActive }
-    MAILBOX { int Id int StoreId string Email string Host int Port bool UseSsl string EncryptedPassword string InboxFolder int CheckIntervalMinutes int LookbackDays enum DefaultAfterProcessing bool IsActive datetime LastCheckAt string LastError }
-    PRINTER { int Id int StoreId string DisplayName string WindowsName enum Kind int DefaultCopies bool Duplex bool IsActive }
-    CATEGORY { int Id string Name string LocalSubfolder string ImapFolder string Color int SortOrder }
-    RULE { int Id string Name int Priority bool IsActive enum MatchMode bool StopProcessing int MailboxId }
-    RULE_CONDITION { int Id int RuleId enum Field enum Operator string Value bool CaseSensitive }
-    RULE_ACTION { int Id int RuleId enum Type int CategoryId int PrinterId int Copies string ImapFolder }
-    ALLOWED_SENDER { int Id string Pattern int StoreId }
-    PROCESSED_MESSAGE { int Id int MailboxId string MessageId uint ImapUid datetime ReceivedAt string From string Subject int MatchedRuleId enum Status datetime ProcessedAt }
-    DOCUMENT { int Id int ProcessedMessageId string Sha256 string OriginalName string StoredPath int CategoryId datetime PrintedAt int PrinterId string PrintError }
-    RUN_LOG { int Id datetime StartedAt timespan Duration int MailboxId int MessagesHandled int DocumentsSaved int Printed string Error }
-    SETTING { string Key string Value }
-```
+Start Mailflow. A window shows the dashboard (Microsoft Edge WebView2 is required; it is present by default on Windows 11) and an icon appears in the notification area. Closing the window hides it and Mailflow keeps working in the background. Right-click the icon to open the dashboard, run now, pause/resume or quit. Only one instance runs at a time. `Mailflow.exe --minimized` starts in the notification area; `--headless` runs the server without a window.
 
-### Énumérations
+On first launch a setup page, reachable from the local machine only, asks you to choose the administrator password. Then add a mailbox, a printer, categories and rules. The **Help** page walks through each step.
 
-| Énumération | Valeurs |
-|---|---|
-| `ConditionField` | `FromAddress`, `FromDomain`, `ToAddress`, `Subject`, `Body`, `AttachmentName`, `PdfText`, `HasPdf` |
-| `ConditionOperator` | `Contains`, `NotContains`, `Equals`, `StartsWith`, `EndsWith`, `Regex` |
-| `ActionType` | `SaveToCategory`, `Print`, `MarkAsRead`, `MoveToFolder`, `LeaveUnread`, `Skip` |
-| `AfterProcessing` | `MarkRead`, `Move`, `Leave` |
-| `MatchMode` | `All`, `Any` |
+Advanced: [deploy/install.ps1](deploy/install.ps1) installs Mailflow as a Windows service (elevated PowerShell) and [deploy/uninstall.ps1](deploy/uninstall.ps1) removes it. Mailbox passwords are encrypted for one Windows account, so enter them after the service is installed and running.
 
----
+### Run from source
 
-## 6. Moteur de règles
-
-Logique pure dans `Domain`, entièrement testée unitairement.
-
-```mermaid
-flowchart LR
-    R[Règles actives<br/>triées par Priority ↑] --> E{Évaluer les conditions}
-    E -->|MatchMode = All| T1[toutes vraies]
-    E -->|MatchMode = Any| T2[au moins une vraie]
-    T1 --> M[Règle déclenchée]
-    T2 --> M
-    M --> A[Fusion des actions]
-    M --> S{StopProcessing ?}
-    S -- oui --> X([Fin de l'évaluation])
-    S -- non --> R
-```
-
-- Comparaison **insensible à la casse et aux accents** par défaut (« Facture » = « facture » = « FACTURÉ »).
-- `PdfText` + `Contains` : option « le mot-clé le plus proche du haut gagne » (une facture qui mentionne « bon de livraison n° … » plus bas reste une facture).
-- Regex avec **délai de 100 ms** pour éviter les blocages.
-
-**Exemple de règle**
-
-| Champ | Valeur |
-|---|---|
-| Nom | Factures Fournisseur X |
-| Mode | Tous |
-| Conditions | `FromDomain` égal à `fournisseur-x.fr` · `PdfText` contient « FACTURE » |
-| Actions | `SaveToCategory` → Factures · `Print` → imprimante du magasin (1 copie) · `MarkAsRead` |
-
----
-
-## 7. Tableau de bord
-
-Adresse par défaut : **http://127.0.0.1:5088** (liée à `127.0.0.1`). Connexion obligatoire. Libellés en français.
-
-| Page | Contenu |
-|---|---|
-| **Accueil** | État du worker, dernier / prochain passage, compteurs du jour, dernières erreurs, **Lancer maintenant**, **Pause / Reprise**, 10 derniers documents |
-| **Boîtes mail** | CRUD, préréglages fournisseurs, mot de passe en écriture seule, **Tester la connexion** (nombre de messages + dossiers serveur) |
-| **Imprimantes** | **Détecter les imprimantes**, copies, recto-verso, **Test d'impression** |
-| **Catégories / Dossiers** | CRUD, sous-dossier local avec vérification du chemin, dossier IMAP choisi ou créé, couleur |
-| **Règles** | Liste ordonnée (glisser-déposer), éditeur conditions / actions, **Tester cette règle** sur les 50 derniers e-mails (lecture seule) |
-| **Historique** | Recherche par date / fournisseur / catégorie, **Ouvrir le PDF**, **Réimprimer**, **Changer de catégorie** |
-| **Journal** | Exécutions et erreurs |
-| **Paramètres** | Dossier racine des documents, modèle de nom de fichier, âge maximal d'impression, vérification de l'expéditeur avant impression, mot de passe admin, sauvegarde immédiate, **Import config.yaml** |
-
-Principes d'interface : Bootstrap 5, HTMX pour les actions en ligne (tests, interrupteurs, « lancer maintenant »). Pas de SPA, pas d'étape de build front.
-
----
-
-## 8. Sécurité
-
-| Risque | Parade |
-|---|---|
-| Accès au tableau de bord par le personnel / le réseau | Lié à `127.0.0.1`, mot de passe haché, session de 30 min, jetons anti-falsification sur tous les formulaires, 5 tentatives de connexion par minute, hôtes autorisés limités à `localhost` (`AllowedHosts`), assistant de premier lancement accessible uniquement depuis la machine locale |
-| Usurpation de l'expéditeur (en-tête `From` falsifiable) | L'adresse est analysée strictement (toute adresse ambiguë est ignorée). Vérification optionnelle du verdict DKIM/DMARC du serveur de réception (Paramètres) : **Désactivée**, **Avertir** (défaut : impression inchangée, l'Historique signale les expéditeurs non vérifiés) ou **Stricte** (seuls les expéditeurs vérifiés sont imprimés ; les autres sont archivés, réimpression possible). Un serveur sans verdict compte comme non vérifié. Limitez l'impression par des règles avec l'adresse exacte de l'expéditeur |
-| Mots de passe des boîtes | Chiffrés avec **DPAPI** (portée : compte du service), jamais affichés |
-| Impression sauvage | Impression uniquement si une règle le demande (condition sur l'adresse de l'expéditeur), âge maximal 24 h |
-| PDF malveillants | Jamais ouverts ni exécutés : seul le texte est lu (PdfPig) ; SumatraPDF ne fait qu'imprimer |
-| Personnel qui consulte les factures | Service sous compte local dédié `svc-mailflow` ; ACL sur le dossier de documents |
-| Accès distant (plus tard) | **Tailscale**, aucun port ouvert sur la box |
-| Perte de données | Sauvegarde SQLite nocturne (`VACUUM INTO`) |
-
-> ⚠️ DPAPI est lié au compte Windows. Un mot de passe saisi sous votre compte ne peut pas être déchiffré par le compte du service : **saisissez les mots de passe après l'installation du service**.
-
----
-
-## 9. Pile technique
-
-| Domaine | Choix |
-|---|---|
-| Exécution | **.NET 10 (LTS)** |
-| Hôte | Generic Host + service Windows (`Microsoft.Extensions.Hosting.WindowsServices`) |
-| Tableau de bord | ASP.NET Core Razor Pages + HTMX + Bootstrap 5 (fichiers statiques, sans CDN) |
-| Base de données | SQLite + EF Core (code-first, migrations) |
-| E-mail IMAP | MailKit / MimeKit |
-| Texte PDF | PdfPig (`UglyToad.PdfPig`) |
-| Liste des imprimantes | `PrinterSettings.InstalledPrinters` (`System.Drawing.Common`) |
-| Impression PDF | SumatraPDF (ligne de commande silencieuse), livré à côté de l'application |
-| Secrets | Windows DPAPI (`ProtectedData`) |
-| Authentification | Cookie + `PasswordHasher` d'Identity (uniquement le hachage) |
-| Journalisation | Serilog → fichiers tournants + table pour la page Journal |
-| Planification | `BackgroundService` + `PeriodicTimer` |
-| Tests | xUnit + NSubstitute ; GreenMail (Docker) pour l'IMAP |
-
----
-
-## 10. Prérequis
-
-- Windows 10 / 11 (DPAPI, détection des imprimantes et service Windows : Windows uniquement)
-- [Kit SDK .NET 10](https://dotnet.microsoft.com/download) : `winget install Microsoft.DotNet.SDK.10`
-- Git
-- Une imprimante installée **pour tous les utilisateurs** (sinon le compte du service ne la voit pas)
-- Facultatif : Docker (GreenMail pour les tests IMAP) ; Visual Studio 2026, Rider ou VS Code + C# Dev Kit
-
----
-
-## 11. Démarrage rapide
-
-**Utilisateur** : décompressez la version et double-cliquez sur `Mailflow.exe`. Une fenêtre affiche le tableau de bord (Microsoft Edge WebView2 requis, présent par défaut sur Windows 11) et une icône apparaît dans la zone de notification. Fermer la fenêtre la masque : Mailflow continue de travailler en arrière-plan. Clic droit sur l'icône : ouvrir, lancer le traitement maintenant, mettre en pause / reprendre, quitter. Une seule instance à la fois ; si le service Windows tourne déjà, la fenêtre s'y connecte (pause et traitement immédiat se font alors depuis le tableau de bord). `Mailflow.exe --minimized` démarre directement dans la zone de notification ; `--headless` (ou le mode service) lance le serveur sans fenêtre.
-
-**Développeur** :
+Requirements: Windows, the [.NET 10 SDK](https://dotnet.microsoft.com/download), Git, and a printer installed on the machine.
 
 ```powershell
-git clone https://github.com/<votre-compte>/mailflow.git
+git clone https://github.com/<owner>/mailflow.git
 cd mailflow
-dotnet build
-dotnet test
 dotnet run --project src/Mailflow.Web
 ```
 
-Ouvrez ensuite **http://127.0.0.1:5088** et définissez le mot de passe administrateur dans l'assistant de premier lancement.
+Open **http://127.0.0.1:5088** and set the administrator password. To print, download the portable 64-bit SumatraPDF and place `SumatraPDF.exe` in `tools/SumatraPDF/` (see [tools/SumatraPDF/README.md](tools/SumatraPDF/README.md)).
 
-> Lancer VS Code en administrateur n'est nécessaire que pour **installer le service Windows**, pas pour développer.
+## Configuration
 
----
-
-## 12. Configuration
-
-Seuls l'URL / le port, le chemin de la base et le chemin des journaux sont dans `appsettings.json`. Tout le reste est en base de données.
-
-**Changer le port** (`src/Mailflow.Web/appsettings.json`) :
+Almost everything is configured in the dashboard and stored in the SQLite database (`data/mailflow.db` next to the application). Only the listening URL, the polling interval and logging live in `src/Mailflow.Web/appsettings.json`.
 
 ```json
 {
-  "Kestrel": { "Endpoints": { "Http": { "Url": "http://127.0.0.1:5088" } } }
+  "Kestrel": { "Endpoints": { "Http": { "Url": "http://127.0.0.1:5088" } } },
+  "Worker": { "Interval": "00:01:00" }
 }
 ```
 
-Autres façons :
+Other ways to change the port:
 
 ```powershell
 dotnet run --project src/Mailflow.Web --urls "http://127.0.0.1:5099"
 $env:ASPNETCORE_URLS = "http://127.0.0.1:5099"
 ```
 
-Choisissez un port supérieur à 1024 et libre (`netstat -ano | findstr :5088`). Gardez `127.0.0.1` pour que le tableau de bord reste local.
+Keep `127.0.0.1` so the dashboard stays local.
 
----
+**Settings page:** documents folder (with a folder picker), file-name pattern, maximum age for printing (1 to 168 hours, default 24), printing the e-mail body when there is no PDF, sender verification mode, administrator password, immediate backup.
 
-## 13. Tests
+**Language:** use the FR | EN switch in the top bar. The choice is stored in a cookie; French is the default.
 
-| Niveau | Contenu | Outil |
-|---|---|---|
-| Unitaire | Moteur de règles : chaque champ × opérateur, accents, priorité, arrêt, « mot-clé le plus proche » | xUnit |
-| Unitaire | `PrintPolicy`, nommage des fichiers, dédoublonnage | xUnit |
-| Application | `MessagePipeline` avec faux client mail / imprimante / stockage : « lu » seulement après enregistrement, reprises, échecs | xUnit + NSubstitute |
-| Intégration | Flux IMAP réel contre **GreenMail** | xUnit + Docker |
-| Manuel (PC du magasin) | Boîte réelle en mode « tester la règle », test d'impression, 1 semaine pilote en `LeaveUnread` avant `MarkAsRead` | liste de contrôle |
+## Rules
 
-Serveur IMAP de test :
+Rules are evaluated by priority. Each rule has conditions (all or any must match) and actions: save to a category, print on a printer (with a number of copies), mark as read, move to an IMAP folder, leave unread, skip. The rule editor can **test a rule** against the 50 most recent messages without changing anything.
 
-```powershell
-docker run -p 3143:3143 -p 3025:3025 greenmail/standalone
+```mermaid
+flowchart LR
+    R[Active rules<br/>sorted by priority] --> E{Evaluate conditions}
+    E -->|All| T1[all true]
+    E -->|Any| T2[at least one true]
+    T1 --> M[Rule matches]
+    T2 --> M
+    M --> A[Merge actions]
+    M --> S{StopProcessing?}
+    S -- yes --> X([End])
+    S -- no --> R
 ```
 
-Les PDF d'exemple (anonymisés) vont dans `tests/fixtures/`.
+Example:
 
----
+| Field | Value |
+|---|---|
+| Name | Supplier X invoices |
+| Mode | All |
+| Conditions | `FromAddress` equals `billing@supplier-x.example` and `PdfText` contains "INVOICE" |
+| Actions | save to "Invoices", print on the office printer (1 copy), mark as read |
 
-## 14. Déploiement en service Windows
+Comparisons ignore case and accents by default. For `PdfText` with `Contains`, the keyword nearest the top wins, so an invoice that mentions "delivery note" further down stays an invoice. Regular expressions time out after 100 ms.
 
-**Construire** (poste de développement) :
+## Security model
+
+| Risk | Mitigation |
+|---|---|
+| Dashboard access from the network or other users | Bound to `127.0.0.1`; hashed password; 30-minute session; anti-forgery tokens on every form; login rate limit (5 per minute); `AllowedHosts` limited to localhost; first-run setup only from the local machine |
+| Sender spoofing (the `From` header is forgeable) | The address is parsed strictly and ambiguous addresses are ignored. Optional check of the receiving server's DKIM/DMARC verdict (Settings): **Off**, **Warn** (default: printing unchanged, History flags unverified senders) or **Strict** (only verified senders are printed; the others are archived and can be reprinted). A missing verdict counts as unverified |
+| Unwanted printing | Nothing prints unless a rule says so, and printing is controlled by the rules alone: add an exact-sender condition to a print rule to limit it to one sender. Messages older than the age limit (default 24 h) are never printed |
+| Mailbox passwords | Encrypted with Windows **DPAPI** (scope: the Windows account running Mailflow); write-only in the UI |
+| Malicious PDFs | Never opened or executed: only text is read (PdfPig); SumatraPDF only prints |
+| Path traversal | Documents are opened by id, never by a browser-supplied path; folder and pattern settings reject `..` and absolute patterns |
+| Remote access | Local only (`127.0.0.1`). If you need remote access, use a private network such as Tailscale rather than opening a port |
+| Data loss | Nightly SQLite backup (`VACUUM INTO`), last 14 kept |
+
+DPAPI ties a password to one Windows account: a password saved under another account cannot be decrypted by the account that runs Mailflow, so enter passwords after choosing how Mailflow runs.
+
+Report vulnerabilities privately through GitHub Security Advisories, not in public issues.
+
+## Architecture and tech stack
+
+Clean Architecture: `Domain` <- `Application` <- `Infrastructure` <- `Web` / `Desktop`. Nothing depends upward; the core talks to the outside world through interfaces.
+
+```mermaid
+flowchart TB
+    subgraph Host["Mailflow.Web (host) and Mailflow.Desktop (tray + window)"]
+        Pages[Razor Pages + HTMX + Bootstrap]
+        Auth[Cookie authentication]
+        Worker[MailflowWorker<br/>BackgroundService + PeriodicTimer]
+    end
+    subgraph App["Mailflow.Application"]
+        UC[Use cases<br/>MailboxProcessor, MessagePipeline, PrintPolicy, Reprint, Reclassify]
+        Abs[/Interfaces<br/>IMailClient, IPdfTextReader, IPrinterService, IDocumentStore, ISecretStore, IAppDbContext/]
+    end
+    subgraph Infra["Mailflow.Infrastructure"]
+        EF[EF Core + SQLite]
+        Mail[MailKit IMAP]
+        Pdf[PdfPig]
+        Prn[Windows printers + SumatraPDF]
+        Sec[DPAPI]
+        Sto[File storage]
+    end
+    subgraph Dom["Mailflow.Domain"]
+        Ent[Entities, enums]
+        RE[RuleEngine, ConditionEvaluator, MatchContext]
+    end
+    Host --> App
+    Host -. dependency injection .-> Infra
+    Infra -->|implements| Abs
+    App --> Dom
+    Infra --> App
+```
+
+| Area | Choice |
+|---|---|
+| Runtime | .NET 10 |
+| Dashboard | ASP.NET Core Razor Pages, HTMX, Bootstrap 5 (static files, no CDN) |
+| Desktop shell | Windows Forms + WebView2 (window and notification-area icon) |
+| Database | SQLite with EF Core (code first, migrations applied at startup) |
+| IMAP | MailKit / MimeKit |
+| PDF text | PdfPig |
+| Printing | SumatraPDF (silent command line); printers listed through `System.Drawing.Common` |
+| Secrets | Windows DPAPI |
+| Logging | Serilog (rolling files + run log table) |
+| Localization | `Loc.T("French text")` with JSON dictionaries (French source, English translation) |
+| Tests | xUnit, NSubstitute |
+
+## Project layout
+
+```
+Mailflow.slnx
+src/
+  Mailflow.Domain/           entities, enums, rule engine
+  Mailflow.Application/      use cases and interfaces
+  Mailflow.Infrastructure/   EF Core, MailKit, PdfPig, printing, DPAPI, file storage
+  Mailflow.Web/              dashboard, worker, host, localization
+  Mailflow.Desktop/          tray icon and window around the web host
+tests/
+  Mailflow.Domain.Tests/        Mailflow.Application.Tests/
+  Mailflow.Integration.Tests/   Mailflow.Desktop.Tests/
+tools/SumatraPDF/            portable executable (not committed)
+deploy/                      release build, installer, service scripts
+Docs/                        design system
+```
+
+## Build, test, release
+
+```powershell
+dotnet build
+dotnet test
+```
+
+To build a release from a development machine:
 
 ```powershell
 .\deploy\build-release.ps1 -Version 1.0.0
 ```
 
-Le script produit `dist\Mailflow-1.0.0-win-x64.zip` (application autonome, aucun .NET à installer sur le PC du magasin). Ajoutez ensuite `SumatraPDF.exe` (version portable) dans `tools\SumatraPDF\` : voir [tools/SumatraPDF/README.md](tools/SumatraPDF/README.md).
+This publishes a self-contained win-x64 build and writes `dist\Mailflow-<version>-win-x64.zip` and `dist\Mailflow-Setup-<version>-win-x64.exe`. Put `SumatraPDF.exe` in `tools\SumatraPDF\` first if you want printing in the package. CI (`.github/workflows/ci.yml`) restores, builds and tests on Windows for each push to `main` and each pull request.
 
-**Installer** (PC du magasin, PowerShell **administrateur**) :
+To update, install the new version over the old one; database migrations are applied at startup.
 
-```mermaid
-flowchart LR
-    Z[Décompresser dans<br/>C:\Mailflow] --> I[install.ps1]
-    I --> U[Crée le compte svc-mailflow]
-    I --> F[Crée les dossiers<br/>Documents + data avec ACL]
-    I --> S[sc.exe create Mailflow<br/>démarrage différé]
-    S --> R[Redémarrage auto en cas d'échec]
-    R --> G[Démarre le service<br/>et ouvre le tableau de bord]
-    G --> W[Assistant : mot de passe admin]
-```
+## Roadmap
 
-**Mise à jour :** arrêter le service → remplacer l'exécutable → redémarrer (les migrations EF s'appliquent au démarrage).
+- Daily digest of what needs attention
+- Backup of documents to a synced folder (Google Drive, OneDrive)
+- OCR for scanned PDFs
+- More provider presets
 
-**Objectifs de ressources :** RAM au repos ≤ 120 Mo · CPU ~0 % entre deux relevés · passage sans nouveau mail < 3 s · ~125 Mo de disque pour l'application (autonome, avec le runtime .NET) · ~1–2 Go/an/magasin pour les documents · priorité du service « inférieure à la normale » (la caisse reste prioritaire).
+## Contributing and license
 
----
-
-## 15. Structure du dépôt
-
-```
-Mailflow.slnx
-├── src/
-│   ├── Mailflow.Domain/           entités, énumérations, moteur de règles
-│   ├── Mailflow.Application/      cas d'usage et interfaces
-│   ├── Mailflow.Infrastructure/   EF Core, MailKit, PdfPig, impression, DPAPI, fichiers
-│   └── Mailflow.Web/              tableau de bord, worker, hôte
-├── tests/
-│   ├── Mailflow.Domain.Tests/
-│   ├── Mailflow.Application.Tests/
-│   └── Mailflow.Integration.Tests/
-├── tools/SumatraPDF/                   exécutable portable
-├── deploy/                             install.ps1 · uninstall.ps1
-└── Docs/                               plan du projet · plan de développement parallèle
-```
-
----
-
-## 16. Plan de développement parallèle
-
-Le projet est découpé en vagues pour être construit par **3 à 10 contributeurs ou agents en parallèle**. Chacun possède ses dossiers ; les contrats (`contracts-v1`) sont figés avant le départ.
-
-```mermaid
-flowchart LR
-    W0[Vague 0<br/>Fondations + contrats<br/>1 agent] --> W1
-    subgraph W1[Vague 1 : construction parallèle]
-        direction TB
-        A1[A1 Moteur de règles]
-        A2[A2 Persistance]
-        A3[A3 Mail IMAP]
-        A4[A4 PDF + stockage]
-        A5[A5 Impression + secrets]
-        A6[A6 Socle Web]
-        A7[A7 Pages CRUD]
-        A8[A8 Pages règles]
-        A9[A9 Pipeline]
-        A10[A10 Worker + déploiement]
-    end
-    W1 --> W2[Vague 2<br/>Historique · Accueil/Journal · Paramètres]
-    W2 --> W3[Vague 3<br/>Tests d'intégration · Revue sécurité · Release]
-    W3 --> P[Pilote]
-```
-
-| Nombre d'agents | Regroupement |
-|---|---|
-| 3 | Logique (A1+A9+A10) · Infrastructure (A2+A3+A4+A5) · Web (A6+A7+A8) |
-| **5** | A1+A9 · A2+A4 · A3+A5 · A6+A10 · A7+A8 |
-| 10 | Un agent par ligne |
-
-Détails complets : [Docs/Parallel-Development-Plan.md](Docs/Parallel-Development-Plan.md). Plan général : [Docs/Mailflow-dotnet-plan.md](Docs/Mailflow-dotnet-plan.md).
-
----
-
-## 17. Feuille de route
-
-| Phase | Contenu | Terminé quand… |
-|---|---|---|
-| 0 | Solution, 4 projets + tests, contrats | `dotnet build` vert ✅ |
-| 1 | Hôte, connexion, assistant, Accueil, Paramètres | Installé en service sur un PC de test |
-| 2 | Magasins et boîtes, DPAPI, **Test de connexion** | Une boîte réelle se connecte |
-| 3 | Imprimantes, **Test d'impression** via le service | Une page de test s'imprime depuis le compte du service |
-| 4 | Catégories et règles, expéditeurs autorisés, **Tester la règle** | Les règles de 3 fournisseurs principaux fonctionnent sur de vrais e-mails |
-| 5 | Worker : pipeline, dédoublonnage, politique d'impression | 48 h sans document manqué ni imprimé deux fois |
-| 6 | Historique, réimpression, sauvegarde, import YAML | Semaine pilote terminée |
-| v2 | Récapitulatif, cloud, indicateurs « à vérifier » | — |
-| v3 | Multi-magasins, PrintNode, OCR, Tailscale | Tous les magasins en service |
-
----
-
-## 18. Contribuer
-
-Pour savoir **où modifier le code** (ajouter un fournisseur, une condition, une action, un backend d'impression ou de stockage), lisez [CONTRIBUTING.md](CONTRIBUTING.md).
-
-1. Ouvrez une *issue* pour discuter du changement.
-2. Créez une branche (`feature/<sujet>`).
-3. Respectez les couches : `Domain` ne dépend de rien, `Application` définit les interfaces, `Infrastructure` les implémente.
-4. Ajoutez des tests (le moteur de règles en particulier) ; `dotnet build` et `dotnet test` doivent passer.
-5. Ouvrez une *pull request*.
-
-Ne committez **jamais** d'identifiants de boîte mail, de documents clients ni de factures de fournisseurs. Anonymisez les PDF d'exemple.
-
-**Sécurité :** signalez les vulnérabilités en privé (GitHub Security Advisories), pas dans une issue publique.
-
----
-
-## 19. Licence
-
-[MIT](LICENSE)
+See [CONTRIBUTING.md](CONTRIBUTING.md) for conventions, migrations, tests, provider presets and UI translations. Licensed under the [MIT License](LICENSE).

@@ -44,10 +44,10 @@ Menu active state is automatic (most specific URL wins). A new top-level page ne
 Inline sprite in `Pages/Shared/_Icons.cshtml`, 24x24 stroke icons. Always decorative unless alone in a button (then put `aria-label` on the button).
 
 ```html
-<svg class="icon" aria-hidden="true"><use href="#i-store" /></svg>
+<svg class="icon" aria-hidden="true"><use href="#i-inbox" /></svg>
 ```
 
-Available: logo home store inbox printer tag rules shield clock list sliders logout menu sun moon play pause refresh file alert check plus lock. Add a `<symbol id="i-name" viewBox="0 0 24 24">` with `path`s (no fill, the CSS strokes them) in `_Icons.cshtml` if you need another.
+Available: logo home inbox printer tag rules shield clock list sliders logout menu sun moon play pause refresh file alert check plus lock. Add a `<symbol id="i-name" viewBox="0 0 24 24">` with `path`s (no fill, the CSS strokes them) in `_Icons.cshtml` if you need another.
 
 ## Components
 
@@ -55,8 +55,8 @@ Available: logo home store inbox printer tag rules shield clock list sliders log
 
 ```html
 <div class="page-header">
-  <div><h1 class="page-title">Magasins</h1><p class="page-subtitle">Les points de vente qui reçoivent des documents.</p></div>
-  <div class="page-actions"><a class="btn btn-primary" asp-page="Edit"><svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg>Ajouter un magasin</a></div>
+  <div><h1 class="page-title">Boîtes mail</h1><p class="page-subtitle">Les boîtes surveillées par Mailflow.</p></div>
+  <div class="page-actions"><a class="btn btn-primary" asp-page="Edit"><svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg>Ajouter une boîte mail</a></div>
 </div>
 ```
 
@@ -94,10 +94,10 @@ Always wrap in `.table-wrap` (rounded border, horizontal scroll on narrow widths
     <thead><tr><th scope="col">Nom</th><th scope="col" class="num">Total</th><th scope="col"></th></tr></thead>
     <tbody>
       <tr>
-        <td>Store A<span class="cell-sub">1 Example Street</span></td>
+        <td>Mailbox A<span class="cell-sub">name@example.com</span></td>
         <td class="num">12</td>
         <td><div class="row-actions"><a class="btn btn-sm btn-secondary" href="#">Modifier</a>
-            <form method="post" hx-post="..." hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Supprimer ce magasin ?"><button class="btn btn-sm btn-danger" type="submit">Supprimer</button></form></div></td>
+            <form method="post" hx-post="..." hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Supprimer cette boîte mail ?"><button class="btn btn-sm btn-danger" type="submit">Supprimer</button></form></div></td>
       </tr>
     </tbody>
   </table>
@@ -183,10 +183,10 @@ Use instead of an empty table. One sentence, one call to action when something c
 
 ```html
 <div class="card"><div class="empty-state">
-  <span class="empty-state-icon"><svg class="icon" aria-hidden="true"><use href="#i-store" /></svg></span>
-  <h2 class="empty-state-title">Aucun magasin</h2>
-  <p>Ajoutez votre premier magasin pour y rattacher des boîtes mail.</p>
-  <a class="btn btn-primary" asp-page="Edit">Ajouter un magasin</a>
+  <span class="empty-state-icon"><svg class="icon" aria-hidden="true"><use href="#i-inbox" /></svg></span>
+  <h2 class="empty-state-title">Aucune boîte mail</h2>
+  <p>Ajoutez votre première boîte mail pour commencer à trier vos e-mails.</p>
+  <a class="btn btn-primary" asp-page="Edit">Ajouter une boîte mail</a>
 </div></div>
 ```
 
@@ -203,7 +203,7 @@ Use instead of an empty table. One sentence, one call to action when something c
 ```html
 @page
 @model ...
-@{ ViewData["Title"] = "Magasins"; }
+@{ ViewData["Title"] = "Boîtes mail"; }
 <div class="page-header"> ... </div>
 <!-- optional: <form class="toolbar"> ... </form> -->
 <!-- either the table or the empty state -->
@@ -221,9 +221,11 @@ The page `<title>` comes from `ViewData["Title"]` (French, no product name: the 
 - A fragment returned to htmx must be a partial (no layout). When it needs to update the top-bar pill, render `_WorkerPill` with `ViewData["Oob"] = true` only for htmx requests (see `_StatusBlock.cshtml`).
 - Confirm destructive actions with `hx-confirm="..."` in French.
 
-## Wording (French)
+## Wording (French, with English translation)
 
-Sentence case, accents everywhere (Boîtes mail, Catégories, Règles, Expéditeurs autorisés, Paramètres). Buttons name the action: Enregistrer, Ajouter un magasin, Supprimer, Annuler, Filtrer, Lancer maintenant. The same action keeps the same name everywhere. Errors say what happened and what to do. Empty states invite an action. Dates `dd/MM/yyyy HH:mm:ss`.
+French is the source language. Wrap every visible string in `T("...")` and add the English text to `src/Mailflow.Web/Localization/en/*.json` (see CONTRIBUTING.md); a missing entry falls back to French.
+
+Sentence case, accents everywhere (Boîtes mail, Catégories, Règles, Paramètres). Buttons name the action: Enregistrer, Ajouter une boîte mail, Supprimer, Annuler, Filtrer, Lancer maintenant. The same action keeps the same name everywhere. Errors say what happened and what to do. Empty states invite an action. Dates `dd/MM/yyyy HH:mm:ss`.
 
 ## Do / Don't
 
