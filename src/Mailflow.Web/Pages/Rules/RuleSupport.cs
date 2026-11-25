@@ -1,5 +1,6 @@
 using Mailflow.Domain.Entities;
 using Mailflow.Domain.Enums;
+using Mailflow.Web.Localization;
 
 namespace Mailflow.Web.Pages.Rules;
 
@@ -35,35 +36,35 @@ public sealed record RuleListVm(IReadOnlyList<Rule> Rules, IReadOnlyDictionary<i
 
 public static class RuleLabels
 {
-    public static readonly IReadOnlyDictionary<ConditionField, string> Fields = new Dictionary<ConditionField, string>
+    public static IReadOnlyDictionary<ConditionField, string> Fields => new Dictionary<ConditionField, string>
     {
-        [ConditionField.FromAddress] = "Expéditeur (adresse)",
-        [ConditionField.FromDomain] = "Expéditeur (domaine)",
-        [ConditionField.ToAddress] = "Destinataire",
-        [ConditionField.Subject] = "Objet",
-        [ConditionField.Body] = "Corps du message",
-        [ConditionField.AttachmentName] = "Nom de la pièce jointe",
-        [ConditionField.PdfText] = "Texte du PDF",
-        [ConditionField.HasPdf] = "Contient un PDF",
+        [ConditionField.FromAddress] = Loc.T("Expéditeur (adresse)"),
+        [ConditionField.FromDomain] = Loc.T("Expéditeur (domaine)"),
+        [ConditionField.ToAddress] = Loc.T("Destinataire"),
+        [ConditionField.Subject] = Loc.T("Objet"),
+        [ConditionField.Body] = Loc.T("Corps du message"),
+        [ConditionField.AttachmentName] = Loc.T("Nom de la pièce jointe"),
+        [ConditionField.PdfText] = Loc.T("Texte du PDF"),
+        [ConditionField.HasPdf] = Loc.T("Contient un PDF"),
     };
 
-    public static readonly IReadOnlyDictionary<ConditionOperator, string> Operators = new Dictionary<ConditionOperator, string>
+    public static IReadOnlyDictionary<ConditionOperator, string> Operators => new Dictionary<ConditionOperator, string>
     {
-        [ConditionOperator.Contains] = "contient",
-        [ConditionOperator.NotContains] = "ne contient pas",
-        [ConditionOperator.Equals] = "est égal à",
-        [ConditionOperator.StartsWith] = "commence par",
-        [ConditionOperator.EndsWith] = "se termine par",
-        [ConditionOperator.Regex] = "expression régulière",
+        [ConditionOperator.Contains] = Loc.T("contient"),
+        [ConditionOperator.NotContains] = Loc.T("ne contient pas"),
+        [ConditionOperator.Equals] = Loc.T("est égal à"),
+        [ConditionOperator.StartsWith] = Loc.T("commence par"),
+        [ConditionOperator.EndsWith] = Loc.T("se termine par"),
+        [ConditionOperator.Regex] = Loc.T("expression régulière"),
     };
 
-    public static readonly IReadOnlyDictionary<ActionType, string> Actions = new Dictionary<ActionType, string>
+    public static IReadOnlyDictionary<ActionType, string> Actions => new Dictionary<ActionType, string>
     {
-        [ActionType.SaveToCategory] = "Classer dans une catégorie",
-        [ActionType.Print] = "Imprimer",
-        [ActionType.MarkAsRead] = "Marquer comme lu",
-        [ActionType.MoveToFolder] = "Déplacer vers un dossier IMAP",
-        [ActionType.LeaveUnread] = "Laisser non lu",
-        [ActionType.Skip] = "Ignorer",
+        [ActionType.SaveToCategory] = Loc.T("Classer dans une catégorie"),
+        [ActionType.Print] = Loc.T("Imprimer"),
+        [ActionType.MarkAsRead] = Loc.T("Marquer comme lu"),
+        [ActionType.MoveToFolder] = Loc.T("Déplacer vers un dossier IMAP"),
+        [ActionType.LeaveUnread] = Loc.T("Laisser non lu"),
+        [ActionType.Skip] = Loc.T("Ignorer"),
     };
 }

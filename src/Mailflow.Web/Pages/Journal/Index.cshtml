@@ -1,17 +1,17 @@
 @page
 @model Mailflow.Web.Pages.Journal.IndexModel
-@{ ViewData["Title"] = "Journal"; }
+@{ ViewData["Title"] = T("Journal"); }
 <div class="page-header">
     <div>
-        <h1 class="page-title">Journal</h1>
-        <p class="page-subtitle">Chaque relève de boîte mail, avec sa durée et son résultat.</p>
+        <h1 class="page-title">@T("Journal")</h1>
+        <p class="page-subtitle">@T("Chaque relève de boîte mail, avec sa durée et son résultat.")</p>
     </div>
 </div>
-<form method="get" class="toolbar" role="search" aria-label="Filtrer le journal">
+<form method="get" class="toolbar" role="search" aria-label="@T("Filtrer le journal")">
     <div class="field">
-        <label class="form-label" for="MailboxId">Boîte mail</label>
+        <label class="form-label" for="MailboxId">@T("Boîte mail")</label>
         <select class="form-select" id="MailboxId" name="MailboxId">
-            <option value="">Toutes</option>
+            <option value="">@T("Toutes")</option>
             @foreach (var m in Model.Mailboxes)
             {
                 <option value="@m.Id" selected="@(Model.MailboxId == m.Id)">@m.DisplayName</option>
@@ -20,17 +20,17 @@
     </div>
     <div class="form-check form-switch">
         <input class="form-check-input" type="checkbox" role="switch" id="ErrorsOnly" name="ErrorsOnly" value="true" checked="@Model.ErrorsOnly" />
-        <label class="form-check-label" for="ErrorsOnly">Erreurs seulement</label>
+        <label class="form-check-label" for="ErrorsOnly">@T("Erreurs seulement")</label>
     </div>
-    <div class="toolbar-end"><button class="btn btn-primary" type="submit">Filtrer</button></div>
+    <div class="toolbar-end"><button class="btn btn-primary" type="submit">@T("Filtrer")</button></div>
 </form>
 @if (Model.Rows.Count == 0)
 {
     <div class="card">
         <div class="empty-state">
             <span class="empty-state-icon"><svg class="icon" aria-hidden="true"><use href="#i-list" /></svg></span>
-            <h2 class="empty-state-title">Aucune entrée</h2>
-            <p>Aucune relève ne correspond à ces filtres.</p>
+            <h2 class="empty-state-title">@T("Aucune entrée")</h2>
+            <p>@T("Aucune relève ne correspond à ces filtres.")</p>
         </div>
     </div>
 }
@@ -38,7 +38,7 @@ else
 {
     <div class="table-wrap">
         <table class="table align-middle">
-            <thead><tr><th scope="col">Date</th><th scope="col">Boîte mail</th><th scope="col" class="num">Durée</th><th scope="col" class="num">Messages</th><th scope="col" class="num">Documents</th><th scope="col" class="num">Imprimés</th><th scope="col">Résultat</th></tr></thead>
+            <thead><tr><th scope="col">@T("Date")</th><th scope="col">@T("Boîte mail")</th><th scope="col" class="num">@T("Durée")</th><th scope="col" class="num">@T("Messages")</th><th scope="col" class="num">@T("Documents")</th><th scope="col" class="num">@T("Imprimés")</th><th scope="col">@T("Résultat")</th></tr></thead>
             <tbody>
             @foreach (var r in Model.Rows)
             {
@@ -51,7 +51,7 @@ else
                     <td class="num">@r.Log.Printed</td>
                     <td class="cell-result">
                         @if (string.IsNullOrEmpty(r.Log.Error)) { <span class="badge badge-ok">OK</span> }
-                        else { <span class="badge badge-error">Erreur</span><span class="cell-sub">@r.Log.Error</span> }
+                        else { <span class="badge badge-error">@T("Erreur")</span><span class="cell-sub">@T(r.Log.Error)</span> }
                     </td>
                 </tr>
             }
@@ -61,14 +61,14 @@ else
 }
 @if (Model.TotalPages > 1)
 {
-    <nav aria-label="Pagination">
+    <nav aria-label="@T("Pagination")">
         <ul class="pagination">
             <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : "")">
-                <a class="page-link" asp-page="Index" asp-route-PageNumber="@(Model.PageNumber - 1)" asp-route-ErrorsOnly="@Model.ErrorsOnly" asp-route-MailboxId="@Model.MailboxId">Précédent</a>
+                <a class="page-link" asp-page="Index" asp-route-PageNumber="@(Model.PageNumber - 1)" asp-route-ErrorsOnly="@Model.ErrorsOnly" asp-route-MailboxId="@Model.MailboxId">@T("Précédent")</a>
             </li>
-            <li class="page-item disabled"><span class="page-link">Page @Model.PageNumber / @Model.TotalPages</span></li>
+            <li class="page-item disabled"><span class="page-link">@T("Page {0} / {1}", Model.PageNumber, Model.TotalPages)</span></li>
             <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : "")">
-                <a class="page-link" asp-page="Index" asp-route-PageNumber="@(Model.PageNumber + 1)" asp-route-ErrorsOnly="@Model.ErrorsOnly" asp-route-MailboxId="@Model.MailboxId">Suivant</a>
+                <a class="page-link" asp-page="Index" asp-route-PageNumber="@(Model.PageNumber + 1)" asp-route-ErrorsOnly="@Model.ErrorsOnly" asp-route-MailboxId="@Model.MailboxId">@T("Suivant")</a>
             </li>
         </ul>
     </nav>
