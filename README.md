@@ -408,7 +408,7 @@ Les PDF d'exemple (anonymisés) vont dans `tests/fixtures/`.
 .\deploy\build-release.ps1 -Version 1.0.0
 ```
 
-Le script produit `dist\Mailflow-1.0.0-win-x64.zip` (application autonome, aucun .NET à installer sur le PC du magasin). Ajoutez ensuite `SumatraPDF.exe` (version portable) dans `tools\SumatraPDF\` : voir [tools/SumatraPDF/README.md](tools/SumatraPDF/README.md).
+Le script produit `dist\Mailflow-Setup-1.0.0-win-x64.exe` (assistant d'installation FR/EN, sans droits administrateur, désinstallateur inclus) et le zip correspondant. Placez d'abord `SumatraPDF.exe` (version portable) dans `tools\SumatraPDF\` : voir [tools/SumatraPDF/README.md](tools/SumatraPDF/README.md). Installation silencieuse : `Mailflow-Setup-1.0.0-win-x64.exe /S /dir=C:\Mailflow /nostartup /nodesktop /nostartmenu /noRun /nowebview2 /lang=fr`. Désinstallation : `Uninstall.exe` (`/S` conserve les données, `/removedata` les supprime). Les scripts `install.ps1` / `uninstall.ps1` ci-dessous ne concernent que le mode service Windows.
 
 **Installer** (PC du magasin, PowerShell **administrateur**) :
 
