@@ -17,5 +17,6 @@
   "Système": "System",
   "Paramètres": "Settings",
   "Aide": "Help",
-  "Mailflow, accueil": "Mailflow, home"
+  "Mailflow, accueil": "Mailflow, home",
+  "IMAP personnalisé": "Custom IMAP"
 }

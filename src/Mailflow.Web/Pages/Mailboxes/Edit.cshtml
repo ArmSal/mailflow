@@ -43,7 +43,7 @@
                     @foreach (var p in ProviderPresets.All)
                     {
                         var selected = !string.IsNullOrEmpty(p.Host) && string.Equals(p.Host, Model.Input.Host, StringComparison.OrdinalIgnoreCase);
-                        <option value="@p.Key" selected="@selected" data-host="@p.Host" data-port="@p.Port" data-ssl="@(p.UseSsl ? "1" : "0")" data-domains="@p.Domains">@p.Label</option>
+                        <option value="@p.Key" selected="@selected" data-host="@p.Host" data-port="@p.Port" data-ssl="@(p.UseSsl ? "1" : "0")" data-domains="@p.Domains">@T(p.Label)</option>
                     }
                 </select></div>
             <div class="form-grid">
