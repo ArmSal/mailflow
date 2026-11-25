@@ -1,5 +1,6 @@
 using Mailflow.Application.Abstractions;
 using Mailflow.Domain.Entities;
+using Mailflow.Web.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +19,7 @@ public class IndexModel(IAppDbContext db) : PageModel
         if (c is null) return Content("");
         if (await db.Documents.AnyAsync(d => d.CategoryId == id) || await db.RuleActions.AnyAsync(a => a.CategoryId == id))
         {
-            return this.PartialWith("_CategoryRow", c, ("Error", "Suppression impossible : la catégorie est utilisée par des documents ou des règles."));
+            return this.PartialWith("_CategoryRow", c, ("Error", Loc.T("Suppression impossible : la catégorie est utilisée par des documents ou des règles.")));
         }
         db.Categories.Remove(c);
         await db.SaveChangesAsync();

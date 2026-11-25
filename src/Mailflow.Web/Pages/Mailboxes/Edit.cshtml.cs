@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Mailflow.Application.Abstractions;
 using Mailflow.Domain.Entities;
 using Mailflow.Domain.Enums;
+using Mailflow.Web.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -58,14 +59,14 @@ public class EditModel(IAppDbContext db, ISecretStore secrets, IMailClient mail,
         Input.Host = (Input.Host ?? "").Trim();
         Input.Username = (Input.Username ?? "").Trim();
         Input.InboxFolder = string.IsNullOrWhiteSpace(Input.InboxFolder) ? "INBOX" : Input.InboxFolder.Trim();
-        if (Input.DisplayName.Length == 0) ModelState.AddModelError("Input.DisplayName", "Le nom est requis.");
-        if (Input.Email.Length == 0 || !new EmailAddressAttribute().IsValid(Input.Email)) ModelState.AddModelError("Input.Email", "Adresse invalide.");
-        if (Input.Host.Length == 0) ModelState.AddModelError("Input.Host", "Le serveur est requis.");
+        if (Input.DisplayName.Length == 0) ModelState.AddModelError("Input.DisplayName", Loc.T("Le nom est requis."));
+        if (Input.Email.Length == 0 || !new EmailAddressAttribute().IsValid(Input.Email)) ModelState.AddModelError("Input.Email", Loc.T("Adresse invalide."));
+        if (Input.Host.Length == 0) ModelState.AddModelError("Input.Host", Loc.T("Le serveur est requis."));
         if (Input.Username.Length == 0) Input.Username = Input.Email;
-        if (Input.Port is < 1 or > 65535) ModelState.AddModelError("Input.Port", "Port : 1 à 65535.");
-        if (Input.CheckIntervalMinutes is < 1 or > 1440) ModelState.AddModelError("Input.CheckIntervalMinutes", "Intervalle : 1 à 1440 minutes.");
-        if (Input.LookbackDays is < 1 or > 365) ModelState.AddModelError("Input.LookbackDays", "Historique : 1 à 365 jours.");
-        if (!Enum.IsDefined(Input.DefaultAfterProcessing)) ModelState.AddModelError("Input.DefaultAfterProcessing", "Valeur invalide.");
+        if (Input.Port is < 1 or > 65535) ModelState.AddModelError("Input.Port", Loc.T("Port : 1 à 65535."));
+        if (Input.CheckIntervalMinutes is < 1 or > 1440) ModelState.AddModelError("Input.CheckIntervalMinutes", Loc.T("Intervalle : 1 à 1440 minutes."));
+        if (Input.LookbackDays is < 1 or > 365) ModelState.AddModelError("Input.LookbackDays", Loc.T("Historique : 1 à 365 jours."));
+        if (!Enum.IsDefined(Input.DefaultAfterProcessing)) ModelState.AddModelError("Input.DefaultAfterProcessing", Loc.T("Valeur invalide."));
 
         Mailbox? m = null;
         if (id is not null)
@@ -74,7 +75,7 @@ public class EditModel(IAppDbContext db, ISecretStore secrets, IMailClient mail,
             if (m is null) return NotFound();
         }
         if (string.IsNullOrEmpty(Input.Password) && string.IsNullOrEmpty(m?.EncryptedPassword))
-            ModelState.AddModelError("Input.Password", "Le mot de passe est requis.");
+            ModelState.AddModelError("Input.Password", Loc.T("Le mot de passe est requis."));
         if (!ModelState.IsValid) return Page();
 
         if (m is null) db.Mailboxes.Add(m = new Mailbox());
@@ -106,7 +107,7 @@ public class EditModel(IAppDbContext db, ISecretStore secrets, IMailClient mail,
             if (string.IsNullOrEmpty(password) && !string.IsNullOrEmpty(stored?.EncryptedPassword)) password = secrets.Unprotect(stored.EncryptedPassword);
 
             if (string.IsNullOrWhiteSpace(Input.Host) || Input.Port is < 1 or > 65535 || string.IsNullOrWhiteSpace(username) || string.IsNullOrEmpty(password))
-                result = new ConnectionTestResult(false, 0, [], "Renseignez l'adresse e-mail et le mot de passe (et le serveur sous « Réglages du serveur »).");
+                result = new ConnectionTestResult(false, 0, [], Loc.T("Renseignez l'adresse e-mail et le mot de passe (et le serveur sous « Réglages du serveur »)."));
             else
             {
                 var probe = new Mailbox

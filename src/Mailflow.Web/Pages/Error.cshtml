@@ -1,15 +1,15 @@
 @page
 @model ErrorModel
 @{
-    ViewData["Title"] = "Erreur";
+    ViewData["Title"] = T("Erreur");
 }
 
 <div class="auth-panel">
-    <h1>Une erreur est survenue</h1>
-    <p class="lead-text">La demande n'a pas pu être traitée. Réessayez ; si le problème persiste, consultez le journal.</p>
+    <h1>@T("Une erreur est survenue")</h1>
+    <p class="lead-text">@T("La demande n'a pas pu être traitée. Réessayez ; si le problème persiste, consultez le journal.")</p>
     @if (Model.ShowRequestId)
     {
-        <p class="small mb-3">Identifiant de la requête : <code>@Model.RequestId</code></p>
+        <p class="small mb-3">@T("Identifiant de la requête :") <code>@Model.RequestId</code></p>
     }
-    <a class="btn btn-primary" href="~/">Retour à l'accueil</a>
+    <a class="btn btn-primary" href="~/">@T("Retour à l'accueil")</a>
 </div>

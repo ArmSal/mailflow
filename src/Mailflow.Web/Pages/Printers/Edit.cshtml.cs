@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Mailflow.Application.Abstractions;
 using Mailflow.Domain.Entities;
 using Mailflow.Domain.Enums;
+using Mailflow.Web.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -38,10 +39,10 @@ public class EditModel(IAppDbContext db, IPrinterService printers) : PageModel
     {
         Input.DisplayName = (Input.DisplayName ?? "").Trim();
         Input.WindowsName = (Input.WindowsName ?? "").Trim();
-        if (Input.DisplayName.Length == 0) ModelState.AddModelError("Input.DisplayName", "Le nom est requis.");
-        if (Input.WindowsName.Length == 0) ModelState.AddModelError("Input.WindowsName", "L'imprimante Windows est requise.");
-        if (Input.DefaultCopies is < 1 or > 99) ModelState.AddModelError("Input.DefaultCopies", "Copies : 1 à 99.");
-        if (!Enum.IsDefined(Input.Kind)) ModelState.AddModelError("Input.Kind", "Type invalide.");
+        if (Input.DisplayName.Length == 0) ModelState.AddModelError("Input.DisplayName", Loc.T("Le nom est requis."));
+        if (Input.WindowsName.Length == 0) ModelState.AddModelError("Input.WindowsName", Loc.T("L'imprimante Windows est requise."));
+        if (Input.DefaultCopies is < 1 or > 99) ModelState.AddModelError("Input.DefaultCopies", Loc.T("Copies : 1 à 99."));
+        if (!Enum.IsDefined(Input.Kind)) ModelState.AddModelError("Input.Kind", Loc.T("Type invalide."));
         if (!ModelState.IsValid) return Page();
 
         Printer? p = null;
@@ -64,7 +65,7 @@ public class EditModel(IAppDbContext db, IPrinterService printers) : PageModel
     public IActionResult OnPostDetect()
     {
         try { return Partial("_Detected", printers.GetInstalledPrinters()); }
-        catch (Exception ex) { return Content("Détection impossible : " + System.Net.WebUtility.HtmlEncode(ex.Message), "text/html"); }
+        catch (Exception ex) { return Content(Loc.T("Détection impossible :") + " " + System.Net.WebUtility.HtmlEncode(ex.Message), "text/html"); }
     }
 
 }

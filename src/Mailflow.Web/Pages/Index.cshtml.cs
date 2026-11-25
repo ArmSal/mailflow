@@ -1,5 +1,6 @@
 using Mailflow.Application.Abstractions;
 using Mailflow.Domain.Entities;
+using Mailflow.Web.Localization;
 using Mailflow.Web.Worker;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -20,7 +21,7 @@ public class IndexModel(IAppDbContext db, WorkerState state, RunNowSignal signal
     public List<RunError> RunErrors { get; private set; } = [];
     public List<LatestDocument> Documents { get; private set; } = [];
 
-    public string StatusLabel => state.IsPaused ? "En pause" : state.IsRunning ? "En cours" : "En attente";
+    public string StatusLabel => state.IsPaused ? Loc.T("En pause") : state.IsRunning ? Loc.T("En cours") : Loc.T("En attente");
     public string StatusClass => state.IsPaused ? "bg-warning text-dark" : state.IsRunning ? "bg-primary" : "bg-success";
 
     public Task OnGetAsync() => LoadAsync();

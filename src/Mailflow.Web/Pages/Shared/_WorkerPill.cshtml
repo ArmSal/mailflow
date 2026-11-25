@@ -2,8 +2,8 @@
 @model WorkerState
 @{
     var state = Model.IsPaused ? "paused" : Model.IsRunning ? "running" : "idle";
-    var label = Model.IsPaused ? "En pause" : Model.IsRunning ? "Relève en cours" : "En attente";
+    var label = Model.IsPaused ? T("En pause") : Model.IsRunning ? T("Relève en cours") : T("En attente");
     var oob = ViewData["Oob"] as bool? == true;
 }
-<span id="worker-pill" class="worker-pill" data-state="@state" role="status" aria-label="État du traitement : @label"
+<span id="worker-pill" class="worker-pill" data-state="@state" role="status" aria-label="@T("État du traitement :") @label"
       hx-swap-oob="@(oob ? "true" : null)">@label</span>

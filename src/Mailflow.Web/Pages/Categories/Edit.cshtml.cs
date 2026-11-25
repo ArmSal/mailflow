@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Mailflow.Application.Abstractions;
 using Mailflow.Domain.Entities;
+using Mailflow.Web.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -35,11 +36,11 @@ public class EditModel(IAppDbContext db) : PageModel
     {
         Input.Name = (Input.Name ?? "").Trim();
         Input.LocalSubfolder = (Input.LocalSubfolder ?? "").Trim();
-        if (Input.Name.Length == 0) ModelState.AddModelError("Input.Name", "Le nom est requis.");
+        if (Input.Name.Length == 0) ModelState.AddModelError("Input.Name", Loc.T("Le nom est requis."));
         if (!CategoryPath.IsValid(Input.LocalSubfolder))
-            ModelState.AddModelError("Input.LocalSubfolder", "Sous-dossier invalide : chemin relatif sans « .. », sans lecteur ni caractères interdits.");
+            ModelState.AddModelError("Input.LocalSubfolder", Loc.T("Sous-dossier invalide : chemin relatif sans « .. », sans lecteur ni caractères interdits."));
         if (!System.Text.RegularExpressions.Regex.IsMatch(Input.Color ?? "", "^#[0-9a-fA-F]{6}$"))
-            ModelState.AddModelError("Input.Color", "Couleur invalide (#RRGGBB).");
+            ModelState.AddModelError("Input.Color", Loc.T("Couleur invalide (#RRGGBB)."));
         if (!ModelState.IsValid) return Page();
 
         Category? c = null;

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Mailflow.Web.Auth;
+using Mailflow.Web.Localization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -26,7 +27,7 @@ public class LoginModel(IAdminPasswordStore store, IPasswordHasher<object> hashe
         var result = hasher.VerifyHashedPassword(new object(), hash, Password ?? "");
         if (result == PasswordVerificationResult.Failed)
         {
-            Error = "Mot de passe incorrect.";
+            Error = Loc.T("Mot de passe incorrect.");
             return Page();
         }
 

@@ -1,4 +1,4 @@
 @model Mailflow.Web.Backup.BackupResult
 <div class="alert @(Model.Ok ? "alert-success" : "alert-danger") mb-0" role="@(Model.Ok ? "status" : "alert")">
-    @(Model.Ok ? "Sauvegarde créée : " + Model.FileName : "Échec de la sauvegarde : " + Model.Error)
+    @(Model.Ok ? T("Sauvegarde créée :") + " " + Model.FileName : T("Échec de la sauvegarde :") + " " + Model.Error)
 </div>

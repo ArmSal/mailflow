@@ -1,3 +1,5 @@
+using Mailflow.Web.Localization;
+
 namespace Mailflow.Web.Pages.Settings;
 
 /// <param name="Path">Current folder; empty means "list the drives".</param>
@@ -29,7 +31,7 @@ public static class FolderBrowser
         }
         catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
         {
-            return new FolderListing(full, parent, [], "Ce dossier n'est pas accessible.");
+            return new FolderListing(full, parent, [], Loc.T("Ce dossier n'est pas accessible."));
         }
     }
 }

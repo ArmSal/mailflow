@@ -4,6 +4,7 @@ using Mailflow.Domain.Enums;
 using Mailflow.Infrastructure.Storage;
 using Mailflow.Web.Auth;
 using Mailflow.Web.Backup;
+using Mailflow.Web.Localization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -75,7 +76,7 @@ public class IndexModel(
         await SettingsRules.SaveAsync(db, SettingsRules.HoursKey, Input.PrintMaxAgeHours.ToString(), ct);
         await SettingsRules.SaveAsync(db, SettingsRules.PrintEmailBodyKey, Input.PrintEmailBodyWithoutPdf ? "true" : "false", ct);
         await db.SaveChangesAsync(ct);
-        SettingsMessage = "Paramètres enregistrés.";
+        SettingsMessage = Loc.T("Paramètres enregistrés.");
         return Page();
     }
 
@@ -92,7 +93,7 @@ public class IndexModel(
         await SettingsRules.SaveAsync(db, SettingsRules.SenderCheckKey, mode, ct);
         await db.SaveChangesAsync(ct);
         SenderCheck = new SenderCheckInput { Mode = mode };
-        SenderCheckMessage = "Vérification de l'expéditeur enregistrée.";
+        SenderCheckMessage = Loc.T("Vérification de l'expéditeur enregistrée.");
         ModelState.Clear();
         return Page();
     }
@@ -103,14 +104,14 @@ public class IndexModel(
         await LoadAsync();
         var hash = await passwords.GetHashAsync(ct);
         if (string.IsNullOrEmpty(hash) || hasher.VerifyHashedPassword(new object(), hash, Password.Current ?? "") == PasswordVerificationResult.Failed)
-            PasswordMessage = "Le mot de passe actuel est incorrect.";
+            PasswordMessage = Loc.T("Le mot de passe actuel est incorrect.");
         else if (SettingsRules.ValidateNewPassword(Password.New, Password.Confirm) is { } error)
             PasswordMessage = error;
         else
         {
             await passwords.SetHashAsync(hasher.HashPassword(new object(), Password.New), ct);
             PasswordOk = true;
-            PasswordMessage = "Mot de passe modifié.";
+            PasswordMessage = Loc.T("Mot de passe modifié.");
         }
         Password = new();
         ModelState.Clear();

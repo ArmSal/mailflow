@@ -1,31 +1,31 @@
 @page "{id:int?}"
 @model Mailflow.Web.Pages.Categories.EditModel
-@{ ViewData["Title"] = "Catégorie"; }
+@{ ViewData["Title"] = T("Catégorie"); }
 <link rel="stylesheet" href="~/css/page-config.css" asp-append-version="true" />
 <div class="page-header">
     <div>
-        <h1 class="page-title">Catégorie</h1>
-        <p class="page-subtitle">Une catégorie détermine le dossier où un document est rangé.</p>
+        <h1 class="page-title">@T("Catégorie")</h1>
+        <p class="page-subtitle">@T("Une catégorie détermine le dossier où un document est rangé.")</p>
     </div>
 </div>
 <form method="post">
     <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
     <section class="form-section">
-        <h2 class="form-section-title">Identité</h2>
-        <p class="form-section-hint">Le nom et la couleur servent à repérer la catégorie dans les listes.</p>
+        <h2 class="form-section-title">@T("Identité")</h2>
+        <p class="form-section-hint">@T("Le nom et la couleur servent à repérer la catégorie dans les listes.")</p>
         <div class="form-grid">
-            <div class="field"><label class="form-label" asp-for="Input.Name">Nom</label><input class="form-control" asp-for="Input.Name" /><span class="field-validation-error" asp-validation-for="Input.Name"></span></div>
-            <div class="field"><label class="form-label" asp-for="Input.Color">Couleur</label><div class="color-field"><input type="color" class="form-control form-control-color" asp-for="Input.Color" /></div><span class="field-validation-error" asp-validation-for="Input.Color"></span></div>
+            <div class="field"><label class="form-label" asp-for="Input.Name">@T("Nom")</label><input class="form-control" asp-for="Input.Name" /><span class="field-validation-error" asp-validation-for="Input.Name"></span></div>
+            <div class="field"><label class="form-label" asp-for="Input.Color">@T("Couleur")</label><div class="color-field"><input type="color" class="form-control form-control-color" asp-for="Input.Color" /></div><span class="field-validation-error" asp-validation-for="Input.Color"></span></div>
         </div>
     </section>
     <section class="form-section">
-        <h2 class="form-section-title">Dossiers</h2>
-        <p class="form-section-hint">Où sont rangés les documents de cette catégorie.</p>
+        <h2 class="form-section-title">@T("Dossiers")</h2>
+        <p class="form-section-hint">@T("Où sont rangés les documents de cette catégorie.")</p>
         <div class="form-grid">
-            <div class="field"><label class="form-label" asp-for="Input.LocalSubfolder">Sous-dossier local</label><input class="form-control" asp-for="Input.LocalSubfolder" /><span class="form-text">Créé dans le dossier de documents.</span><span class="field-validation-error" asp-validation-for="Input.LocalSubfolder"></span></div>
-            <div class="field"><label class="form-label" asp-for="Input.ImapFolder">Dossier IMAP (optionnel)</label><input class="form-control" asp-for="Input.ImapFolder" /><span class="form-text">Où déplacer les messages traités.</span></div>
-            <div class="field"><label class="form-label" asp-for="Input.SortOrder">Ordre d'affichage</label><input type="number" class="form-control" asp-for="Input.SortOrder" /></div>
+            <div class="field"><label class="form-label" asp-for="Input.LocalSubfolder">@T("Sous-dossier local")</label><input class="form-control" asp-for="Input.LocalSubfolder" /><span class="form-text">@T("Créé dans le dossier de documents.")</span><span class="field-validation-error" asp-validation-for="Input.LocalSubfolder"></span></div>
+            <div class="field"><label class="form-label" asp-for="Input.ImapFolder">@T("Dossier IMAP (optionnel)")</label><input class="form-control" asp-for="Input.ImapFolder" /><span class="form-text">@T("Où déplacer les messages traités.")</span></div>
+            <div class="field"><label class="form-label" asp-for="Input.SortOrder">@T("Ordre d'affichage")</label><input type="number" class="form-control" asp-for="Input.SortOrder" /></div>
         </div>
     </section>
-    <div class="form-actions form-actions-sticky"><button class="btn btn-primary" type="submit">Enregistrer</button><a class="btn btn-ghost" asp-page="Index">Annuler</a></div>
+    <div class="form-actions form-actions-sticky"><button class="btn btn-primary" type="submit">@T("Enregistrer")</button><a class="btn btn-ghost" asp-page="Index">@T("Annuler")</a></div>
 </form>

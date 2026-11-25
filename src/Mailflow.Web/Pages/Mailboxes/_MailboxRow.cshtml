@@ -14,14 +14,14 @@
     <td class="text-nowrap">@(Model.LastCheckAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
     <td>
         <form method="post" hx-post="@Url.Page("/Mailboxes/Index", "Toggle", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML">
-            <button class="badge-toggle @(Model.IsActive ? "badge-ok" : "badge-neutral")" type="submit" title="@(Model.IsActive ? "Cliquer pour désactiver" : "Cliquer pour activer")">@(Model.IsActive ? "Actif" : "Inactif")</button>
+            <button class="badge-toggle @(Model.IsActive ? "badge-ok" : "badge-neutral")" type="submit" title="@(Model.IsActive ? T("Cliquer pour désactiver") : T("Cliquer pour activer"))">@(Model.IsActive ? T("Actif") : T("Inactif"))</button>
         </form>
     </td>
     <td>
         <div class="row-actions row-actions-nowrap">
-            <a class="btn btn-sm btn-secondary" asp-page="/Mailboxes/Edit" asp-route-id="@Model.Id">Modifier</a>
-            <form method="post" hx-post="@Url.Page("/Mailboxes/Index", "Delete", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Supprimer cette boîte mail ?">
-                <button class="btn btn-sm btn-danger" type="submit">Supprimer</button>
+            <a class="btn btn-sm btn-secondary" asp-page="/Mailboxes/Edit" asp-route-id="@Model.Id">@T("Modifier")</a>
+            <form method="post" hx-post="@Url.Page("/Mailboxes/Index", "Delete", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="@T("Supprimer cette boîte mail ?")">
+                <button class="btn btn-sm btn-danger" type="submit">@T("Supprimer")</button>
             </form>
         </div>
     </td>

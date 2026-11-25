@@ -11,31 +11,31 @@
         <partial name="_WorkerPill" model="Model.State" view-data='new ViewDataDictionary(ViewData) { ["Oob"] = true }' />
     }
 
-    <section class="card status-panel" data-state="@state" aria-label="État du traitement">
+    <section class="card status-panel" data-state="@state" aria-label="@T("État du traitement")">
         <div class="status-panel-main">
             <span class="status-orb"><svg class="icon" aria-hidden="true"><use href="#i-@icon" /></svg></span>
             <div>
                 <div class="status-panel-title">@Model.StatusLabel</div>
                 <div class="status-panel-meta">
-                    <span>Dernière relève : @Fmt(Model.State.LastRunUtc)</span>
-                    <span>Prochaine relève : @Fmt(Model.State.NextRunUtc)</span>
+                    <span>@T("Dernière relève :") @Fmt(Model.State.LastRunUtc)</span>
+                    <span>@T("Prochaine relève :") @Fmt(Model.State.NextRunUtc)</span>
                 </div>
             </div>
         </div>
         <div class="status-panel-actions">
             <form method="post" hx-post="@Url.Page("/Index", "RunNow")" hx-target="@target" hx-swap="outerHTML">
-                <button class="btn btn-primary" type="submit"><svg class="icon" aria-hidden="true"><use href="#i-play" /></svg>Lancer maintenant</button>
+                <button class="btn btn-primary" type="submit"><svg class="icon" aria-hidden="true"><use href="#i-play" /></svg>@T("Lancer maintenant")</button>
             </form>
             @if (Model.State.IsPaused)
             {
                 <form method="post" hx-post="@Url.Page("/Index", "Resume")" hx-target="@target" hx-swap="outerHTML">
-                    <button class="btn btn-secondary" type="submit"><svg class="icon" aria-hidden="true"><use href="#i-play" /></svg>Reprendre</button>
+                    <button class="btn btn-secondary" type="submit"><svg class="icon" aria-hidden="true"><use href="#i-play" /></svg>@T("Reprendre")</button>
                 </form>
             }
             else
             {
                 <form method="post" hx-post="@Url.Page("/Index", "Pause")" hx-target="@target" hx-swap="outerHTML">
-                    <button class="btn btn-secondary" type="submit"><svg class="icon" aria-hidden="true"><use href="#i-pause" /></svg>Pause</button>
+                    <button class="btn btn-secondary" type="submit"><svg class="icon" aria-hidden="true"><use href="#i-pause" /></svg>@T("Pause")</button>
                 </form>
             }
         </div>
@@ -46,26 +46,26 @@
     </section>
 
     <section aria-labelledby="today-title">
-        <h2 id="today-title" class="section-title">Aujourd'hui</h2>
+        <h2 id="today-title" class="section-title">@T("Aujourd'hui")</h2>
         <div class="stat-grid">
-            <div class="stat"><div><div class="stat-label">Messages traités</div><div class="stat-value">@Model.Today.Messages</div></div><span class="stat-icon"><svg class="icon" aria-hidden="true"><use href="#i-inbox" /></svg></span></div>
-            <div class="stat"><div><div class="stat-label">Documents enregistrés</div><div class="stat-value">@Model.Today.Documents</div></div><span class="stat-icon"><svg class="icon" aria-hidden="true"><use href="#i-file" /></svg></span></div>
-            <div class="stat"><div><div class="stat-label">Imprimés</div><div class="stat-value">@Model.Today.Printed</div></div><span class="stat-icon"><svg class="icon" aria-hidden="true"><use href="#i-printer" /></svg></span></div>
-            <div class="stat @(Model.Today.Errors > 0 ? "stat--error" : "")"><div><div class="stat-label">Erreurs</div><div class="stat-value">@Model.Today.Errors</div></div><span class="stat-icon"><svg class="icon" aria-hidden="true"><use href="#i-alert" /></svg></span></div>
+            <div class="stat"><div><div class="stat-label">@T("Messages traités")</div><div class="stat-value">@Model.Today.Messages</div></div><span class="stat-icon"><svg class="icon" aria-hidden="true"><use href="#i-inbox" /></svg></span></div>
+            <div class="stat"><div><div class="stat-label">@T("Documents enregistrés")</div><div class="stat-value">@Model.Today.Documents</div></div><span class="stat-icon"><svg class="icon" aria-hidden="true"><use href="#i-file" /></svg></span></div>
+            <div class="stat"><div><div class="stat-label">@T("Imprimés")</div><div class="stat-value">@Model.Today.Printed</div></div><span class="stat-icon"><svg class="icon" aria-hidden="true"><use href="#i-printer" /></svg></span></div>
+            <div class="stat @(Model.Today.Errors > 0 ? "stat--error" : "")"><div><div class="stat-label">@T("Erreurs")</div><div class="stat-value">@Model.Today.Errors</div></div><span class="stat-icon"><svg class="icon" aria-hidden="true"><use href="#i-alert" /></svg></span></div>
         </div>
     </section>
 
     <div class="split">
         <section aria-labelledby="docs-title">
-            <h2 id="docs-title" class="section-title">Derniers documents</h2>
+            <h2 id="docs-title" class="section-title">@T("Derniers documents")</h2>
             @if (Model.Documents.Count == 0)
             {
                 <div class="card">
                     <div class="empty-state">
                         <span class="empty-state-icon"><svg class="icon" aria-hidden="true"><use href="#i-file" /></svg></span>
-                        <h3 class="empty-state-title">Aucun document pour le moment</h3>
-                        <p>Les pièces jointes PDF apparaissent ici dès qu'une boîte mail a été relevée.</p>
-                        <a class="btn btn-primary" href="~/Mailboxes">Configurer une boîte mail</a>
+                        <h3 class="empty-state-title">@T("Aucun document pour le moment")</h3>
+                        <p>@T("Les pièces jointes PDF apparaissent ici dès qu'une boîte mail a été relevée.")</p>
+                        <a class="btn btn-primary" href="~/Mailboxes">@T("Configurer une boîte mail")</a>
                     </div>
                 </div>
             }
@@ -73,7 +73,7 @@
             {
                 <div class="table-wrap">
                     <table class="table align-middle">
-                        <thead><tr><th scope="col">Nom</th><th scope="col">Catégorie</th><th scope="col">Impression</th></tr></thead>
+                        <thead><tr><th scope="col">@T("Nom")</th><th scope="col">@T("Catégorie")</th><th scope="col">@T("Impression")</th></tr></thead>
                         <tbody>
                         @foreach (var d in Model.Documents)
                         {
@@ -81,9 +81,9 @@
                                 <td class="cell-clip" title="@d.Name">@d.Name</td>
                                 <td>@d.Category</td>
                                 <td>
-                                    @if (d.PrintError != null) { <span class="badge badge-error">Erreur</span><span class="cell-sub">@d.PrintError</span> }
-                                    else if (d.PrintedAt != null) { <span class="badge badge-ok">Imprimé</span><span class="cell-sub">@Fmt(d.PrintedAt)</span> }
-                                    else { <span class="badge badge-neutral">Non imprimé</span> }
+                                    @if (d.PrintError != null) { <span class="badge badge-error">@T("Erreur")</span><span class="cell-sub">@d.PrintError</span> }
+                                    else if (d.PrintedAt != null) { <span class="badge badge-ok">@T("Imprimé")</span><span class="cell-sub">@Fmt(d.PrintedAt)</span> }
+                                    else { <span class="badge badge-neutral">@T("Non imprimé")</span> }
                                 </td>
                             </tr>
                         }
@@ -94,14 +94,14 @@
         </section>
 
         <section aria-labelledby="errors-title">
-            <h2 id="errors-title" class="section-title">Dernières erreurs</h2>
+            <h2 id="errors-title" class="section-title">@T("Dernières erreurs")</h2>
             <div class="card">
                 @if (Model.MailboxErrors.Count == 0 && Model.RunErrors.Count == 0)
                 {
                     <div class="empty-state">
                         <span class="empty-state-icon"><svg class="icon" aria-hidden="true"><use href="#i-check" /></svg></span>
-                        <h3 class="empty-state-title">Aucune erreur</h3>
-                        <p>Tout fonctionne normalement.</p>
+                        <h3 class="empty-state-title">@T("Aucune erreur")</h3>
+                        <p>@T("Tout fonctionne normalement.")</p>
                     </div>
                 }
                 else

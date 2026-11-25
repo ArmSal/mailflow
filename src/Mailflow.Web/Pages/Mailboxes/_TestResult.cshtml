@@ -2,10 +2,10 @@
 @if (Model.Success)
 {
     <div class="alert alert-success" role="status">
-        <span class="alert-title">Connexion réussie : @Model.MessageCount message(s) dans la boîte.</span>
+        <span class="alert-title">@T("Connexion réussie : {0} message(s) dans la boîte.", Model.MessageCount)</span>
         @if (Model.Folders.Count > 0)
         {
-            <span class="small">Dossiers disponibles :</span>
+            <span class="small">@T("Dossiers disponibles :")</span>
             <ul class="chip-list">
                 @foreach (var f in Model.Folders) { <li class="chip">@f</li> }
             </ul>
@@ -14,9 +14,9 @@
 }
 else if (ViewData["Hint"] is string hint)
 {
-    <div class="alert alert-danger" role="alert"><span class="alert-title">Échec de la connexion</span>@hint<span class="small d-block mt-1">@Model.Error</span></div>
+    <div class="alert alert-danger" role="alert"><span class="alert-title">@T("Échec de la connexion")</span>@hint<span class="small d-block mt-1">@Model.Error</span></div>
 }
 else
 {
-    <div class="alert alert-danger" role="alert"><span class="alert-title">Échec de la connexion</span>@Model.Error</div>
+    <div class="alert alert-danger" role="alert"><span class="alert-title">@T("Échec de la connexion")</span>@Model.Error</div>
 }

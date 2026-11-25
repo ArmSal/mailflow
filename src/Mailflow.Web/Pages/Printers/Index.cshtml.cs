@@ -1,5 +1,6 @@
 using Mailflow.Application.Abstractions;
 using Mailflow.Domain.Entities;
+using Mailflow.Web.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -31,7 +32,7 @@ public class IndexModel(IAppDbContext db, IPrinterService printers, ITestPagePro
         if (await db.Documents.AnyAsync(d => d.PrinterId == id) || await db.RuleActions.AnyAsync(a => a.PrinterId == id))
         {
             return this.PartialWith("_PrinterRow", p,
-                ("Error", "Suppression impossible : l'imprimante est utilisée. Désactivez-la."));
+                ("Error", Loc.T("Suppression impossible : l'imprimante est utilisée. Désactivez-la.")));
         }
         db.Printers.Remove(p);
         await db.SaveChangesAsync();
@@ -48,12 +49,12 @@ public class IndexModel(IAppDbContext db, IPrinterService printers, ITestPagePro
         {
             await printers.PrintAsync(testPage.GetTestPagePath(), p.WindowsName, 1, p.Duplex, ct);
             ok = true;
-            message = "Page de test envoyée.";
+            message = Loc.T("Page de test envoyée.");
         }
         catch (Exception ex)
         {
             ok = false;
-            message = "Échec de l'impression : " + ex.Message;
+            message = Loc.T("Échec de l'impression :") + " " + ex.Message;
         }
         return this.PartialWith("_TestPrintResult", null, ("Ok", ok), ("Message", message));
     }

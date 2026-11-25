@@ -1,14 +1,14 @@
 @page
 @model LogoutModel
 @{
-    ViewData["Title"] = "Déconnexion";
+    ViewData["Title"] = T("Déconnexion");
 }
 
-<div class="page-header"><h1 class="page-title">Déconnexion</h1></div>
+<div class="page-header"><h1 class="page-title">@T("Déconnexion")</h1></div>
 <form method="post" class="form-section">
-    <p>Se déconnecter de Mailflow ?</p>
+    <p>@T("Se déconnecter de Mailflow ?")</p>
     <div class="form-actions mb-3">
-        <button type="submit" class="btn btn-primary">Déconnexion</button>
-        <a class="btn btn-ghost" href="~/">Annuler</a>
+        <button type="submit" class="btn btn-primary">@T("Déconnexion")</button>
+        <a class="btn btn-ghost" href="~/">@T("Annuler")</a>
     </div>
 </form>

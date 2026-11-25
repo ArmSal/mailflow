@@ -1,28 +1,28 @@
 @page
 @model Mailflow.Web.Pages.Printers.IndexModel
-@{ ViewData["Title"] = "Imprimantes"; }
+@{ ViewData["Title"] = T("Imprimantes"); }
 <link rel="stylesheet" href="~/css/page-config.css" asp-append-version="true" />
 <div class="page-header">
     <div>
-        <h1 class="page-title">Imprimantes</h1>
-        <p class="page-subtitle">Les imprimantes Windows utilisées pour imprimer les documents reçus.</p>
+        <h1 class="page-title">@T("Imprimantes")</h1>
+        <p class="page-subtitle">@T("Les imprimantes Windows utilisées pour imprimer les documents reçus.")</p>
     </div>
-    <div class="page-actions"><a class="btn btn-primary" asp-page="Edit"><svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg>Ajouter une imprimante</a></div>
+    <div class="page-actions"><a class="btn btn-primary" asp-page="Edit"><svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg>@T("Ajouter une imprimante")</a></div>
 </div>
 @if (!Model.Items.Any())
 {
     <div class="card"><div class="empty-state">
         <span class="empty-state-icon"><svg class="icon" aria-hidden="true"><use href="#i-printer" /></svg></span>
-        <h2 class="empty-state-title">Aucune imprimante</h2>
-        <p>Ajoutez une imprimante pour imprimer automatiquement les documents reçus.</p>
-        <a class="btn btn-primary" asp-page="Edit">Ajouter une imprimante</a>
+        <h2 class="empty-state-title">@T("Aucune imprimante")</h2>
+        <p>@T("Ajoutez une imprimante pour imprimer automatiquement les documents reçus.")</p>
+        <a class="btn btn-primary" asp-page="Edit">@T("Ajouter une imprimante")</a>
     </div></div>
 }
 else
 {
 <div class="table-wrap">
     <table class="table align-middle">
-        <thead><tr><th scope="col">Nom</th><th scope="col">Impression</th><th scope="col">Statut</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+        <thead><tr><th scope="col">@T("Nom")</th><th scope="col">@T("Impression")</th><th scope="col">@T("Statut")</th><th scope="col"><span class="visually-hidden">@T("Actions")</span></th></tr></thead>
         <tbody>
         @foreach (var p in Model.Items)
         {

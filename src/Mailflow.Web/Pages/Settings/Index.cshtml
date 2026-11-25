@@ -1,104 +1,104 @@
 @page
 @model Mailflow.Web.Pages.Settings.IndexModel
-@{ ViewData["Title"] = "Paramètres"; }
+@{ ViewData["Title"] = T("Paramètres"); }
 <link rel="stylesheet" href="~/css/page-activity.css" asp-append-version="true" />
 <div class="page-header">
     <div>
-        <h1 class="page-title">Paramètres</h1>
-        <p class="page-subtitle">Stockage des documents, impression, sécurité et sauvegarde.</p>
+        <h1 class="page-title">@T("Paramètres")</h1>
+        <p class="page-subtitle">@T("Stockage des documents, impression, sécurité et sauvegarde.")</p>
     </div>
 </div>
 
 <div class="settings-stack">
 <form method="post" asp-page-handler="Settings">
     @if (Model.SettingsMessage is not null) { <div class="alert alert-success" role="status">@Model.SettingsMessage</div> }
-    @if (ViewData.ModelState.Keys.Any(k => k.StartsWith("Input.") && ViewData.ModelState[k]!.Errors.Count > 0)) { <div class="alert alert-danger" role="alert">Certains paramètres sont invalides : corrigez les champs signalés puis enregistrez de nouveau.</div> }
+    @if (ViewData.ModelState.Keys.Any(k => k.StartsWith("Input.") && ViewData.ModelState[k]!.Errors.Count > 0)) { <div class="alert alert-danger" role="alert">@T("Certains paramètres sont invalides : corrigez les champs signalés puis enregistrez de nouveau.")</div> }
     <section class="form-section">
-        <h2 class="form-section-title">Dossier des documents</h2>
-        <p class="form-section-hint">Où sont archivés les PDF reçus.</p>
+        <h2 class="form-section-title">@T("Dossier des documents")</h2>
+        <p class="form-section-hint">@T("Où sont archivés les PDF reçus.")</p>
         <div class="field">
-            <label class="form-label" asp-for="Input.DocumentsRoot">Dossier des documents</label>
+            <label class="form-label" asp-for="Input.DocumentsRoot">@T("Dossier des documents")</label>
             <div class="d-flex gap-2">
                 <input class="form-control" asp-for="Input.DocumentsRoot" />
-                <button type="button" class="btn btn-secondary text-nowrap" id="browse-folder">Parcourir…</button>
+                <button type="button" class="btn btn-secondary text-nowrap" id="browse-folder">@T("Parcourir…")</button>
             </div>
             <div id="folder-browser"></div>
             <span class="field-validation-error" asp-validation-for="Input.DocumentsRoot"></span>
         </div>
     </section>
     <section class="form-section">
-        <h2 class="form-section-title">Nom de fichier</h2>
-        <p class="form-section-hint">Comment chaque document est nommé une fois archivé.</p>
+        <h2 class="form-section-title">@T("Nom de fichier")</h2>
+        <p class="form-section-hint">@T("Comment chaque document est nommé une fois archivé.")</p>
         <div class="field">
-            <label class="form-label" asp-for="Input.FileNamePattern">Modèle de nom de fichier</label>
+            <label class="form-label" asp-for="Input.FileNamePattern">@T("Modèle de nom de fichier")</label>
             <input class="form-control" asp-for="Input.FileNamePattern" />
-            <span class="form-text">Doit contenir <code>{OriginalName}</code>. Jetons : <code>{Category}</code>, <code>{Supplier}</code>, <code>{OriginalName}</code>, <code>{yyyy}</code>, <code>{MM}</code>, <code>{yyyy-MM-dd}</code>.</span>
+            <span class="form-text">@T("Doit contenir") <code>{OriginalName}</code>. @T("Jetons :") <code>{Category}</code>, <code>{Supplier}</code>, <code>{OriginalName}</code>, <code>{yyyy}</code>, <code>{MM}</code>, <code>{yyyy-MM-dd}</code>.</span>
             <span class="field-validation-error" asp-validation-for="Input.FileNamePattern"></span>
         </div>
     </section>
     <section class="form-section">
-        <h2 class="form-section-title">Impression</h2>
-        <p class="form-section-hint">Les documents plus anciens que cette durée ne sont pas imprimés automatiquement.</p>
+        <h2 class="form-section-title">@T("Impression")</h2>
+        <p class="form-section-hint">@T("Les documents plus anciens que cette durée ne sont pas imprimés automatiquement.")</p>
         <div class="field">
-            <label class="form-label" asp-for="Input.PrintMaxAgeHours">Âge maximum d'impression (heures, 1 à 168)</label>
+            <label class="form-label" asp-for="Input.PrintMaxAgeHours">@T("Âge maximum d'impression (heures, 1 à 168)")</label>
             <input type="number" class="form-control" asp-for="Input.PrintMaxAgeHours" />
             <span class="field-validation-error" asp-validation-for="Input.PrintMaxAgeHours"></span>
         </div>
         <div class="form-check form-switch mt-3">
             <input class="form-check-input" type="checkbox" role="switch" asp-for="Input.PrintEmailBodyWithoutPdf" />
-            <label class="form-check-label" asp-for="Input.PrintEmailBodyWithoutPdf">Imprimer le contenu de l'e-mail lorsqu'aucun PDF n'est joint</label>
-            <div class="form-text">Si une règle d'impression correspond à un e-mail sans pièce jointe PDF, Mailflow génère un PDF avec son texte et l'envoie à l'imprimante.</div>
+            <label class="form-check-label" asp-for="Input.PrintEmailBodyWithoutPdf">@T("Imprimer le contenu de l'e-mail lorsqu'aucun PDF n'est joint")</label>
+            <div class="form-text">@T("Si une règle d'impression correspond à un e-mail sans pièce jointe PDF, Mailflow génère un PDF avec son texte et l'envoie à l'imprimante.")</div>
         </div>
     </section>
-    <div class="form-actions mb-4"><button class="btn btn-primary" type="submit">Enregistrer</button></div>
+    <div class="form-actions mb-4"><button class="btn btn-primary" type="submit">@T("Enregistrer")</button></div>
 </form>
 
 <form method="post" asp-page-handler="SenderCheck">
     <section class="form-section">
-        <h2 class="form-section-title">Vérification de l'expéditeur avant impression</h2>
-        <p class="form-section-hint">L'adresse d'expédition d'un e-mail peut être falsifiée. Cette vérification s'appuie sur le verdict DKIM/DMARC du serveur de messagerie qui a reçu le message.</p>
+        <h2 class="form-section-title">@T("Vérification de l'expéditeur avant impression")</h2>
+        <p class="form-section-hint">@T("L'adresse d'expédition d'un e-mail peut être falsifiée. Cette vérification s'appuie sur le verdict DKIM/DMARC du serveur de messagerie qui a reçu le message.")</p>
         @if (Model.SenderCheckMessage is not null) { <div class="alert alert-success" role="status">@Model.SenderCheckMessage</div> }
         @if (ViewData.ModelState.Keys.Any(k => k.StartsWith("SenderCheck.") && ViewData.ModelState[k]!.Errors.Count > 0)) { <div class="alert alert-danger" role="alert">@ViewData.ModelState["SenderCheck.Mode"]!.Errors[0].ErrorMessage</div> }
         <div class="field">
-            <label class="form-label" asp-for="SenderCheck.Mode">Mode de vérification</label>
+            <label class="form-label" asp-for="SenderCheck.Mode">@T("Mode de vérification")</label>
             <select class="form-select" asp-for="SenderCheck.Mode" aria-describedby="sender-check-help">
-                <option value="Off" selected="@(Model.SenderCheck.Mode == "Off")">Désactivée</option>
-                <option value="Warn" selected="@(Model.SenderCheck.Mode == "Warn")">Avertir (recommandé)</option>
-                <option value="Strict" selected="@(Model.SenderCheck.Mode == "Strict")">Stricte</option>
+                <option value="Off" selected="@(Model.SenderCheck.Mode == "Off")">@T("Désactivée")</option>
+                <option value="Warn" selected="@(Model.SenderCheck.Mode == "Warn")">@T("Avertir (recommandé)")</option>
+                <option value="Strict" selected="@(Model.SenderCheck.Mode == "Strict")">@T("Stricte")</option>
             </select>
             <div id="sender-check-help" class="form-text">
                 <ul class="mb-1">
-                    <li><strong>Désactivée</strong> : aucune vérification, impression comme avant.</li>
-                    <li><strong>Avertir</strong> : impression comme avant, mais l'Historique signale les expéditeurs non vérifiés.</li>
-                    <li><strong>Stricte</strong> : seuls les expéditeurs vérifiés sont imprimés ; les autres documents sont archivés sans impression (« Réimprimer » reste possible).</li>
+                    <li><strong>@T("Désactivée")</strong>@T(" : aucune vérification, impression comme avant.")</li>
+                    <li><strong>@T("Avertir")</strong>@T(" : impression comme avant, mais l'Historique signale les expéditeurs non vérifiés.")</li>
+                    <li><strong>@T("Stricte")</strong>@T(" : seuls les expéditeurs vérifiés sont imprimés ; les autres documents sont archivés sans impression (« Réimprimer » reste possible).")</li>
                 </ul>
-                Un serveur de messagerie qui ne fournit pas ce verdict donne « non vérifié » : en mode Stricte, aucune impression automatique ne partirait pour ses messages. Essayez d'abord Avertir et consultez la colonne « Impression » de l'Historique. Le verdict n'est fiable que dans la mesure où le serveur qui reçoit les messages l'est.
+                @T("Un serveur de messagerie qui ne fournit pas ce verdict donne « non vérifié » : en mode Stricte, aucune impression automatique ne partirait pour ses messages. Essayez d'abord Avertir et consultez la colonne « Impression » de l'Historique. Le verdict n'est fiable que dans la mesure où le serveur qui reçoit les messages l'est.")
             </div>
         </div>
     </section>
-    <div class="form-actions mb-4"><button class="btn btn-primary" type="submit">Enregistrer</button></div>
+    <div class="form-actions mb-4"><button class="btn btn-primary" type="submit">@T("Enregistrer")</button></div>
 </form>
 
 <form method="post" asp-page-handler="Password">
     <section class="form-section">
-        <h2 class="form-section-title">Sécurité</h2>
-        <p class="form-section-hint">Changer le mot de passe administrateur.</p>
+        <h2 class="form-section-title">@T("Sécurité")</h2>
+        <p class="form-section-hint">@T("Changer le mot de passe administrateur.")</p>
         @if (Model.PasswordMessage is not null) { <div class="alert @(Model.PasswordOk ? "alert-success" : "alert-danger")" role="@(Model.PasswordOk ? "status" : "alert")">@Model.PasswordMessage</div> }
-        <div class="field"><label class="form-label" asp-for="Password.Current">Mot de passe actuel</label><input class="form-control" asp-for="Password.Current" autocomplete="current-password" /></div>
+        <div class="field"><label class="form-label" asp-for="Password.Current">@T("Mot de passe actuel")</label><input class="form-control" asp-for="Password.Current" autocomplete="current-password" /></div>
         <div class="form-grid">
-            <div class="field"><label class="form-label" asp-for="Password.New">Nouveau mot de passe (8 caractères minimum)</label><input class="form-control" asp-for="Password.New" autocomplete="new-password" /></div>
-            <div class="field"><label class="form-label" asp-for="Password.Confirm">Confirmer le nouveau mot de passe</label><input class="form-control" asp-for="Password.Confirm" autocomplete="new-password" /></div>
+            <div class="field"><label class="form-label" asp-for="Password.New">@T("Nouveau mot de passe (8 caractères minimum)")</label><input class="form-control" asp-for="Password.New" autocomplete="new-password" /></div>
+            <div class="field"><label class="form-label" asp-for="Password.Confirm">@T("Confirmer le nouveau mot de passe")</label><input class="form-control" asp-for="Password.Confirm" autocomplete="new-password" /></div>
         </div>
     </section>
-    <div class="form-actions mb-4"><button class="btn btn-primary" type="submit">Changer le mot de passe</button></div>
+    <div class="form-actions mb-4"><button class="btn btn-primary" type="submit">@T("Changer le mot de passe")</button></div>
 </form>
 
 <section class="form-section">
-    <h2 class="form-section-title">Sauvegarde</h2>
-    <p class="form-section-hint">Une sauvegarde de la base est créée chaque nuit à 02:00 dans le dossier « backups » des documents (14 conservées).</p>
+    <h2 class="form-section-title">@T("Sauvegarde")</h2>
+    <p class="form-section-hint">@T("Une sauvegarde de la base est créée chaque nuit à 02:00 dans le dossier « backups » des documents (14 conservées).")</p>
     <div id="backup-result" aria-live="polite"></div>
     <form method="post" asp-page-handler="Backup" hx-post="@Url.Page("/Settings/Index", "Backup")" hx-target="#backup-result" hx-swap="innerHTML" class="mb-3">
-        <button class="btn btn-secondary" type="submit">Sauvegarder maintenant</button>
+        <button class="btn btn-secondary" type="submit">@T("Sauvegarder maintenant")</button>
     </form>
 </section>
 </div>

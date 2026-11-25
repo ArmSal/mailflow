@@ -1,6 +1,7 @@
 using Mailflow.Application.Abstractions;
 using Mailflow.Domain.Entities;
 using Mailflow.Domain.Enums;
+using Mailflow.Web.Localization;
 using Microsoft.EntityFrameworkCore;
 
 namespace Mailflow.Web.Pages.Settings;
@@ -14,10 +15,10 @@ public static class SettingsRules
     /// <summary>Absolute, no '..'; creates the folder and checks it is writable. Returns an error or null.</summary>
     public static string? ValidateRoot(string? root)
     {
-        if (string.IsNullOrWhiteSpace(root)) return "Le dossier des documents est obligatoire.";
+        if (string.IsNullOrWhiteSpace(root)) return Loc.T("Le dossier des documents est obligatoire.");
         root = root.Trim();
-        if (!Path.IsPathFullyQualified(root)) return "Le dossier des documents doit être un chemin absolu.";
-        if (HasTraversal(root)) return "Le chemin ne doit pas contenir « .. ».";
+        if (!Path.IsPathFullyQualified(root)) return Loc.T("Le dossier des documents doit être un chemin absolu.");
+        if (HasTraversal(root)) return Loc.T("Le chemin ne doit pas contenir « .. ».");
         try
         {
             Directory.CreateDirectory(root);
@@ -27,23 +28,23 @@ public static class SettingsRules
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {
-            return "Dossier inaccessible en écriture : " + ex.Message;
+            return Loc.T("Dossier inaccessible en écriture :") + " " + ex.Message;
         }
         return null;
     }
 
     public static string? ValidatePattern(string? pattern)
     {
-        if (string.IsNullOrWhiteSpace(pattern)) return "Le modèle de nom de fichier est obligatoire.";
-        if (!pattern.Contains("{OriginalName}")) return "Le modèle doit contenir {OriginalName}.";
-        if (HasTraversal(pattern)) return "Le modèle ne doit pas contenir « .. ».";
+        if (string.IsNullOrWhiteSpace(pattern)) return Loc.T("Le modèle de nom de fichier est obligatoire.");
+        if (!pattern.Contains("{OriginalName}")) return Loc.T("Le modèle doit contenir {OriginalName}.");
+        if (HasTraversal(pattern)) return Loc.T("Le modèle ne doit pas contenir « .. ».");
         if (Path.IsPathRooted(pattern) || pattern.StartsWith('/') || pattern.StartsWith('\\') || pattern.Split('/', '\\').Any(p => p.Contains(':')))
-            return "Le modèle ne doit pas être un chemin absolu.";
+            return Loc.T("Le modèle ne doit pas être un chemin absolu.");
         return null;
     }
 
     public static string? ValidateHours(int hours)
-        => hours is < 1 or > 168 ? "La durée doit être comprise entre 1 et 168 heures." : null;
+        => hours is < 1 or > 168 ? Loc.T("La durée doit être comprise entre 1 et 168 heures.") : null;
 
     /// <summary>True unless explicitly disabled ("false").</summary>
     public static bool ParsePrintEmailBody(string? value)
@@ -54,12 +55,12 @@ public static class SettingsRules
         => Enum.TryParse<SenderCheckMode>(value, out var m) && Enum.IsDefined(m) && !int.TryParse(value, out _) ? m : SenderCheckMode.Warn;
 
     public static string? ValidateSenderCheck(string? value)
-        => Enum.TryParse<SenderCheckMode>(value, out var m) && Enum.IsDefined(m) && !int.TryParse(value, out _) ? null : "Choisissez un mode de vérification valide.";
+        => Enum.TryParse<SenderCheckMode>(value, out var m) && Enum.IsDefined(m) && !int.TryParse(value, out _) ? null : Loc.T("Choisissez un mode de vérification valide.");
 
     public static string? ValidateNewPassword(string? password, string? confirm)
     {
-        if ((password ?? "").Length < 8) return "Le nouveau mot de passe doit contenir au moins 8 caractères.";
-        if (password != confirm) return "Les deux mots de passe ne correspondent pas.";
+        if ((password ?? "").Length < 8) return Loc.T("Le nouveau mot de passe doit contenir au moins 8 caractères.");
+        if (password != confirm) return Loc.T("Les deux mots de passe ne correspondent pas.");
         return null;
     }
 

@@ -8,9 +8,9 @@
     <td>@Model.ImapFolder</td>
     <td>
         <div class="row-actions row-actions-nowrap">
-            <a class="btn btn-sm btn-secondary" asp-page="/Categories/Edit" asp-route-id="@Model.Id">Modifier</a>
-            <form method="post" hx-post="@Url.Page("/Categories/Index", "Delete", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Supprimer cette catégorie ?">
-                <button class="btn btn-sm btn-danger" type="submit">Supprimer</button>
+            <a class="btn btn-sm btn-secondary" asp-page="/Categories/Edit" asp-route-id="@Model.Id">@T("Modifier")</a>
+            <form method="post" hx-post="@Url.Page("/Categories/Index", "Delete", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="@T("Supprimer cette catégorie ?")">
+                <button class="btn btn-sm btn-danger" type="submit">@T("Supprimer")</button>
             </form>
         </div>
     </td>

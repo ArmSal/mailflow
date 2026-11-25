@@ -1,4 +1,5 @@
 using Mailflow.Web.Auth;
+using Mailflow.Web.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -21,8 +22,8 @@ public class SetupModel(IAdminPasswordStore store, IPasswordHasher<object> hashe
         // Setup is only possible while no password exists.
         if (await IsConfiguredAsync()) return RedirectToPage("/Login");
 
-        if ((Password ?? "").Length < 8) Error = "Le mot de passe doit contenir au moins 8 caractères.";
-        else if (Password != Confirm) Error = "Les deux mots de passe ne correspondent pas.";
+        if ((Password ?? "").Length < 8) Error = Loc.T("Le mot de passe doit contenir au moins 8 caractères.");
+        else if (Password != Confirm) Error = Loc.T("Les deux mots de passe ne correspondent pas.");
         if (Error is not null) return Page();
 
         await store.SetHashAsync(hasher.HashPassword(new object(), Password!), HttpContext.RequestAborted);
