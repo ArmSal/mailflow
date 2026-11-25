@@ -488,7 +488,8 @@ $RECYCLE.BIN/
 !src/Mailflow.Web/Backup/
 
 # release output
-dist/
+dist/*
+!dist/Mailflow-Setup-*-win-x64.exe
 
 # portable SumatraPDF binary
 tools/SumatraPDF/*.exe
