@@ -15,9 +15,6 @@
         <h2 class="form-section-title">Imprimante</h2>
         <p class="form-section-hint">Le nom Windows doit correspondre exactement à celui du système.</p>
         <div class="form-grid">
-            <div class="field"><label class="form-label" asp-for="Input.StoreId">Magasin</label>
-                <select class="form-select" asp-for="Input.StoreId" asp-items="@(new SelectList(Model.Stores, "Id", "Name"))"></select>
-                <span class="field-validation-error" asp-validation-for="Input.StoreId"></span></div>
             <div class="field"><label class="form-label" asp-for="Input.DisplayName">Nom affiché</label><input class="form-control" asp-for="Input.DisplayName" /><span class="field-validation-error" asp-validation-for="Input.DisplayName"></span></div>
         </div>
         <div class="field"><label class="form-label" asp-for="Input.WindowsName">Imprimante Windows</label>

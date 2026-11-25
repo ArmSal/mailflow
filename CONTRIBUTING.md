@@ -66,7 +66,7 @@ Les migrations s'appliquent automatiquement au démarrage. Ne modifiez jamais un
 - Ne supprimer **jamais** un e-mail ; ne jamais ouvrir ni exécuter une pièce jointe.
 - Ouvrir un PDF depuis le tableau de bord se fait **par identifiant de document**, jamais avec un chemin venant du navigateur.
 - Tout formulaire POST garde le jeton anti-falsification ; pas de `Html.Raw` sur des données utilisateur.
-- L'impression ne dépend que des expéditeurs autorisés : toute modification de `PrintPolicy` ou de `ExtractAddress` demande des tests dédiés.
+- L'impression dépend des règles (conditions sur l'expéditeur), de l'âge du message et de la vérification DKIM/DMARC : toute modification de `PrintPolicy` ou de `ExtractAddress` demande des tests dédiés.
 - Connexion non chiffrée interdite, sauf vers `localhost` (tests).
 
 ## Limites connues

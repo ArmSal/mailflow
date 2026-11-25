@@ -10,7 +10,7 @@ public sealed record MessageOutcome(bool AlreadyProcessed, int DocumentsSaved, i
 
 public sealed class MessagePipeline(
     IAppDbContext db, IMailClient mail, IPdfTextReader pdfReader, IDocumentStore store,
-    IPrinterService printerService, IClock clock, RuleEngine ruleEngine)
+    IPrinterService printerService, IClock clock, RuleEngine ruleEngine, IEmailPdfRenderer? emailPdfRenderer = null)
 {
     public const string DefaultCategoryName = "A trier";
 
@@ -24,7 +24,6 @@ public sealed class MessagePipeline(
         var rules = await db.Rules.Include(r => r.Conditions).Include(r => r.Actions).ToListAsync(ct);
         var categories = await db.Categories.ToListAsync(ct);
         var printers = await db.Printers.ToListAsync(ct);
-        var allowed = await db.AllowedSenders.ToListAsync(ct);
         var maxAge = await MaxAgeHoursAsync(ct);
 
         var senderMode = PrintPolicy.ParseMode((await db.Settings.FirstOrDefaultAsync(x => x.Key == "PrintSenderCheck", ct))?.Value);
@@ -48,7 +47,12 @@ public sealed class MessagePipeline(
             ? new RuleAction { Type = ActionType.LeaveUnread }
             : actions.FirstOrDefault(a => a.Type is ActionType.MarkAsRead or ActionType.MoveToFolder or ActionType.LeaveUnread);
         var now = clock.UtcNow;
-        var print = !skip && PrintPolicy.Allows(printAction != null, from, allowed, mailbox.StoreId, message.ReceivedAt, now, maxAge, printer);
+        var policyBlocked = PrintPolicy.ReasonBlocked(printAction != null, message.ReceivedAt, now, maxAge, printer);
+        var print = !skip && printAction != null && policyBlocked is null;
+        var printEmailBody = await PrintEmailBodyWithoutPdfAsync(ct);
+        var attachments = message.Pdfs;
+        if (!skip && attachments.Count == 0 && printAction != null && printEmailBody && emailPdfRenderer is not null)
+            attachments = [new MailAttachment("email.pdf", emailPdfRenderer.Render(message))];
 
         var tracked = new List<object>();
         var dc = db as DbContext;
@@ -67,7 +71,7 @@ public sealed class MessagePipeline(
             await db.SaveChangesAsync(ct);
 
             if (!skip)
-                foreach (var pdf in message.Pdfs)
+                foreach (var pdf in attachments)
                 {
                     var stored = await store.SaveAsync(pdf.Content, category.LocalSubfolder, DomainOf(from), pdf.FileName, message.ReceivedAt, ct);
                     if (stored.WasDuplicate && await db.Documents.AnyAsync(d => d.Sha256 == stored.Sha256, ct)) continue;
@@ -77,7 +81,12 @@ public sealed class MessagePipeline(
                         ProcessedMessageId = processed.Id, Sha256 = stored.Sha256, OriginalName = pdf.FileName,
                         StoredPath = stored.Path, CategoryId = category.Id
                     };
-                    if (print && senderBlocked)
+                    if (printAction != null && policyBlocked is not null)
+                    {
+                        doc.PrinterId = printer?.Id;
+                        doc.PrintError = policyBlocked;
+                    }
+                    else if (print && senderBlocked)
                     {
                         doc.PrinterId = printer!.Id;
                         doc.PrintError = PrintPolicy.SenderBlockedMessage;
@@ -155,6 +164,12 @@ public sealed class MessagePipeline(
     {
         var s = await db.Settings.FirstOrDefaultAsync(x => x.Key == "PrintMaxAgeHours", ct);
         return s != null && int.TryParse(s.Value, out var h) ? h : PrintPolicy.DefaultMaxAgeHours;
+    }
+
+    async Task<bool> PrintEmailBodyWithoutPdfAsync(CancellationToken ct)
+    {
+        var s = await db.Settings.FirstOrDefaultAsync(x => x.Key == "PrintEmailBodyWithoutPdf", ct);
+        return !string.Equals(s?.Value?.Trim(), "false", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>Lenient parsing for the To field (it may list several recipients); never used for security decisions.</summary>

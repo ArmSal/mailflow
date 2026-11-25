@@ -42,4 +42,23 @@ public class PdfPigTextReaderTests
         var pdf = PdfFixture.Make("HELLO");
         Assert.Equal("", _reader.ReadText(pdf[..(pdf.Length / 3)]));
     }
+
+    [Fact]
+    public void Email_renderer_creates_readable_pdf_and_handles_unicode_emojis()
+    {
+        var renderer = new PdfPigEmailRenderer();
+        var msg = new Mailflow.Application.Abstractions.MailMessage(
+            "id-1", 1, new DateTime(2026, 11, 24, 21, 0, 0, DateTimeKind.Utc),
+            "client@exemple.fr", "boutique@exemple.fr",
+            "PPPrint commande reçu 😀",
+            "Bonjour,\nVoici le détail : 42,50 € — merci d’imprimer !\n\nCordialement.",
+            []);
+
+        var bytes = renderer.Render(msg);
+        var text = _reader.ReadText(bytes, 5);
+
+        Assert.Contains("PPPrint", text);
+        Assert.Contains("client@exemple.fr", text);
+        Assert.Contains("42,50 EUR", text);
+    }
 }

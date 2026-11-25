@@ -25,6 +25,7 @@ public class IndexModel(
         [Required(ErrorMessage = "Le modèle de nom de fichier est requis.")]
         public string FileNamePattern { get; set; } = "";
         public int PrintMaxAgeHours { get; set; } = 24;
+        public bool PrintEmailBodyWithoutPdf { get; set; } = true;
     }
 
     public class PasswordInput
@@ -37,11 +38,6 @@ public class IndexModel(
         public string Confirm { get; set; } = "";
     }
 
-    public class MicrosoftInput
-    {
-        public string? ClientId { get; set; }
-    }
-
     public class SenderCheckInput
     {
         public string? Mode { get; set; }
@@ -49,9 +45,6 @@ public class IndexModel(
 
     [BindProperty] public SenderCheckInput SenderCheck { get; set; } = new();
     public string? SenderCheckMessage { get; private set; }
-    [BindProperty] public MicrosoftInput Microsoft { get; set; } = new();
-    public string? MicrosoftMessage { get; private set; }
-    public bool MicrosoftConfigured { get; private set; }
     [BindProperty] public SettingsInput Input { get; set; } = new();
     [BindProperty] public PasswordInput Password { get; set; } = new();
     public string? SettingsMessage { get; private set; }
@@ -60,10 +53,12 @@ public class IndexModel(
 
     public async Task OnGetAsync() => await LoadAsync();
 
+    public IActionResult OnGetBrowse(string? path) => Partial("_FolderBrowser", FolderBrowser.List(path));
+
     public async Task<IActionResult> OnPostSettingsAsync()
     {
         var ct = HttpContext.RequestAborted;
-        await LoadMicrosoftAsync(ct);
+        await LoadSecondarySectionsAsync(ct);
         Input.DocumentsRoot = (Input.DocumentsRoot ?? "").Trim();
         Input.FileNamePattern = (Input.FileNamePattern ?? "").Trim();
         var errors = new (string Field, string? Error)[]
@@ -78,29 +73,9 @@ public class IndexModel(
         await SettingsRules.SaveAsync(db, SettingsRules.RootKey, Input.DocumentsRoot, ct);
         await SettingsRules.SaveAsync(db, SettingsRules.PatternKey, Input.FileNamePattern, ct);
         await SettingsRules.SaveAsync(db, SettingsRules.HoursKey, Input.PrintMaxAgeHours.ToString(), ct);
+        await SettingsRules.SaveAsync(db, SettingsRules.PrintEmailBodyKey, Input.PrintEmailBodyWithoutPdf ? "true" : "false", ct);
         await db.SaveChangesAsync(ct);
         SettingsMessage = "Paramètres enregistrés.";
-        return Page();
-    }
-
-    public async Task<IActionResult> OnPostMicrosoftAsync()
-    {
-        var ct = HttpContext.RequestAborted;
-        var clientId = (Microsoft.ClientId ?? "").Trim();
-        await LoadAsync();
-        if (SettingsRules.ValidateClientId(clientId) is { } error)
-        {
-            ModelState.AddModelError("Microsoft.ClientId", error);
-            Microsoft = new MicrosoftInput { ClientId = clientId };
-            return Page();
-        }
-        if (clientId.Length > 0) clientId = Guid.Parse(clientId).ToString();
-        await SettingsRules.SaveAsync(db, SettingsRules.OAuthClientIdKey, clientId, ct);
-        await db.SaveChangesAsync(ct);
-        Microsoft = new MicrosoftInput { ClientId = clientId };
-        MicrosoftConfigured = clientId.Length > 0;
-        MicrosoftMessage = MicrosoftConfigured ? "Identifiant d'application Microsoft enregistré." : "Connexion Microsoft désactivée : identifiant effacé.";
-        ModelState.Clear();
         return Page();
     }
 
@@ -156,17 +131,17 @@ public class IndexModel(
             DocumentsRoot = s.GetValueOrDefault(SettingsRules.RootKey) is { Length: > 0 } r ? r : storeOptions.Value.DocumentsRoot,
             FileNamePattern = s.GetValueOrDefault(SettingsRules.PatternKey) is { Length: > 0 } p ? p : storeOptions.Value.FileNamePattern,
             PrintMaxAgeHours = int.TryParse(s.GetValueOrDefault(SettingsRules.HoursKey), out var h) ? h : 24,
+            PrintEmailBodyWithoutPdf = SettingsRules.ParsePrintEmailBody(s.GetValueOrDefault(SettingsRules.PrintEmailBodyKey)),
         };
-        SetMicrosoft(s);
-        SenderCheck = new SenderCheckInput { Mode = SettingsRules.ParseSenderCheck(s.GetValueOrDefault(SettingsRules.SenderCheckKey)).ToString() };
+        SetSenderCheck(s);
     }
 
-    private async Task LoadMicrosoftAsync(CancellationToken ct) => SetMicrosoft(await SettingsRules.LoadAsync(db, ct));
-
-    private void SetMicrosoft(Dictionary<string, string> s)
+    private async Task LoadSecondarySectionsAsync(CancellationToken ct)
     {
-        var id = s.GetValueOrDefault(SettingsRules.OAuthClientIdKey) ?? "";
-        Microsoft = new MicrosoftInput { ClientId = id };
-        MicrosoftConfigured = id.Length > 0;
+        var s = await SettingsRules.LoadAsync(db, ct);
+        SetSenderCheck(s);
     }
+
+    private void SetSenderCheck(Dictionary<string, string> s)
+        => SenderCheck = new SenderCheckInput { Mode = SettingsRules.ParseSenderCheck(s.GetValueOrDefault(SettingsRules.SenderCheckKey)).ToString() };
 }

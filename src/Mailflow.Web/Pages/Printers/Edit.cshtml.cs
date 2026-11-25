@@ -12,7 +12,6 @@ public class EditModel(IAppDbContext db, IPrinterService printers) : PageModel
 {
     public class PrinterInput
     {
-        public int StoreId { get; set; }
         [Required(ErrorMessage = "Le nom est requis."), StringLength(100)]
         public string DisplayName { get; set; } = "";
         [Required(ErrorMessage = "L'imprimante Windows est requise."), StringLength(260)]
@@ -25,15 +24,13 @@ public class EditModel(IAppDbContext db, IPrinterService printers) : PageModel
     }
 
     [BindProperty] public PrinterInput Input { get; set; } = new();
-    public List<Store> Stores { get; private set; } = [];
 
     public async Task<IActionResult> OnGetAsync(int? id)
     {
-        await LoadStores();
         if (id is null) return Page();
         var p = await db.Printers.FindAsync(id.Value);
         if (p is null) return NotFound();
-        Input = new PrinterInput { StoreId = p.StoreId, DisplayName = p.DisplayName, WindowsName = p.WindowsName, Kind = p.Kind, DefaultCopies = p.DefaultCopies, Duplex = p.Duplex, IsActive = p.IsActive };
+        Input = new PrinterInput { DisplayName = p.DisplayName, WindowsName = p.WindowsName, Kind = p.Kind, DefaultCopies = p.DefaultCopies, Duplex = p.Duplex, IsActive = p.IsActive };
         return Page();
     }
 
@@ -45,8 +42,7 @@ public class EditModel(IAppDbContext db, IPrinterService printers) : PageModel
         if (Input.WindowsName.Length == 0) ModelState.AddModelError("Input.WindowsName", "L'imprimante Windows est requise.");
         if (Input.DefaultCopies is < 1 or > 99) ModelState.AddModelError("Input.DefaultCopies", "Copies : 1 à 99.");
         if (!Enum.IsDefined(Input.Kind)) ModelState.AddModelError("Input.Kind", "Type invalide.");
-        if (!await db.Stores.AnyAsync(s => s.Id == Input.StoreId)) ModelState.AddModelError("Input.StoreId", "Magasin invalide.");
-        if (!ModelState.IsValid) { await LoadStores(); return Page(); }
+        if (!ModelState.IsValid) return Page();
 
         Printer? p = null;
         if (id is not null)
@@ -55,7 +51,6 @@ public class EditModel(IAppDbContext db, IPrinterService printers) : PageModel
             if (p is null) return NotFound();
         }
         else db.Printers.Add(p = new Printer());
-        p.StoreId = Input.StoreId;
         p.DisplayName = Input.DisplayName;
         p.WindowsName = Input.WindowsName;
         p.Kind = Input.Kind;
@@ -72,5 +67,4 @@ public class EditModel(IAppDbContext db, IPrinterService printers) : PageModel
         catch (Exception ex) { return Content("Détection impossible : " + System.Net.WebUtility.HtmlEncode(ex.Message), "text/html"); }
     }
 
-    private async Task LoadStores() => Stores = await db.Stores.OrderBy(s => s.Name).ToListAsync();
 }

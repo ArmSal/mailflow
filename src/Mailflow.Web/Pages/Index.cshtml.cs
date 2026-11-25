@@ -10,7 +10,7 @@ namespace Mailflow.Web.Pages;
 public class IndexModel(IAppDbContext db, WorkerState state, RunNowSignal signal, IClock clock) : PageModel
 {
     public record Counters(int Messages, int Documents, int Printed, int Errors);
-    public record MailboxError(string Name, DateTime? At, string Error);
+    public record MailboxError(string Name, DateTime? At, string Error, string? Hint = null);
     public record RunError(DateTime At, string Mailbox, string Error);
     public record LatestDocument(string Name, string Category, DateTime? PrintedAt, string? PrintError);
 
@@ -61,7 +61,7 @@ public class IndexModel(IAppDbContext db, WorkerState state, RunNowSignal signal
             runs.Sum(r => r.Printed), runs.Count(r => r.Error != null));
 
         MailboxErrors = (await db.Mailboxes.Where(m => m.LastError != null).OrderBy(m => m.DisplayName).ToListAsync())
-            .Select(m => new MailboxError(m.DisplayName, m.LastCheckAt, m.LastError!)).ToList();
+            .Select(m => new MailboxError(m.DisplayName, m.LastCheckAt, m.LastError!, Mailflow.Web.Pages.Mailboxes.MailErrorHints.For(m.LastError, m.Host))).ToList();
 
         var names = await db.Mailboxes.ToDictionaryAsync(m => m.Id, m => m.DisplayName);
         RunErrors = (await db.RunLogs.Where(r => r.Error != null).OrderByDescending(r => r.StartedAt).Take(5).ToListAsync())

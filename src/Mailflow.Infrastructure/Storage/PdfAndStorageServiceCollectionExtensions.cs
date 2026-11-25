@@ -9,6 +9,7 @@ public static class PdfAndStorageServiceCollectionExtensions
     {
         services.Configure(configure);
         services.AddSingleton<IPdfTextReader, Pdf.PdfPigTextReader>();
+        services.AddSingleton<IEmailPdfRenderer, Pdf.PdfPigEmailRenderer>();
         services.AddSingleton<IDocumentStore, Storage.FileSystemDocumentStore>();
         return services;
     }

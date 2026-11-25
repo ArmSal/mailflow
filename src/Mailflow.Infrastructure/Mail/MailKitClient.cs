@@ -1,3 +1,5 @@
+using System.Net;
+using System.Text.RegularExpressions;
 using Mailflow.Application.Abstractions;
 using MailKit;
 using MailKit.Net.Imap;
@@ -7,8 +9,10 @@ using MimeKit;
 
 namespace Mailflow.Infrastructure.Mail;
 
-public sealed class MailKitClient : IMailClient
+public sealed partial class MailKitClient : IMailClient
 {
+    private const int ImapTimeoutMs = 30_000;
+
     public async Task<ConnectionTestResult> TestConnectionAsync(MailboxConnection c, CancellationToken ct)
     {
         try
@@ -18,8 +22,9 @@ public sealed class MailKitClient : IMailClient
             await inbox.OpenAsync(FolderAccess.ReadOnly, ct);
             var count = inbox.Count;
             var folders = new List<string>();
-            foreach (var f in await client.GetFoldersAsync(client.PersonalNamespaces[0], cancellationToken: ct))
-                folders.Add(f.FullName);
+            if (client.PersonalNamespaces.Count > 0)
+                foreach (var f in await client.GetFoldersAsync(client.PersonalNamespaces[0], cancellationToken: ct))
+                    folders.Add(f.FullName);
             if (!folders.Contains(inbox.FullName)) folders.Insert(0, inbox.FullName);
             await client.DisconnectAsync(true, ct);
             return new ConnectionTestResult(true, count, folders, null);
@@ -61,7 +66,7 @@ public sealed class MailKitClient : IMailClient
                 fromAddress,
                 m.To.Mailboxes.FirstOrDefault()?.Address ?? "",
                 m.Subject ?? "",
-                m.TextBody ?? "",
+                ExtractBody(m.TextBody, m.HtmlBody),
                 pdfs,
                 SenderAuthParser.Parse(authHeaders, fromAddress)));
         }
@@ -121,22 +126,41 @@ public sealed class MailKitClient : IMailClient
         return loopback ? SecureSocketOptions.None : SecureSocketOptions.StartTls;
     }
 
-    /// <summary>XOAUTH2 when the connection carries an access token (only ever sent over the link chosen by <see cref="SocketOptionsFor"/>).</summary>
-    internal static SaslMechanism? OAuthMechanismFor(MailboxConnection c) =>
-        c.AccessToken is null ? null : new SaslMechanismOAuth2(c.Username, c.AccessToken);
-
     private static async Task<ImapClient> ConnectAsync(MailboxConnection c, CancellationToken ct)
     {
-        var client = new ImapClient();
+        var client = new ImapClient { Timeout = ImapTimeoutMs };
         try
         {
             await client.ConnectAsync(c.Host, c.Port,
                 SocketOptionsFor(c), ct);
-            if (OAuthMechanismFor(c) is { } oauth) await client.AuthenticateAsync(oauth, ct);
-            else await client.AuthenticateAsync(c.Username, c.Password, ct);
+            await client.AuthenticateAsync(c.Username, c.Password, ct);
             return client;
         }
         catch { client.Dispose(); throw; }
     }
+
+    internal static string ExtractBody(string? textBody, string? htmlBody)
+    {
+        if (!string.IsNullOrWhiteSpace(textBody)) return textBody;
+        if (string.IsNullOrWhiteSpace(htmlBody)) return "";
+        var stripped = StyleOrScriptRegex().Replace(htmlBody, " ");
+        stripped = BlockTagRegex().Replace(stripped, "\n");
+        stripped = AnyTagRegex().Replace(stripped, " ");
+        stripped = WebUtility.HtmlDecode(stripped);
+        stripped = MultiBlankLinesRegex().Replace(stripped, "\n\n");
+        return stripped.Trim();
+    }
+
+    [GeneratedRegex(@"<(style|script)\b[^>]*>[\s\S]*?</\1>", RegexOptions.IgnoreCase)]
+    private static partial Regex StyleOrScriptRegex();
+
+    [GeneratedRegex(@"<(br\s*/?|/(p|div|li|tr|h[1-6]))\s*>", RegexOptions.IgnoreCase)]
+    private static partial Regex BlockTagRegex();
+
+    [GeneratedRegex(@"<[^>]+>")]
+    private static partial Regex AnyTagRegex();
+
+    [GeneratedRegex(@"\n{3,}")]
+    private static partial Regex MultiBlankLinesRegex();
 }
 

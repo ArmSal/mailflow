@@ -18,33 +18,21 @@ public class PagesTests : IDisposable
     private readonly SqliteFixture _fx = new();
     private readonly FakeSecretStore _secrets = new();
     private readonly FakeMailClient _mail = new();
-    private readonly Mailflow.Application.Abstractions.IOAuthSignInService _oauth = NSubstitute.Substitute.For<Mailflow.Application.Abstractions.IOAuthSignInService>();
     private readonly Mailflow.Application.Abstractions.IMailboxConnectionFactory _factory = new FakeConnectionFactory(new FakeSecretStore());
-
-    public PagesTests() => _oauth.GetStatus(default).ReturnsForAnyArgs(new Mailflow.Application.Abstractions.OAuthSignInStatus(Mailflow.Application.Abstractions.OAuthSignInState.None));
 
     public void Dispose() => _fx.Dispose();
 
-    private int SeedStore()
+    private static MailboxEdit.MailboxInput MailboxForm(string? password) => new()
     {
-        using var db = _fx.NewDb();
-        var s = new Store { Name = "Magasin" };
-        db.Stores.Add(s);
-        db.SaveChanges();
-        return s.Id;
-    }
-
-    private static MailboxEdit.MailboxInput MailboxForm(int storeId, string? password) => new()
-    {
-        StoreId = storeId, DisplayName = "Compta", Email = "a@b.fr", Host = "imap.b.fr", Port = 993, UseSsl = true,
+        DisplayName = "Compta", Email = "a@b.fr", Host = "imap.b.fr", Port = 993, UseSsl = true,
         Username = "a@b.fr", Password = password, InboxFolder = "INBOX", CheckIntervalMinutes = 5, LookbackDays = 3,
     };
 
-    private async Task<int> CreateMailbox(int storeId, string password)
+    private async Task<int> CreateMailbox(string password)
     {
         using var db = _fx.NewDb();
-        var page = new MailboxEdit(db, _secrets, _mail, _oauth, _factory).With();
-        page.Input = MailboxForm(storeId, password);
+        var page = new MailboxEdit(db, _secrets, _mail, _factory).With();
+        page.Input = MailboxForm(password);
         Assert.IsType<RedirectToPageResult>(await page.OnPostAsync(null));
         return db.Mailboxes.Single().Id;
     }
@@ -52,29 +40,38 @@ public class PagesTests : IDisposable
     [Fact]
     public async Task Mailbox_create_protects_password_and_requires_it()
     {
-        var storeId = SeedStore();
         using (var db = _fx.NewDb())
         {
-            var page = new MailboxEdit(db, _secrets, _mail, _oauth, _factory).With();
-            page.Input = MailboxForm(storeId, null);
+            var page = new MailboxEdit(db, _secrets, _mail, _factory).With();
+            page.Input = MailboxForm(null);
             Assert.IsType<PageResult>(await page.OnPostAsync(null));
             Assert.Empty(db.Mailboxes);
         }
-        await CreateMailbox(storeId, "secret");
+        await CreateMailbox("secret");
         using var check = _fx.NewDb();
         Assert.Equal("enc:secret", check.Mailboxes.Single().EncryptedPassword);
     }
 
     [Fact]
+    public async Task Mailbox_without_username_uses_the_email_address()
+    {
+        using var db = _fx.NewDb();
+        var page = new MailboxEdit(db, _secrets, _mail, _factory).With();
+        page.Input = MailboxForm("secret");
+        page.Input.Username = null;
+        Assert.IsType<RedirectToPageResult>(await page.OnPostAsync(null));
+        Assert.Equal("a@b.fr", db.Mailboxes.Single().Username);
+    }
+
+    [Fact]
     public async Task Mailbox_edit_with_blank_password_keeps_old_one_and_new_password_replaces()
     {
-        var storeId = SeedStore();
-        var id = await CreateMailbox(storeId, "old");
+        var id = await CreateMailbox("old");
 
         using (var db = _fx.NewDb())
         {
-            var page = new MailboxEdit(db, _secrets, _mail, _oauth, _factory).With();
-            page.Input = MailboxForm(storeId, "");
+            var page = new MailboxEdit(db, _secrets, _mail, _factory).With();
+            page.Input = MailboxForm("");
             page.Input.DisplayName = "Renommée";
             Assert.IsType<RedirectToPageResult>(await page.OnPostAsync(id));
         }
@@ -86,8 +83,8 @@ public class PagesTests : IDisposable
         }
         using (var db = _fx.NewDb())
         {
-            var page = new MailboxEdit(db, _secrets, _mail, _oauth, _factory).With();
-            page.Input = MailboxForm(storeId, "new");
+            var page = new MailboxEdit(db, _secrets, _mail, _factory).With();
+            page.Input = MailboxForm("new");
             await page.OnPostAsync(id);
         }
         using var final = _fx.NewDb();
@@ -97,17 +94,16 @@ public class PagesTests : IDisposable
     [Fact]
     public async Task Mailbox_test_connection_uses_stored_password_when_blank_and_never_renders_it()
     {
-        var storeId = SeedStore();
-        var id = await CreateMailbox(storeId, "stored");
+        var id = await CreateMailbox("stored");
         using var db = _fx.NewDb();
-        var page = new MailboxEdit(db, _secrets, _mail, _oauth, _factory).With();
-        page.Input = MailboxForm(storeId, "");
+        var page = new MailboxEdit(db, _secrets, _mail, _factory).With();
+        page.Input = MailboxForm("");
         var result = Assert.IsType<PartialViewResult>(await page.OnPostTestAsync(id, default));
         Assert.Equal("stored", _mail.Last!.Password);
         var model = Assert.IsType<Mailflow.Application.Abstractions.ConnectionTestResult>(result.Model);
         Assert.Equal(12, model.MessageCount);
 
-        var get = new MailboxEdit(db, _secrets, _mail, _oauth, _factory).With();
+        var get = new MailboxEdit(db, _secrets, _mail, _factory).With();
         await get.OnGetAsync(id);
         Assert.Null(get.Input.Password);
     }
@@ -115,8 +111,7 @@ public class PagesTests : IDisposable
     [Fact]
     public async Task Mailbox_delete_blocked_when_messages_were_processed_else_removed()
     {
-        var storeId = SeedStore();
-        var id = await CreateMailbox(storeId, "p");
+        var id = await CreateMailbox("p");
         using (var db = _fx.NewDb())
         {
             db.ProcessedMessages.Add(new ProcessedMessage { MailboxId = id, MessageId = "m" });
@@ -166,9 +161,8 @@ public class PagesTests : IDisposable
         int catId, printerId;
         using (var db = _fx.NewDb())
         {
-            var storeId = SeedStore();
             var c = new Category { Name = "Factures", LocalSubfolder = "Factures" };
-            var p = new Printer { StoreId = storeId, DisplayName = "P", WindowsName = "HP" };
+            var p = new Printer { DisplayName = "P", WindowsName = "HP" };
             db.Categories.Add(c); db.Printers.Add(p); db.SaveChanges();
             catId = c.Id; printerId = p.Id;
         }
@@ -246,16 +240,4 @@ public class PagesTests : IDisposable
         Assert.Equal(2, db.Rules.Single(r => r.Name == "A").Priority);
     }
 
-    [Fact]
-    public async Task Allowed_sender_validates_pattern()
-    {
-        using var db = _fx.NewDb();
-        var page = new AllowedSendersModel(db).With();
-        page.Pattern = "pas un motif";
-        Assert.IsType<PageResult>(await page.OnPostAddAsync());
-        page.ModelState.Clear();
-        page.Pattern = "Fournisseur.FR";
-        Assert.IsType<RedirectToPageResult>(await page.OnPostAddAsync());
-        Assert.Equal("fournisseur.fr", db.AllowedSenders.Single().Pattern);
-    }
 }

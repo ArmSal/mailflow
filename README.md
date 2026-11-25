@@ -41,7 +41,7 @@ Mailflow est une application Windows installée sur le PC toujours allumé d'un 
 3. **Enregistre** une copie renommée de chaque PDF dans des dossiers organisés.
 4. **Imprime** les documents choisis sur l'imprimante locale du magasin.
 5. **Marque les e-mails comme lus**, les déplace, ou n'y touche pas, selon la règle.
-6. Se **pilote entièrement depuis un tableau de bord web** : boîtes, magasins, imprimantes, dossiers et règles se modifient sans toucher au code.
+6. Se **pilote entièrement depuis un tableau de bord web** : boîtes, imprimantes, dossiers et règles se modifient sans toucher au code.
 
 ```mermaid
 flowchart LR
@@ -76,12 +76,11 @@ flowchart LR
 
 ## 2. Fonctionnalités
 
-- 📥 Lecture IMAP multi-boîtes avec préréglages (OVH MX Plan, OVH Email Pro, iCloud, Gmail, Outlook / Hotmail, Yahoo) et option « IMAP personnalisé »
-- 🔐 Outlook / Hotmail : connexion par **compte Microsoft (OAuth2)**, sans mot de passe (code d'appareil). Gratuit, sans secret à conserver ; chaque installation inscrit sa propre application.
-  Procédure pas à pas : [Docs/microsoft-oauth-setup.md](Docs/microsoft-oauth-setup.md).
+- 📥 Lecture IMAP multi-boîtes avec préréglages (OVH MX Plan, OVH Email Pro, iCloud, Gmail, Yahoo) et option « IMAP personnalisé »
+- 🔐 Connexion par adresse e-mail et mot de passe (mot de passe d'application pour Gmail, iCloud et Yahoo) ; le serveur est rempli automatiquement quand le fournisseur est connu. Les boîtes Outlook / Hotmail ne sont plus prises en charge.
 - 🧠 Moteur de règles : expéditeur, domaine, objet, corps, nom de pièce jointe, **texte du PDF** (insensible à la casse et aux accents, regex avec délai maximal)
 - 🗂️ Archivage : `{Catégorie}/{aaaa}/{MM}/{aaaa-MM-jj}_{Fournisseur}_{NomOriginal}.pdf`, dédoublonnage par SHA-256
-- 🖨️ Impression silencieuse via SumatraPDF, **uniquement** pour les expéditeurs autorisés et les e-mails récents
+- 🖨️ Impression silencieuse via SumatraPDF, **uniquement** pour les e-mails récents qu'une règle demande d'imprimer (ajoutez une condition sur l'adresse de l'expéditeur pour limiter l'impression)
 - 📬 Action sur la boîte par règle : marquer comme lu, déplacer dans un dossier IMAP, ou laisser tel quel
 - 🔎 Historique : recherche, ouverture du PDF, **réimpression**, changement de catégorie
 - 📊 Journal d'exécution, erreurs par boîte, bouton « Lancer maintenant », pause / reprise
@@ -147,7 +146,7 @@ flowchart TD
     I -- oui --> I1[Règle par défaut :<br/>catégorie « À trier », pas d'impression, non lu]
     I -- non --> J
     I1 --> J[SaveToCategory : enregistrer les PDF<br/>dédoublonnage SHA-256]
-    J --> K{Impression autorisée ?<br/>règle + expéditeur autorisé<br/>+ âge ≤ 24 h + imprimante active}
+    J --> K{Impression autorisée ?<br/>règle (dont l'expéditeur)<br/>+ âge ≤ 24 h + imprimante active}
     K -- oui --> L[Imprimer via SumatraPDF]
     K -- non --> M
     L --> M{Enregistrement réussi ?}
@@ -279,12 +278,11 @@ Adresse par défaut : **http://127.0.0.1:5088** (liée à `127.0.0.1`). Connexio
 | Page | Contenu |
 |---|---|
 | **Accueil** | État du worker, dernier / prochain passage, compteurs du jour, dernières erreurs, **Lancer maintenant**, **Pause / Reprise**, 10 derniers documents |
-| **Magasins** | CRUD ; chaque magasin affiche ses boîtes et ses imprimantes |
 | **Boîtes mail** | CRUD, préréglages fournisseurs, mot de passe en écriture seule, **Tester la connexion** (nombre de messages + dossiers serveur) |
-| **Imprimantes** | **Détecter les imprimantes**, rattachement au magasin, copies, recto-verso, **Test d'impression** |
+| **Imprimantes** | **Détecter les imprimantes**, copies, recto-verso, **Test d'impression** |
 | **Catégories / Dossiers** | CRUD, sous-dossier local avec vérification du chemin, dossier IMAP choisi ou créé, couleur |
-| **Règles** | Liste ordonnée (glisser-déposer), éditeur conditions / actions, **Tester cette règle** sur les 50 derniers e-mails (lecture seule), **Expéditeurs autorisés** |
-| **Historique** | Recherche par date / fournisseur / catégorie / magasin, **Ouvrir le PDF**, **Réimprimer**, **Changer de catégorie** |
+| **Règles** | Liste ordonnée (glisser-déposer), éditeur conditions / actions, **Tester cette règle** sur les 50 derniers e-mails (lecture seule) |
+| **Historique** | Recherche par date / fournisseur / catégorie, **Ouvrir le PDF**, **Réimprimer**, **Changer de catégorie** |
 | **Journal** | Exécutions et erreurs |
 | **Paramètres** | Dossier racine des documents, modèle de nom de fichier, âge maximal d'impression, vérification de l'expéditeur avant impression, mot de passe admin, sauvegarde immédiate, **Import config.yaml** |
 
@@ -297,9 +295,9 @@ Principes d'interface : Bootstrap 5, HTMX pour les actions en ligne (tests, inte
 | Risque | Parade |
 |---|---|
 | Accès au tableau de bord par le personnel / le réseau | Lié à `127.0.0.1`, mot de passe haché, session de 30 min, jetons anti-falsification sur tous les formulaires, 5 tentatives de connexion par minute, hôtes autorisés limités à `localhost` (`AllowedHosts`), assistant de premier lancement accessible uniquement depuis la machine locale |
-| Usurpation de l'expéditeur (en-tête `From` falsifiable) | L'adresse est analysée strictement (toute adresse ambiguë est ignorée). Vérification optionnelle du verdict DKIM/DMARC du serveur de réception (Paramètres) : **Désactivée**, **Avertir** (défaut : impression inchangée, l'Historique signale les expéditeurs non vérifiés) ou **Stricte** (seuls les expéditeurs vérifiés sont imprimés ; les autres sont archivés, réimpression possible). Un serveur sans verdict compte comme non vérifié. Ne mettez dans les expéditeurs autorisés que des fournisseurs de confiance |
+| Usurpation de l'expéditeur (en-tête `From` falsifiable) | L'adresse est analysée strictement (toute adresse ambiguë est ignorée). Vérification optionnelle du verdict DKIM/DMARC du serveur de réception (Paramètres) : **Désactivée**, **Avertir** (défaut : impression inchangée, l'Historique signale les expéditeurs non vérifiés) ou **Stricte** (seuls les expéditeurs vérifiés sont imprimés ; les autres sont archivés, réimpression possible). Un serveur sans verdict compte comme non vérifié. Limitez l'impression par des règles avec l'adresse exacte de l'expéditeur |
 | Mots de passe des boîtes | Chiffrés avec **DPAPI** (portée : compte du service), jamais affichés |
-| Impression sauvage | Impression uniquement depuis les **expéditeurs autorisés**, âge maximal 24 h |
+| Impression sauvage | Impression uniquement si une règle le demande (condition sur l'adresse de l'expéditeur), âge maximal 24 h |
 | PDF malveillants | Jamais ouverts ni exécutés : seul le texte est lu (PdfPig) ; SumatraPDF ne fait qu'imprimer |
 | Personnel qui consulte les factures | Service sous compte local dédié `svc-mailflow` ; ACL sur le dossier de documents |
 | Accès distant (plus tard) | **Tailscale**, aucun port ouvert sur la box |

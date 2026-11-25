@@ -38,21 +38,22 @@ public sealed class PersistenceTests : IDisposable
     }
 
     [Fact]
-    public async Task Upgrade_keeps_existing_mailboxes_as_password_mailboxes()
+    public async Task Upgrade_keeps_password_mailboxes_and_switches_off_microsoft_ones()
     {
         using var db = new MailflowDbContext(new DbContextOptionsBuilder<MailflowDbContext>().UseSqlite(_conn).Options);
-        // A database created by the very first version, holding a real mailbox.
-        db.GetService<IMigrator>().Migrate("20261124161503_Initial");
+        db.GetService<IMigrator>().Migrate("20261124200614_AddSenderVerification");
         db.Database.ExecuteSqlRaw("INSERT INTO Stores (Id, Name, IsActive) VALUES (1, 'Store A', 1)");
-        db.Database.ExecuteSqlRaw("INSERT INTO Mailboxes (Id, StoreId, DisplayName, Email, Host, Port, UseSsl, Username, EncryptedPassword, InboxFolder, CheckIntervalMinutes, LookbackDays, DefaultAfterProcessing, IsActive) " +
-                                  "VALUES (1, 1, 'Old', 'a@example.com', 'imap.example.com', 993, 1, 'a@example.com', 'secret', 'INBOX', 5, 3, 'Leave', 1)");
+        var cols = "(Id, StoreId, DisplayName, Email, Host, Port, UseSsl, Username, EncryptedPassword, InboxFolder, CheckIntervalMinutes, LookbackDays, DefaultAfterProcessing, IsActive, AuthMethod) ";
+        db.Database.ExecuteSqlRaw("INSERT INTO Mailboxes " + cols + "VALUES (1, 1, 'Old', 'a@example.com', 'imap.example.com', 993, 1, 'a@example.com', 'secret', 'INBOX', 5, 3, 'Leave', 1, 'Password')");
+        db.Database.ExecuteSqlRaw("INSERT INTO Mailboxes " + cols + "VALUES (2, 1, 'Hot', 'b@hotmail.com', 'outlook.office365.com', 993, 1, 'b@hotmail.com', '', 'INBOX', 5, 3, 'Leave', 1, 'MicrosoftOAuth')");
 
         db.Database.Migrate();
 
-        var mailbox = await db.Mailboxes.SingleAsync();
-        Assert.Equal(AuthMethod.Password, mailbox.AuthMethod);
-        Assert.Null(mailbox.EncryptedOAuthCache);
-        Assert.Equal("secret", mailbox.EncryptedPassword);
+        var boxes = await db.Mailboxes.OrderBy(m => m.Id).ToListAsync();
+        Assert.Equal("secret", boxes[0].EncryptedPassword);
+        Assert.True(boxes[0].IsActive);
+        Assert.False(boxes[1].IsActive);
+        Assert.Contains("Microsoft", boxes[1].LastError);
     }
 
     [Fact]
@@ -110,9 +111,7 @@ public sealed class PersistenceTests : IDisposable
 
     private static async Task SeedGraph(MailflowDbContext db)
     {
-        db.Stores.Add(new Store { Name = "s" });
-        await db.SaveChangesAsync();
-        db.Mailboxes.Add(new Mailbox { StoreId = 1, DisplayName = "m", Email = "e@x.fr", Host = "h", Username = "u", EncryptedPassword = "p" });
+        db.Mailboxes.Add(new Mailbox { DisplayName = "m", Email = "e@x.fr", Host = "h", Username = "u", EncryptedPassword = "p" });
         db.Categories.Add(new Category { Name = "c", LocalSubfolder = "c" });
         await db.SaveChangesAsync();
         db.ProcessedMessages.Add(new ProcessedMessage { MailboxId = 1, MessageId = "seed" });

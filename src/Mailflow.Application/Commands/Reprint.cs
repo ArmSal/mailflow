@@ -13,17 +13,12 @@ public sealed class Reprint(IAppDbContext db, IPrinterService printers, IClock c
         var doc = await db.Documents.FirstOrDefaultAsync(d => d.Id == documentId, ct);
         if (doc is null) return new(false, "Document introuvable.");
 
-        var storeId = await (from pm in db.ProcessedMessages
-                             join mb in db.Mailboxes on pm.MailboxId equals mb.Id
-                             where pm.Id == doc.ProcessedMessageId
-                             select (int?)mb.StoreId).FirstOrDefaultAsync(ct);
-
         var wanted = printerId ?? doc.PrinterId;
         var printer = wanted is { } id
             ? await db.Printers.FirstOrDefaultAsync(p => p.Id == id && p.IsActive, ct)
             : null;
-        if (printer is null && printerId is null && storeId is { } sid)
-            printer = await db.Printers.Where(p => p.StoreId == sid && p.IsActive).OrderBy(p => p.Id).FirstOrDefaultAsync(ct);
+        if (printer is null && printerId is null)
+            printer = await db.Printers.Where(p => p.IsActive).OrderBy(p => p.Id).FirstOrDefaultAsync(ct);
         if (printer is null) return new(false, "Aucune imprimante active disponible.");
 
         try

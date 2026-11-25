@@ -12,14 +12,12 @@ namespace Mailflow.Application.Tests.History;
 public sealed class HistoryDb : DbContext, IAppDbContext
 {
     public HistoryDb(DbContextOptions<HistoryDb> o) : base(o) { }
-    public DbSet<Store> Stores { get; set; } = null!;
     public DbSet<Mailbox> Mailboxes { get; set; } = null!;
     public DbSet<Printer> Printers { get; set; } = null!;
     public DbSet<Category> Categories { get; set; } = null!;
     public DbSet<Rule> Rules { get; set; } = null!;
     public DbSet<RuleCondition> RuleConditions { get; set; } = null!;
     public DbSet<RuleAction> RuleActions { get; set; } = null!;
-    public DbSet<AllowedSender> AllowedSenders { get; set; } = null!;
     public DbSet<ProcessedMessage> ProcessedMessages { get; set; } = null!;
     public DbSet<Document> Documents { get; set; } = null!;
     public DbSet<RunLog> RunLogs { get; set; } = null!;
@@ -38,15 +36,14 @@ public sealed class HistoryFixture : IDisposable
         _options = new DbContextOptionsBuilder<HistoryDb>().UseSqlite(_conn).Options;
         using var db = new HistoryDb(_options);
         db.Database.EnsureCreated();
-        db.Stores.AddRange(new Store { Id = 1, Name = "Store A" }, new Store { Id = 2, Name = "Store B" });
-        db.Mailboxes.AddRange(new Mailbox { Id = 1, StoreId = 1, Email = "a@x.fr" }, new Mailbox { Id = 2, StoreId = 2, Email = "b@x.fr" });
+        db.Mailboxes.AddRange(new Mailbox { Id = 1, Email = "a@x.fr" }, new Mailbox { Id = 2, Email = "b@x.fr" });
         db.Categories.AddRange(
             new Category { Id = 1, Name = "Factures", LocalSubfolder = "Factures" },
             new Category { Id = 2, Name = "BL", LocalSubfolder = "BL" });
         db.Printers.AddRange(
-            new Printer { Id = 1, StoreId = 1, DisplayName = "P1", WindowsName = "Win1", DefaultCopies = 2, Duplex = true },
-            new Printer { Id = 2, StoreId = 1, DisplayName = "P2", WindowsName = "Win2" },
-            new Printer { Id = 3, StoreId = 2, DisplayName = "P3", WindowsName = "Win3", IsActive = false });
+            new Printer { Id = 1, DisplayName = "P1", WindowsName = "Win1", DefaultCopies = 2, Duplex = true },
+            new Printer { Id = 2, DisplayName = "P2", WindowsName = "Win2" },
+            new Printer { Id = 3, DisplayName = "P3", WindowsName = "Win3", IsActive = false });
         db.SaveChanges();
     }
 
@@ -96,21 +93,18 @@ public class DocumentSearchTests
     }
 
     [Fact]
-    public async Task Filters_by_category_store_and_errors()
+    public async Task Filters_by_category_and_errors()
     {
         using var fx = new HistoryFixture();
         fx.AddDoc(1, D, "a@f.fr", categoryId: 1);
         var cat2 = fx.AddDoc(1, D, "a@f.fr", categoryId: 2);
-        var store2 = fx.AddDoc(2, D, "a@f.fr");
         var err = fx.AddDoc(1, D, "a@f.fr", printError: "boom");
         using var db = fx.NewDb();
         var s = new DocumentSearch(db);
         Assert.Equal(cat2, Assert.Single((await s.SearchAsync(new(CategoryId: 2))).Items).DocumentId);
-        Assert.Equal(store2, Assert.Single((await s.SearchAsync(new(StoreId: 2))).Items).DocumentId);
         var e = Assert.Single((await s.SearchAsync(new(PrintErrorsOnly: true))).Items);
         Assert.Equal(err, e.DocumentId);
         Assert.Equal("boom", e.PrintError);
-        Assert.Equal("Store A", e.Store);
         Assert.Equal("Factures", e.Category);
     }
 

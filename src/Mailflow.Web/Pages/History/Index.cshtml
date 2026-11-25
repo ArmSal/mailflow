@@ -28,13 +28,6 @@
             @foreach (var c in Model.Categories) { <option value="@c.Id" selected="@(c.Id == Model.CategoryId)">@c.Name</option> }
         </select>
     </div>
-    <div class="field field-md">
-        <label class="form-label" asp-for="StoreId">Magasin</label>
-        <select class="form-select" asp-for="StoreId">
-            <option value="">Tous</option>
-            @foreach (var s in Model.Stores) { <option value="@s.Id" selected="@(s.Id == Model.StoreId)">@s.Name</option> }
-        </select>
-    </div>
     <div class="form-check form-switch">
         <input class="form-check-input" type="checkbox" role="switch" asp-for="ErrorsOnly" value="true" />
         <label class="form-check-label" asp-for="ErrorsOnly">Erreurs d'impression seulement</label>
@@ -65,7 +58,7 @@ else
 {
     <div class="table-wrap table-wrap--menu">
         <table class="table align-middle">
-            <thead><tr><th scope="col">Reçu le</th><th scope="col">Document</th><th scope="col">Catégorie</th><th scope="col">Magasin</th><th scope="col">Impression</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+            <thead><tr><th scope="col">Reçu le</th><th scope="col">Document</th><th scope="col">Catégorie</th><th scope="col">Impression</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
             <tbody>
             @foreach (var row in Model.Result.Items)
             {
@@ -84,7 +77,7 @@ else
             {
                 <li class="page-item @(i == Model.Result.Page ? "active" : "")">
                     <a class="page-link" asp-page="Index" asp-route-From="@Model.From?.ToString("yyyy-MM-dd")" asp-route-To="@Model.To?.ToString("yyyy-MM-dd")"
-                       asp-route-Supplier="@Model.Supplier" asp-route-CategoryId="@Model.CategoryId" asp-route-StoreId="@Model.StoreId"
+                       asp-route-Supplier="@Model.Supplier" asp-route-CategoryId="@Model.CategoryId"
                        asp-route-ErrorsOnly="@(Model.ErrorsOnly ? "true" : null)" asp-route-UnverifiedOnly="@(Model.UnverifiedOnly ? "true" : null)" asp-route-PageNumber="@i" aria-current="@(i == Model.Result.Page ? "page" : null)">@i</a>
                 </li>
             }

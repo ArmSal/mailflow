@@ -16,40 +16,13 @@ public sealed record MailMessage(
     IReadOnlyList<MailAttachment> Pdfs,
     Mailflow.Domain.Enums.SenderVerification SenderVerification = Mailflow.Domain.Enums.SenderVerification.Unknown);
 
-/// <summary>When <paramref name="AccessToken"/> is set the client signs in with XOAUTH2 and ignores the password.</summary>
-public sealed record MailboxConnection(string Host, int Port, bool UseSsl, string Username, string Password, string? AccessToken = null);
+/// <summary>Everything the IMAP client needs to connect to a mailbox.</summary>
+public sealed record MailboxConnection(string Host, int Port, bool UseSsl, string Username, string Password);
 
-/// <summary>Builds the connection for a stored mailbox: decrypts the password, or silently obtains an OAuth access token.</summary>
+/// <summary>Builds the connection for a stored mailbox (decrypts the password).</summary>
 public interface IMailboxConnectionFactory
 {
-    /// <exception cref="OAuthReconnectRequiredException">The mailbox uses OAuth and the user must sign in again.</exception>
     Task<MailboxConnection> CreateAsync(Mailbox mailbox, CancellationToken ct);
-}
-
-public sealed class OAuthReconnectRequiredException(string message) : Exception(message);
-
-public sealed record DeviceCodeInfo(string UserCode, string VerificationUrl, DateTime ExpiresAtUtc);
-
-public enum OAuthSignInState { None, WaitingForUser, Succeeded, Failed }
-
-public sealed record OAuthSignInStatus(OAuthSignInState State, DeviceCodeInfo? Code = null, string? Error = null);
-
-/// <summary>Microsoft device-code sign-in (works headless, e.g. when Mailflow runs as a Windows service).</summary>
-public interface IOAuthSignInService
-{
-    /// <summary>True when the Azure application (client) id has been configured in the settings.</summary>
-    Task<bool> IsConfiguredAsync(CancellationToken ct);
-
-    /// <summary>Starts a sign-in for the mailbox and returns once the code to show the user is known. Polling continues in the background.</summary>
-    Task<OAuthSignInStatus> StartAsync(int mailboxId, CancellationToken ct);
-
-    OAuthSignInStatus GetStatus(int mailboxId);
-
-    /// <summary>True when a token cache is stored for the mailbox (it may still need renewing).</summary>
-    bool IsSignedIn(Mailbox mailbox);
-
-    /// <summary>Forgets the stored tokens of the mailbox.</summary>
-    Task SignOutAsync(int mailboxId, CancellationToken ct);
 }
 
 public sealed record ConnectionTestResult(bool Success, int MessageCount, IReadOnlyList<string> Folders, string? Error);
@@ -66,6 +39,12 @@ public interface IPdfTextReader
 {
     /// <summary>Text of the first <paramref name="maxPages"/> pages.</summary>
     string ReadText(byte[] pdf, int maxPages = 2);
+}
+
+public interface IEmailPdfRenderer
+{
+    /// <summary>Renders an email (headers and body) as a printable PDF when no PDF attachment exists.</summary>
+    byte[] Render(MailMessage message);
 }
 
 public interface IPrinterService
@@ -96,14 +75,12 @@ public interface IClock
 
 public interface IAppDbContext
 {
-    DbSet<Store> Stores { get; }
     DbSet<Mailbox> Mailboxes { get; }
     DbSet<Printer> Printers { get; }
     DbSet<Category> Categories { get; }
     DbSet<Rule> Rules { get; }
     DbSet<RuleCondition> RuleConditions { get; }
     DbSet<RuleAction> RuleActions { get; }
-    DbSet<AllowedSender> AllowedSenders { get; }
     DbSet<ProcessedMessage> ProcessedMessages { get; }
     DbSet<Document> Documents { get; }
     DbSet<RunLog> RunLogs { get; }

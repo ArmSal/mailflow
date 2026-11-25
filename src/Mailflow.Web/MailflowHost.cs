@@ -2,7 +2,6 @@ using Mailflow.Application.Abstractions;
 using Mailflow.Application.Processing;
 using Mailflow.Domain.Rules;
 using Mailflow.Infrastructure;
-using Mailflow.Infrastructure.OAuth;
 using Mailflow.Infrastructure.Persistence;
 using Mailflow.Web.Auth;
 using Mailflow.Web.Backup;
@@ -96,7 +95,6 @@ public static class MailflowHost
         services.AddPersistence(connectionString);
         services.AddPdfAndStorage(o => o.DocumentsRoot = documentsRoot);
         services.AddMailPrintingSecurity();
-        services.AddMicrosoftOAuth();
         services.AddSingleton(new RuleEngine());
         services.AddScoped<MessagePipeline>();
         services.AddScoped<MailboxProcessor>();

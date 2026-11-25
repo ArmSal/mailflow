@@ -12,14 +12,12 @@ namespace Mailflow.Application.Tests;
 public sealed class TestDb : DbContext, IAppDbContext
 {
     public TestDb(DbContextOptions<TestDb> options) : base(options) { }
-    public DbSet<Store> Stores => Set<Store>();
     public DbSet<Mailbox> Mailboxes => Set<Mailbox>();
     public DbSet<Printer> Printers => Set<Printer>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Rule> Rules => Set<Rule>();
     public DbSet<RuleCondition> RuleConditions => Set<RuleCondition>();
     public DbSet<RuleAction> RuleActions => Set<RuleAction>();
-    public DbSet<AllowedSender> AllowedSenders => Set<AllowedSender>();
     public DbSet<ProcessedMessage> ProcessedMessages => Set<ProcessedMessage>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<RunLog> RunLogs => Set<RunLog>();
@@ -44,6 +42,7 @@ public sealed class Fixture : IDisposable
     public IPrinterService Printer = Substitute.For<IPrinterService>();
     public IMailboxConnectionFactory Connections = Substitute.For<IMailboxConnectionFactory>();
     public IClock Clock = Substitute.For<IClock>();
+    public IEmailPdfRenderer EmailPdf = Substitute.For<IEmailPdfRenderer>();
     public Mailbox Mailbox;
     public MessagePipeline Pipeline;
     public MailboxProcessor Processor;
@@ -58,16 +57,15 @@ public sealed class Fixture : IDisposable
         Connections.CreateAsync(Arg.Any<Mailbox>(), Arg.Any<CancellationToken>())
             .Returns(ci => Conn with { Host = ci.Arg<Mailbox>().Host == "" ? Conn.Host : ci.Arg<Mailbox>().Host });
         Pdf.ReadText(Arg.Any<byte[]>(), Arg.Any<int>()).Returns("");
+        EmailPdf.Render(Arg.Any<MailMessage>()).Returns("%PDF-email"u8.ToArray());
         Store.SaveAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(ci => new StoredDocument("C:/docs/" + ci.ArgAt<string>(3), Convert.ToHexString(ci.ArgAt<byte[]>(0) ?? []), false));
 
-        Db.Stores.Add(new Store { Id = 1, Name = "Store A" });
-        Mailbox = new Mailbox { Id = 1, StoreId = 1, Email = "owner@example.com", DefaultAfterProcessing = AfterProcessing.MarkRead };
+        Mailbox = new Mailbox { Id = 1, Email = "owner@example.com", DefaultAfterProcessing = AfterProcessing.MarkRead };
         Db.Mailboxes.Add(Mailbox);
         Db.Categories.AddRange(new Category { Id = 1, Name = "A trier", LocalSubfolder = "A trier" },
                                new Category { Id = 2, Name = "Factures", LocalSubfolder = "Factures" });
-        Db.Printers.Add(new Printer { Id = 1, StoreId = 1, WindowsName = "HP", IsActive = true });
-        Db.AllowedSenders.Add(new AllowedSender { Pattern = "fournisseur.fr" });
+        Db.Printers.Add(new Printer { Id = 1, WindowsName = "HP", IsActive = true });
         Db.Rules.Add(new Rule
         {
             Id = 1, Name = "Factures", Priority = 1,
@@ -81,7 +79,7 @@ public sealed class Fixture : IDisposable
         });
         Db.SaveChanges();
 
-        Pipeline = new MessagePipeline(Db, Mail, Pdf, Store, Printer, Clock, new RuleEngine());
+        Pipeline = new MessagePipeline(Db, Mail, Pdf, Store, Printer, Clock, new RuleEngine(), EmailPdf);
         Processor = new MailboxProcessor(Db, Mail, Connections, Pipeline, Clock);
     }
 
@@ -210,16 +208,33 @@ public class PipelineTests
     }
 
     [Fact]
-    public async Task Sender_not_allowed_saves_but_does_not_print()
+    public async Task Print_rule_without_pdf_renders_email_body_and_prints_when_enabled()
     {
         using var f = new Fixture();
-        f.Fetch(Fixture.Msg(from: "x@inconnu.com"));
+        f.Fetch(Fixture.Msg() with { Pdfs = [] });
 
-        await f.Processor.RunAsync(f.Mailbox, default);
+        var log = await f.Processor.RunAsync(f.Mailbox, default);
 
-        Assert.Single(f.Db.Documents);
+        Assert.Equal((1, 1, 1), (log.MessagesHandled, log.DocumentsSaved, log.Printed));
+        var doc = Assert.Single(f.Db.Documents);
+        Assert.Equal("email.pdf", doc.OriginalName);
+        Assert.NotNull(doc.PrintedAt);
+        await f.Printer.Received(1).PrintAsync("C:/docs/email.pdf", "HP", 2, false, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Print_rule_without_pdf_does_not_render_when_disabled_in_settings()
+    {
+        using var f = new Fixture();
+        f.Db.Settings.Add(new Setting { Key = "PrintEmailBodyWithoutPdf", Value = "false" });
+        f.Db.SaveChanges();
+        f.Fetch(Fixture.Msg() with { Pdfs = [] });
+
+        var log = await f.Processor.RunAsync(f.Mailbox, default);
+
+        Assert.Equal((1, 0, 0), (log.MessagesHandled, log.DocumentsSaved, log.Printed));
+        Assert.Empty(f.Db.Documents);
         await f.Printer.DidNotReceiveWithAnyArgs().PrintAsync(default!, default!, default, default, default);
-        await f.Mail.Received(1).MarkAsReadAsync(Arg.Any<MailboxConnection>(), "INBOX", 10, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -259,7 +274,7 @@ public class PipelineTests
     public async Task One_mailbox_failing_does_not_stop_the_others()
     {
         using var f = new Fixture();
-        f.Db.Mailboxes.Add(new Mailbox { Id = 2, StoreId = 1, Host = "bad", DefaultAfterProcessing = AfterProcessing.Leave });
+        f.Db.Mailboxes.Add(new Mailbox { Id = 2, Host = "bad", DefaultAfterProcessing = AfterProcessing.Leave });
         f.Db.SaveChanges();
         f.Mail.FetchSinceAsync(Arg.Is<MailboxConnection>(c => c.Host == "bad"), default!, default, default).ReturnsForAnyArgs<Task<IReadOnlyList<MailMessage>>>(ci =>
             ((MailboxConnection)ci[0]).Host == "bad" ? throw new IOException("unreachable") : Task.FromResult<IReadOnlyList<MailMessage>>([Fixture.Msg()]));
@@ -280,22 +295,24 @@ public class PrintPolicyTests
 {
     static readonly DateTime Now = new(2026, 1, 10, 12, 0, 0);
     static readonly Printer Active = new() { Id = 1, IsActive = true };
-    static readonly AllowedSender[] Allowed = [new() { Pattern = "fournisseur.fr" }, new() { Pattern = "Boss@autre.com" }, new() { Pattern = "magasin2.fr", StoreId = 2 }];
-
-    static bool Check(bool rule = true, string from = "a@fournisseur.fr", double ageHours = 1, Printer? printer = null, int store = 1, int maxAge = 48) =>
-        PrintPolicy.Allows(rule, from, Allowed, store, Now.AddHours(-ageHours), Now, maxAge, printer ?? Active);
+    static bool Check(bool rule = true, string from = "a@fournisseur.fr", double ageHours = 1, Printer? printer = null, int maxAge = 48) =>
+        PrintPolicy.Allows(rule, Now.AddHours(-ageHours), Now, maxAge, printer ?? Active);
 
     [Fact] public void All_conditions_met() => Assert.True(Check());
     [Fact] public void Rule_without_print_is_refused() => Assert.False(Check(rule: false));
-    [Fact] public void Unknown_sender_is_refused() => Assert.False(Check(from: "a@inconnu.com"));
-    [Fact] public void Exact_address_pattern_is_case_insensitive() => Assert.True(Check(from: "boss@AUTRE.com"));
-    [Fact] public void Other_address_at_pattern_domain_is_refused_for_address_pattern() => Assert.False(Check(from: "x@autre.com"));
     [Fact] public void Message_older_than_max_age_is_refused() => Assert.False(Check(ageHours: 49));
     [Fact] public void Message_exactly_at_max_age_is_allowed() => Assert.True(Check(ageHours: 48));
     [Fact] public void Inactive_printer_is_refused() => Assert.False(Check(printer: new Printer { IsActive = false }));
-    [Fact] public void Missing_printer_is_refused() => Assert.False(PrintPolicy.Allows(true, "a@fournisseur.fr", Allowed, 1, Now, Now, 48, null));
-    [Fact] public void Sender_scoped_to_other_store_is_refused() => Assert.False(Check(from: "a@magasin2.fr", store: 1));
-    [Fact] public void Sender_scoped_to_this_store_is_allowed() => Assert.True(Check(from: "a@magasin2.fr", store: 2));
+    [Fact] public void Missing_printer_is_refused() => Assert.False(PrintPolicy.Allows(true, Now, Now, 48, null));
+
+    [Fact]
+    public void ReasonBlocked_explains_each_blocked_condition()
+    {
+        Assert.Null(PrintPolicy.ReasonBlocked(false, Now.AddDays(-10), Now, 24, null));
+        Assert.Contains("imprimante", PrintPolicy.ReasonBlocked(true, Now, Now, 24, new Printer { IsActive = false }));
+        Assert.Contains("trop ancien", PrintPolicy.ReasonBlocked(true, Now.AddHours(-25), Now, 24, Active));
+        Assert.Null(PrintPolicy.ReasonBlocked(true, Now, Now, 24, Active));
+    }
 }
 
 public class SenderCheckTests

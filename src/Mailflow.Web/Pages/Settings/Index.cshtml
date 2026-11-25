@@ -18,7 +18,11 @@
         <p class="form-section-hint">Où sont archivés les PDF reçus.</p>
         <div class="field">
             <label class="form-label" asp-for="Input.DocumentsRoot">Dossier des documents</label>
-            <input class="form-control" asp-for="Input.DocumentsRoot" />
+            <div class="d-flex gap-2">
+                <input class="form-control" asp-for="Input.DocumentsRoot" />
+                <button type="button" class="btn btn-secondary text-nowrap" id="browse-folder">Parcourir…</button>
+            </div>
+            <div id="folder-browser"></div>
             <span class="field-validation-error" asp-validation-for="Input.DocumentsRoot"></span>
         </div>
     </section>
@@ -40,21 +44,10 @@
             <input type="number" class="form-control" asp-for="Input.PrintMaxAgeHours" />
             <span class="field-validation-error" asp-validation-for="Input.PrintMaxAgeHours"></span>
         </div>
-    </section>
-    <div class="form-actions mb-4"><button class="btn btn-primary" type="submit">Enregistrer</button></div>
-</form>
-
-<form method="post" asp-page-handler="Microsoft">
-    <section class="form-section">
-        <h2 class="form-section-title">Connexion Microsoft</h2>
-        <p class="form-section-hint">Pour relever une boîte Outlook / Hotmail sans mot de passe (OAuth2). Gratuit, aucun secret à conserver.</p>
-        @if (Model.MicrosoftMessage is not null) { <div class="alert alert-success" role="status">@Model.MicrosoftMessage</div> }
-        <p><span class="badge @(Model.MicrosoftConfigured ? "badge-ok" : "badge-neutral")">@(Model.MicrosoftConfigured ? "Configuré" : "Non configuré")</span></p>
-        <div class="field">
-            <label class="form-label" asp-for="Microsoft.ClientId">Identifiant d'application Azure (client)</label>
-            <input class="form-control" asp-for="Microsoft.ClientId" autocomplete="off" spellcheck="false" placeholder="00000000-0000-0000-0000-000000000000" />
-            <span class="form-text">Laisser vide pour désactiver. Procédure pas à pas : <code>Docs/microsoft-oauth-setup.md</code>.</span>
-            <span class="field-validation-error" asp-validation-for="Microsoft.ClientId"></span>
+        <div class="form-check form-switch mt-3">
+            <input class="form-check-input" type="checkbox" role="switch" asp-for="Input.PrintEmailBodyWithoutPdf" />
+            <label class="form-check-label" asp-for="Input.PrintEmailBodyWithoutPdf">Imprimer le contenu de l'e-mail lorsqu'aucun PDF n'est joint</label>
+            <div class="form-text">Si une règle d'impression correspond à un e-mail sans pièce jointe PDF, Mailflow génère un PDF avec son texte et l'envoie à l'imprimante.</div>
         </div>
     </section>
     <div class="form-actions mb-4"><button class="btn btn-primary" type="submit">Enregistrer</button></div>
@@ -109,3 +102,20 @@
     </form>
 </section>
 </div>
+
+@section Scripts {
+<script>
+(function () {
+    var input = document.getElementById('Input_DocumentsRoot'), panel = document.getElementById('folder-browser');
+    var url = '@Url.Page("/Settings/Index", "Browse")';
+    document.getElementById('browse-folder').addEventListener('click', function () {
+        htmx.ajax('GET', url + '&path=' + encodeURIComponent(input.value), { target: '#folder-browser', swap: 'innerHTML' });
+    });
+    panel.addEventListener('click', function (e) {
+        var pick = e.target.closest('[data-pick]');
+        if (pick) { input.value = pick.dataset.pick; panel.innerHTML = ''; input.focus(); }
+        else if (e.target.closest('[data-close-browser]')) panel.innerHTML = '';
+    });
+})();
+</script>
+}

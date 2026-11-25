@@ -4,16 +4,6 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Mailflow.Infrastructure.Persistence.Configurations;
 
-internal sealed class StoreConfiguration : IEntityTypeConfiguration<Store>
-{
-    public void Configure(EntityTypeBuilder<Store> b)
-    {
-        b.HasKey(x => x.Id);
-        b.Property(x => x.Name).IsRequired().HasMaxLength(200);
-        b.Property(x => x.Address).HasMaxLength(500);
-    }
-}
-
 internal sealed class MailboxConfiguration : IEntityTypeConfiguration<Mailbox>
 {
     public void Configure(EntityTypeBuilder<Mailbox> b)
@@ -25,7 +15,6 @@ internal sealed class MailboxConfiguration : IEntityTypeConfiguration<Mailbox>
         b.Property(x => x.Username).IsRequired().HasMaxLength(320);
         b.Property(x => x.EncryptedPassword).IsRequired();
         b.Property(x => x.InboxFolder).IsRequired().HasMaxLength(255);
-        b.HasOne<Store>().WithMany().HasForeignKey(x => x.StoreId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -36,7 +25,6 @@ internal sealed class PrinterConfiguration : IEntityTypeConfiguration<Printer>
         b.HasKey(x => x.Id);
         b.Property(x => x.DisplayName).IsRequired().HasMaxLength(200);
         b.Property(x => x.WindowsName).IsRequired().HasMaxLength(500);
-        b.HasOne<Store>().WithMany().HasForeignKey(x => x.StoreId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -81,16 +69,6 @@ internal sealed class RuleActionConfiguration : IEntityTypeConfiguration<RuleAct
         b.Property(x => x.ImapFolder).HasMaxLength(255);
         b.HasOne<Category>().WithMany().HasForeignKey(x => x.CategoryId).OnDelete(DeleteBehavior.SetNull);
         b.HasOne<Printer>().WithMany().HasForeignKey(x => x.PrinterId).OnDelete(DeleteBehavior.SetNull);
-    }
-}
-
-internal sealed class AllowedSenderConfiguration : IEntityTypeConfiguration<AllowedSender>
-{
-    public void Configure(EntityTypeBuilder<AllowedSender> b)
-    {
-        b.HasKey(x => x.Id);
-        b.Property(x => x.Pattern).IsRequired().HasMaxLength(320);
-        b.HasOne<Store>().WithMany().HasForeignKey(x => x.StoreId).OnDelete(DeleteBehavior.Cascade);
     }
 }
 

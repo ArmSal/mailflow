@@ -1,15 +1,16 @@
 @model Mailflow.Domain.Entities.Mailbox
-@inject Mailflow.Application.Abstractions.IOAuthSignInService OAuth
 <tr>
     <td><strong>@Model.DisplayName</strong><span class="cell-sub">@Model.Email</span>
-        @if (Model.AuthMethod == Mailflow.Domain.Enums.AuthMethod.MicrosoftOAuth)
-        {
-            <span class="cell-badges"><span class="badge badge-neutral">OAuth2</span>@if (!OAuth.IsSignedIn(Model)) { <span class="badge badge-warn">Reconnexion requise</span> }</span>
-        }
         @if (ViewData["Error"] is string err) { <span class="cell-inline-error" role="alert">@err</span> }
-        @if (!string.IsNullOrEmpty(Model.LastError)) { <span class="cell-inline-warn">@Model.LastError</span> }
+        @if (!string.IsNullOrEmpty(Model.LastError))
+        {
+            <span class="cell-inline-warn">@Model.LastError</span>
+            @if (Mailflow.Web.Pages.Mailboxes.MailErrorHints.For(Model.LastError, Model.Host) is { } hint)
+            {
+                <span class="cell-sub">@hint</span>
+            }
+        }
     </td>
-    <td>@ViewData["StoreName"]</td>
     <td class="text-nowrap">@(Model.LastCheckAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
     <td>
         <form method="post" hx-post="@Url.Page("/Mailboxes/Index", "Toggle", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML">

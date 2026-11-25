@@ -9,7 +9,6 @@ public class ImapPresetsTests
     [InlineData("OVH Email Pro", "pro1.mail.ovh.net")]
     [InlineData("iCloud", "imap.mail.me.com")]
     [InlineData("Gmail", "imap.gmail.com")]
-    [InlineData("Outlook / Hotmail", "outlook.office365.com")]
     [InlineData("Yahoo", "imap.mail.yahoo.com")]
     public void Preset_has_expected_host(string name, string host)
     {
@@ -33,6 +32,18 @@ public class ImapPresetsTests
         Assert.Equal(ImapPresets.All.Select(p => (p.Name, p.Host, p.Port, p.UseSsl)),
                      shown.Select(p => (p.Label, p.Host, p.Port, p.UseSsl)));
     }
+
+    [Theory]
+    [InlineData("gmail.com", "Gmail")]
+    [InlineData("icloud.com", "iCloud")]
+    [InlineData("yahoo.fr", "Yahoo")]
+    public void Known_email_domains_point_to_their_provider(string domain, string name) =>
+        Assert.Contains(domain, Assert.Single(ImapPresets.All, x => x.Name == name).Domains!);
+
+    [Fact]
+    public void An_email_domain_belongs_to_only_one_provider() =>
+        Assert.Equal(ImapPresets.All.SelectMany(p => p.Domains ?? []).Count(),
+                     ImapPresets.All.SelectMany(p => p.Domains ?? []).Distinct().Count());
 
     [Fact]
     public async Task TestConnection_never_throws()

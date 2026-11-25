@@ -5,12 +5,12 @@
     var groups = new (string Title, (string Url, string Label, string Icon)[] Items)[]
     {
         ("Tableau de bord", [("/", "Accueil", "home")]),
-        ("Configuration", [("/Stores", "Magasins", "store"), ("/Mailboxes", "Boîtes mail", "inbox"), ("/Printers", "Imprimantes", "printer"),
-            ("/Categories", "Catégories", "tag"), ("/Rules", "Règles", "rules"), ("/Rules/AllowedSenders", "Expéditeurs autorisés", "shield")]),
+        ("Configuration", [("/Mailboxes", "Boîtes mail", "inbox"), ("/Printers", "Imprimantes", "printer"),
+            ("/Categories", "Catégories", "tag"), ("/Rules", "Règles", "rules")]),
         ("Activité", [("/History", "Historique", "clock"), ("/Journal", "Journal", "list")]),
         ("Système", [("/Settings", "Paramètres", "sliders")]),
     };
-    // The most specific matching entry is the active one (/Rules/AllowedSenders wins over /Rules).
+    // The most specific matching entry is the active one (longest URL wins).
     var activeUrl = groups.SelectMany(g => g.Items)
         .Where(i => i.Url == "/" ? path == "/" || path.Equals("/Index", StringComparison.OrdinalIgnoreCase)
                                  : path.Equals(i.Url, StringComparison.OrdinalIgnoreCase) || path.StartsWith(i.Url + "/", StringComparison.OrdinalIgnoreCase))

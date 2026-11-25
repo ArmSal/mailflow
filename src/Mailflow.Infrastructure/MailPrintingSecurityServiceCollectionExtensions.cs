@@ -21,6 +21,7 @@ public static class MailPrintingSecurityServiceCollectionExtensions
         services.AddSingleton<IPrinterCatalog, WindowsPrinterCatalog>();
         services.AddSingleton<IPrinterService, SumatraPrinterService>();
         services.AddSingleton<ISecretStore, DpapiSecretStore>();
+        services.AddSingleton<IMailboxConnectionFactory, Mail.MailboxConnectionFactory>();
         return services;
     }
 }

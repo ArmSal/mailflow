@@ -42,10 +42,6 @@ public sealed class MailboxProcessor(IAppDbContext db, IMailClient mail, IMailbo
                 }
             }
         }
-        catch (OAuthReconnectRequiredException ex)
-        {
-            errors.Add(ex.Message);
-        }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             errors.Add($"Mailbox error: {ex.Message}");

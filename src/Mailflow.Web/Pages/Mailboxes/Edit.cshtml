@@ -1,6 +1,10 @@
 @page "{id:int?}"
 @using Mailflow.Domain.Enums
-@{ var isMs = Model.Input.AuthMethod == AuthMethod.MicrosoftOAuth; var isNew = Request.RouteValues["id"] is null; }
+@{
+    var isNew = Request.RouteValues["id"] is null;
+    var serverOpen = (ViewData.ModelState.TryGetValue("Input.Host", out var hs) && hs.Errors.Count > 0)
+        || (ViewData.ModelState.TryGetValue("Input.Port", out var ps) && ps.Errors.Count > 0);
+}
 @using Mailflow.Web.Pages.Mailboxes
 @model Mailflow.Web.Pages.Mailboxes.EditModel
 @{ ViewData["Title"] = "Boîte mail"; }
@@ -14,51 +18,41 @@
 <form method="post" id="mailbox-form">
     <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
     <section class="form-section">
-        <h2 class="form-section-title">Identité</h2>
-        <p class="form-section-hint">À quel magasin appartient cette boîte et comment l'afficher.</p>
-        <div class="form-grid">
-            <div class="field"><label class="form-label" asp-for="Input.StoreId">Magasin</label>
-                <select class="form-select" asp-for="Input.StoreId" asp-items="@(new SelectList(Model.Stores, "Id", "Name"))"></select>
-                <span class="field-validation-error" asp-validation-for="Input.StoreId"></span></div>
-            <div class="field"><label class="form-label" asp-for="Input.DisplayName">Nom affiché</label><input class="form-control" asp-for="Input.DisplayName" /><span class="field-validation-error" asp-validation-for="Input.DisplayName"></span></div>
-        </div>
-        <div class="field"><label class="form-label" asp-for="Input.Email">Adresse e-mail</label><input class="form-control" asp-for="Input.Email" /><span class="field-validation-error" asp-validation-for="Input.Email"></span></div>
-    </section>
-    <section class="form-section">
         <h2 class="form-section-title">Connexion</h2>
-        <p class="form-section-hint">Le mot de passe n'est jamais réaffiché une fois enregistré.</p>
-        <div class="field"><label class="form-label" asp-for="Input.AuthMethod">Mode de connexion</label>
-            <select class="form-select" asp-for="Input.AuthMethod">
-                <option value="@AuthMethod.Password">Mot de passe</option>
-                <option value="@AuthMethod.MicrosoftOAuth">Compte Microsoft (OAuth2)</option>
-            </select>
-            <span class="form-text">Outlook et Hotmail refusent le mot de passe : choisissez « Compte Microsoft (OAuth2) ».</span>
-            <span class="field-validation-error" asp-validation-for="Input.AuthMethod"></span></div>
-        <div class="field"><label class="form-label" for="preset">Fournisseur</label>
-            <select class="form-select" id="preset">
-                <option value="">Choisir…</option>
-                @foreach (var p in ProviderPresets.All)
-                {
-                    <option value="@p.Key" data-host="@p.Host" data-port="@p.Port" data-ssl="@(p.UseSsl ? "1" : "0")" data-oauth="@(p.UsesMicrosoftOAuth ? "1" : "0")">@p.Label</option>
-                }
-            </select>
-            <span class="form-text">Remplit le serveur, le port et le SSL. Mot de passe d'application requis pour iCloud, Gmail et Yahoo.</span></div>
-        <div class="form-grid">
-            <div class="field"><label class="form-label" asp-for="Input.Host">Serveur IMAP</label><input class="form-control" asp-for="Input.Host" /><span class="field-validation-error" asp-validation-for="Input.Host"></span></div>
-            <div class="field"><label class="form-label" asp-for="Input.Port">Port</label><input type="number" class="form-control" asp-for="Input.Port" /><span class="field-validation-error" asp-validation-for="Input.Port"></span></div>
+        <p class="form-section-hint">Adresse e-mail et mot de passe de la boîte. Le mot de passe n'est jamais réaffiché une fois enregistré.</p>
+        <div class="field"><label class="form-label" asp-for="Input.Email">Adresse e-mail</label><input class="form-control" asp-for="Input.Email" autocomplete="off" autofocus /><span class="field-validation-error" asp-validation-for="Input.Email"></span></div>
+        <div class="field"><label class="form-label" for="Input_Password">Mot de passe</label>
+            <input type="password" class="form-control" id="Input_Password" name="Input.Password" autocomplete="new-password" placeholder="@(isNew ? "" : "Laisser vide pour conserver l'actuel")" />
+            <span class="form-text">Mot de passe d'application requis pour iCloud, Gmail et Yahoo.</span>
+            <span class="field-validation-error" asp-validation-for="Input.Password"></span></div>
+        <div class="field"><label class="form-label" asp-for="Input.DisplayName">Nom affiché</label><input class="form-control" asp-for="Input.DisplayName" /><span class="field-validation-error" asp-validation-for="Input.DisplayName"></span></div>
+        <input type="hidden" id="Input_UseSsl" name="Input.UseSsl" value="@(Model.Input.UseSsl ? "true" : "false")" />
+        @if (!string.IsNullOrEmpty(Model.Input.Username) && !string.Equals(Model.Input.Username, Model.Input.Email, StringComparison.OrdinalIgnoreCase))
+        {
+            <input type="hidden" name="Input.Username" value="@Model.Input.Username" />
+        }
+        <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" role="switch" id="server-toggle" checked="@serverOpen" aria-controls="server-settings" />
+            <label class="form-check-label" for="server-toggle">Options avancées</label>
         </div>
-        <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" asp-for="Input.UseSsl" /><label class="form-check-label" asp-for="Input.UseSsl">Connexion sécurisée (SSL)</label></div>
-        <div class="form-grid">
-            <div class="field"><label class="form-label" asp-for="Input.Username">Identifiant</label><input class="form-control" asp-for="Input.Username" autocomplete="off" /><span class="field-validation-error" asp-validation-for="Input.Username"></span></div>
-            <div class="field" id="password-field" hidden="@isMs"><label class="form-label" for="Input_Password">Mot de passe</label>
-                <input type="password" class="form-control" id="Input_Password" name="Input.Password" autocomplete="new-password" placeholder="@(isNew ? "" : "Laisser vide pour conserver l'actuel")" />
-                <span class="field-validation-error" asp-validation-for="Input.Password"></span></div>
-        </div>
-        <div id="ms-section" class="field" hidden="@(!isMs)">
-            <partial name="_MsSignIn" model="Model.MsPanel" />
+        <p class="form-text" id="provider-hint" aria-live="polite"></p>
+        <div id="server-settings" hidden="@(!serverOpen)">
+            <div class="field"><label class="form-label" for="preset">Fournisseur</label>
+                <select class="form-select" id="preset">
+                    <option value="">Choisir…</option>
+                    @foreach (var p in ProviderPresets.All)
+                    {
+                        var selected = !string.IsNullOrEmpty(p.Host) && string.Equals(p.Host, Model.Input.Host, StringComparison.OrdinalIgnoreCase);
+                        <option value="@p.Key" selected="@selected" data-host="@p.Host" data-port="@p.Port" data-ssl="@(p.UseSsl ? "1" : "0")" data-domains="@p.Domains">@p.Label</option>
+                    }
+                </select></div>
+            <div class="form-grid">
+                <div class="field"><label class="form-label" asp-for="Input.Host">Serveur IMAP</label><input class="form-control" asp-for="Input.Host" /><span class="field-validation-error" asp-validation-for="Input.Host"></span></div>
+                <div class="field"><label class="form-label" asp-for="Input.Port">Port</label><input type="number" class="form-control" asp-for="Input.Port" /><span class="field-validation-error" asp-validation-for="Input.Port"></span></div>
+            </div>
         </div>
         <div class="field">
-            <div><button type="button" class="btn btn-secondary" hx-post="@Url.Page("/Mailboxes/Edit", "Test", new { id = Request.RouteValues["id"] })" hx-include="#mailbox-form" hx-target="#test-result">Tester la connexion</button></div>
+            <div><button type="button" class="btn btn-secondary" hx-post="@Url.Page("/Mailboxes/Edit", "Test", new { id = Request.RouteValues["id"] })" hx-include="#mailbox-form" hx-target="#test-result" hx-disabled-elt="this">Tester la connexion</button></div>
             <div id="test-result" class="mt-2" aria-live="polite"></div>
         </div>
     </section>
@@ -82,30 +76,72 @@
 </form>
 @section Scripts {
 <script>
-document.getElementById('preset').addEventListener('change', function () {
-    var o = this.selectedOptions[0];
-    if (!o || !o.value) return;
-    if (o.dataset.host) document.getElementById('Input_Host').value = o.dataset.host;
-    document.getElementById('Input_Port').value = o.dataset.port;
-    document.getElementById('Input_UseSsl').checked = o.dataset.ssl === '1';
-    var mode = document.getElementById('Input_AuthMethod');
-    mode.value = o.dataset.oauth === '1' ? 'MicrosoftOAuth' : 'Password';
-    mode.dispatchEvent(new Event('change'));
-});
 (function () {
-    var mode = document.getElementById('Input_AuthMethod');
-    function apply() {
-        var ms = mode.value === 'MicrosoftOAuth';
-        document.getElementById('password-field').hidden = ms;
-        document.getElementById('ms-section').hidden = !ms;
-        var u = document.getElementById('Input_Username'), e = document.getElementById('Input_Email');
-        if (ms && !u.value) u.value = e.value;
+    var $ = function (id) { return document.getElementById(id); };
+    var email = $('Input_Email'), name = $('Input_DisplayName'), host = $('Input_Host'), port = $('Input_Port'), ssl = $('Input_UseSsl');
+    var preset = $('preset'), toggle = $('server-toggle'), panel = $('server-settings'), hint = $('provider-hint');
+    var nameAuto = !name.value, hostAuto = false, timer;
+
+    function setOpen(open) { toggle.checked = open; panel.hidden = !open; }
+
+    function showHint() {
+        var o = preset.selectedOptions[0];
+        var known = o && o.value ? ' (' + o.value + ')' : '';
+        hint.textContent = host.value ? 'Serveur : ' + host.value + ':' + port.value + known : '';
     }
-    mode.addEventListener('change', apply);
+
+    function domainOf() {
+        var v = (email.value || '').trim().toLowerCase(), at = v.lastIndexOf('@@');
+        return at < 0 ? '' : v.slice(at + 1);
+    }
+
+    function applyPreset(o) {
+        if (o.dataset.host) host.value = o.dataset.host;
+        port.value = o.dataset.port;
+        ssl.value = o.dataset.ssl === '1' ? 'true' : 'false';
+    }
+
+    function detect() {
+        var d = domainOf();
+        for (var i = 0; i < preset.options.length; i++) {
+            var o = preset.options[i];
+            if (o.dataset.domains && o.dataset.domains.split(',').indexOf(d) >= 0) {
+                if (host.value && !hostAuto) return;
+                preset.selectedIndex = i;
+                applyPreset(o);
+                hostAuto = true;
+                showHint();
+                return;
+            }
+        }
+        if (hostAuto) { host.value = ''; preset.selectedIndex = 0; hostAuto = false; }
+        showHint();
+    }
+
+    function onEmailDone() {
+        detect();
+        if (!host.value.trim() && domainOf().indexOf('.') > 0) {
+            setOpen(true);
+            hint.textContent = 'Fournisseur non reconnu : choisissez-le ou saisissez le serveur IMAP.';
+        }
+    }
+
+    email.addEventListener('input', function () {
+        if (nameAuto) name.value = email.value.trim();
+        clearTimeout(timer);
+        timer = setTimeout(detect, 250);
+    });
+    email.addEventListener('change', onEmailDone);
+    name.addEventListener('input', function () { nameAuto = false; });
+    host.addEventListener('input', function () { hostAuto = false; showHint(); });
+    port.addEventListener('input', showHint);
+    preset.addEventListener('change', function () {
+        var o = this.selectedOptions[0];
+        if (o && o.value) { applyPreset(o); hostAuto = false; }
+        showHint();
+    });
+    toggle.addEventListener('change', function () { panel.hidden = !toggle.checked; });
+    showHint();
 })();
 </script>
 }
-
-
-
-

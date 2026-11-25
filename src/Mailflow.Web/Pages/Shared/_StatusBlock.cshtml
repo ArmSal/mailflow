@@ -109,7 +109,7 @@
                     <ul class="event-list">
                         @foreach (var e in Model.MailboxErrors)
                         {
-                            <li><svg class="icon" aria-hidden="true"><use href="#i-alert" /></svg><div><div><span class="event-title">@e.Name</span> <span class="event-meta">@Fmt(e.At)</span></div><div class="event-text">@e.Error</div></div></li>
+                            <li><svg class="icon" aria-hidden="true"><use href="#i-alert" /></svg><div><div><span class="event-title">@e.Name</span> <span class="event-meta">@Fmt(e.At)</span></div><div class="event-text">@e.Error</div>@if (!string.IsNullOrEmpty(e.Hint)) { <div class="form-text">@e.Hint</div> }</div></li>
                         }
                         @foreach (var e in Model.RunErrors)
                         {

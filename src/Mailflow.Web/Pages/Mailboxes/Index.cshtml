@@ -22,12 +22,11 @@ else
 {
 <div class="table-wrap">
     <table class="table align-middle">
-        <thead><tr><th scope="col">Nom</th><th scope="col">Magasin</th><th scope="col">Dernière relève</th><th scope="col">Statut</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+        <thead><tr><th scope="col">Nom</th><th scope="col">Dernière relève</th><th scope="col">Statut</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
         <tbody>
         @foreach (var m in Model.Items)
         {
-            ViewData["StoreName"] = Model.StoreNames.GetValueOrDefault(m.StoreId);
-            <partial name="_MailboxRow" model="m" view-data="ViewData" />
+            <partial name="_MailboxRow" model="m" />
         }
         </tbody>
     </table>

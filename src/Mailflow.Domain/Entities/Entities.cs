@@ -2,18 +2,9 @@ using Mailflow.Domain.Enums;
 
 namespace Mailflow.Domain.Entities;
 
-public class Store
-{
-    public int Id { get; set; }
-    public string Name { get; set; } = "";
-    public string? Address { get; set; }
-    public bool IsActive { get; set; } = true;
-}
-
 public class Mailbox
 {
     public int Id { get; set; }
-    public int StoreId { get; set; }
     public string DisplayName { get; set; } = "";
     public string Email { get; set; } = "";
     public string Host { get; set; } = "";
@@ -21,9 +12,6 @@ public class Mailbox
     public bool UseSsl { get; set; } = true;
     public string Username { get; set; } = "";
     public string EncryptedPassword { get; set; } = "";
-    public AuthMethod AuthMethod { get; set; } = AuthMethod.Password;
-    /// <summary>Encrypted OAuth token cache (never the plain refresh token); only used when AuthMethod is MicrosoftOAuth.</summary>
-    public string? EncryptedOAuthCache { get; set; }
     public string InboxFolder { get; set; } = "INBOX";
     public int CheckIntervalMinutes { get; set; } = 5;
     public int LookbackDays { get; set; } = 3;
@@ -36,7 +24,6 @@ public class Mailbox
 public class Printer
 {
     public int Id { get; set; }
-    public int StoreId { get; set; }
     public string DisplayName { get; set; } = "";
     public string WindowsName { get; set; } = "";
     public PrinterKind Kind { get; set; } = PrinterKind.Local;
@@ -87,14 +74,6 @@ public class RuleAction
     public int? PrinterId { get; set; }
     public int? Copies { get; set; }
     public string? ImapFolder { get; set; }
-}
-
-public class AllowedSender
-{
-    public int Id { get; set; }
-    /// <summary>Email address or domain.</summary>
-    public string Pattern { get; set; } = "";
-    public int? StoreId { get; set; }
 }
 
 public class ProcessedMessage

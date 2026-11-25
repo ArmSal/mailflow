@@ -22,6 +22,5 @@ public enum SenderCheckMode { Off, Warn, Strict }
 public enum SenderVerification { Unknown, Pass, Fail }
 
 /// <summary>How a mailbox signs in to its IMAP server.</summary>
-public enum AuthMethod { Password, MicrosoftOAuth }
 
 public enum MessageStatus { Processed, Failed, Skipped }

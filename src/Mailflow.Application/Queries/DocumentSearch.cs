@@ -10,7 +10,6 @@ public sealed record DocumentSearchFilter(
     DateOnly? To = null,
     string? Supplier = null,
     int? CategoryId = null,
-    int? StoreId = null,
     bool PrintErrorsOnly = false,
     int Page = 1,
     bool UnverifiedOnly = false);
@@ -23,8 +22,6 @@ public sealed record DocumentRow(
     string OriginalName,
     int CategoryId,
     string Category,
-    int StoreId,
-    string Store,
     DateTime? PrintedAt,
     string? PrintError,
     SenderVerification SenderVerification = SenderVerification.Unknown);
@@ -42,20 +39,17 @@ public sealed class DocumentSearch(IAppDbContext db)
         from d in db.Documents
         join pm in db.ProcessedMessages on d.ProcessedMessageId equals pm.Id
         join c in db.Categories on d.CategoryId equals c.Id
-        join mb in db.Mailboxes on pm.MailboxId equals mb.Id
-        join st in db.Stores on mb.StoreId equals st.Id
-        select new Joined { D = d, Pm = pm, C = c, St = st };
+        select new Joined { D = d, Pm = pm, C = c };
 
     private sealed class Joined
     {
         public Document D { get; init; } = null!;
         public ProcessedMessage Pm { get; init; } = null!;
         public Category C { get; init; } = null!;
-        public Store St { get; init; } = null!;
     }
 
     private static DocumentRow ToRow(Joined j) => new(j.D.Id, j.Pm.ReceivedAt, j.Pm.From, j.Pm.Subject, j.D.OriginalName,
-        j.C.Id, j.C.Name, j.St.Id, j.St.Name, j.D.PrintedAt, j.D.PrintError, j.Pm.SenderVerification);
+        j.C.Id, j.C.Name, j.D.PrintedAt, j.D.PrintError, j.Pm.SenderVerification);
 
     public async Task<DocumentRow?> GetRowAsync(int documentId, CancellationToken ct = default)
     {
@@ -74,7 +68,6 @@ public sealed class DocumentSearch(IAppDbContext db)
             q = q.Where(r => r.Pm.From.ToLower().Contains(s));
         }
         if (f.CategoryId is { } cat) q = q.Where(r => r.C.Id == cat);
-        if (f.StoreId is { } store) q = q.Where(r => r.St.Id == store);
         if (f.PrintErrorsOnly) q = q.Where(r => r.D.PrintError != null && r.D.PrintError != "");
 
         if (f.UnverifiedOnly) q = q.Where(r => r.Pm.SenderVerification != SenderVerification.Pass);

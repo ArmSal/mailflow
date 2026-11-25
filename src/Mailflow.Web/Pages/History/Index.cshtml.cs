@@ -23,14 +23,12 @@ public class IndexModel(
     [BindProperty(SupportsGet = true)] public DateOnly? To { get; set; }
     [BindProperty(SupportsGet = true)] public string? Supplier { get; set; }
     [BindProperty(SupportsGet = true)] public int? CategoryId { get; set; }
-    [BindProperty(SupportsGet = true)] public int? StoreId { get; set; }
     [BindProperty(SupportsGet = true)] public bool ErrorsOnly { get; set; }
     [BindProperty(SupportsGet = true)] public bool UnverifiedOnly { get; set; }
     [BindProperty(SupportsGet = true)] public int PageNumber { get; set; } = 1;
 
     public PagedResult<DocumentRow> Result { get; private set; } = new([], 0, 1, DocumentSearch.PageSize);
     public List<Category> Categories { get; private set; } = [];
-    public List<Store> Stores { get; private set; } = [];
     public List<Printer> Printers { get; private set; } = [];
 
     public async Task OnGetAsync(CancellationToken ct)
@@ -40,7 +38,7 @@ public class IndexModel(
         if (Supplier is { Length: > 200 }) Supplier = Supplier[..200];
         await LoadLookups(ct);
         if (!ModelState.IsValid) return;
-        Result = await search.SearchAsync(new DocumentSearchFilter(From, To, Supplier, CategoryId, StoreId, ErrorsOnly, Math.Max(1, PageNumber), UnverifiedOnly), ct);
+        Result = await search.SearchAsync(new DocumentSearchFilter(From, To, Supplier, CategoryId, ErrorsOnly, Math.Max(1, PageNumber), UnverifiedOnly), ct);
     }
 
     public async Task<IActionResult> OnPostReprintAsync(int id, int? printerId, CancellationToken ct)
@@ -83,7 +81,6 @@ public class IndexModel(
     private async Task LoadLookups(CancellationToken ct)
     {
         Categories = await db.Categories.OrderBy(c => c.SortOrder).ThenBy(c => c.Name).ToListAsync(ct);
-        Stores = await db.Stores.OrderBy(s => s.Name).ToListAsync(ct);
         Printers = await db.Printers.Where(p => p.IsActive).OrderBy(p => p.DisplayName).ToListAsync(ct);
     }
 }

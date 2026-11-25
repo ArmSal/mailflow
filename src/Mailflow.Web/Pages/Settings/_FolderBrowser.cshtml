@@ -1,0 +1,22 @@
+@model Mailflow.Web.Pages.Settings.FolderListing
+<div class="folder-browser" role="group" aria-label="Choisir un dossier" style="border:1px solid var(--border, #ccc);border-radius:8px;padding:.75rem;margin-top:.5rem">
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+        @if (Model.Parent is not null)
+        {
+            <button type="button" class="btn btn-sm btn-secondary" hx-get="@Url.Page("/Settings/Index", "Browse", new { path = Model.Parent })" hx-target="#folder-browser">↑ Dossier parent</button>
+        }
+        <strong class="text-break">@(Model.Path.Length == 0 ? "Ce PC" : Model.Path)</strong>
+    </div>
+    @if (Model.Error is not null) { <div class="alert alert-warning" role="status">@Model.Error</div> }
+    <div style="max-height:14rem;overflow:auto" class="d-flex flex-column gap-1">
+        @foreach (var f in Model.Folders)
+        {
+            <button type="button" class="btn btn-sm btn-ghost text-start" hx-get="@Url.Page("/Settings/Index", "Browse", new { path = f })" hx-target="#folder-browser">📁 @(Model.Path.Length == 0 ? f : System.IO.Path.GetFileName(f))</button>
+        }
+        @if (Model.Folders.Count == 0 && Model.Error is null) { <span class="form-text">Aucun sous-dossier.</span> }
+    </div>
+    <div class="d-flex gap-2 mt-2">
+        @if (Model.Path.Length > 0) { <button type="button" class="btn btn-sm btn-primary" data-pick="@Model.Path">Choisir ce dossier</button> }
+        <button type="button" class="btn btn-sm btn-ghost" data-close-browser>Fermer</button>
+    </div>
+</div>

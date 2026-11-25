@@ -8,7 +8,6 @@
         <span class="cell-sub cell-clip" title="@r.OriginalName">@r.OriginalName</span>
     </td>
     <td>@r.Category</td>
-    <td>@r.Store</td>
     <td class="cell-result">
         @if (r.PrintedAt is { } p) { <span class="badge badge-ok">Imprimé</span><span class="print-detail">@p.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span> }
         else if (!string.IsNullOrEmpty(r.PrintError)) { <span class="badge badge-error">Erreur</span> }

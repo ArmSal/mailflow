@@ -3,7 +3,6 @@
     <td><strong>@Model.DisplayName</strong><span class="cell-sub">@Model.WindowsName</span>
         @if (ViewData["Error"] is string err) { <span class="cell-inline-error" role="alert">@err</span> }
     </td>
-    <td>@ViewData["StoreName"]</td>
     <td class="text-nowrap">@Model.DefaultCopies @(Model.DefaultCopies > 1 ? "copies" : "copie")<span class="cell-sub">@(Model.Duplex ? "Recto-verso" : "Recto seul")</span></td>
     <td>
         <form method="post" hx-post="@Url.Page("/Printers/Index", "Toggle", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML">

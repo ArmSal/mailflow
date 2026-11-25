@@ -17,27 +17,6 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.15");
 
-            modelBuilder.Entity("Mailflow.Domain.Entities.AllowedSender", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Pattern")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("StoreId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StoreId");
-
-                    b.ToTable("AllowedSenders");
-                });
-
             modelBuilder.Entity("Mailflow.Domain.Entities.Category", b =>
                 {
                     b.Property<int>("Id")
@@ -126,10 +105,6 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("AuthMethod")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("CheckIntervalMinutes")
                         .HasColumnType("INTEGER");
 
@@ -145,9 +120,6 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(320)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("EncryptedOAuthCache")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("EncryptedPassword")
@@ -179,9 +151,6 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
                     b.Property<int>("Port")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("StoreId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<bool>("UseSsl")
                         .HasColumnType("INTEGER");
 
@@ -191,8 +160,6 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("StoreId");
 
                     b.ToTable("Mailboxes");
                 });
@@ -221,17 +188,12 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("StoreId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("WindowsName")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("StoreId");
 
                     b.ToTable("Printers");
                 });
@@ -440,37 +402,6 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
                     b.ToTable("Settings");
                 });
 
-            modelBuilder.Entity("Mailflow.Domain.Entities.Store", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Address")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Stores");
-                });
-
-            modelBuilder.Entity("Mailflow.Domain.Entities.AllowedSender", b =>
-                {
-                    b.HasOne("Mailflow.Domain.Entities.Store", null)
-                        .WithMany()
-                        .HasForeignKey("StoreId")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
             modelBuilder.Entity("Mailflow.Domain.Entities.Document", b =>
                 {
                     b.HasOne("Mailflow.Domain.Entities.Category", null)
@@ -488,24 +419,6 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("ProcessedMessageId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Mailflow.Domain.Entities.Mailbox", b =>
-                {
-                    b.HasOne("Mailflow.Domain.Entities.Store", null)
-                        .WithMany()
-                        .HasForeignKey("StoreId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Mailflow.Domain.Entities.Printer", b =>
-                {
-                    b.HasOne("Mailflow.Domain.Entities.Store", null)
-                        .WithMany()
-                        .HasForeignKey("StoreId")
-                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

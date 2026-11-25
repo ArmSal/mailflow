@@ -9,14 +9,12 @@ namespace Mailflow.Integration.Tests.Pages;
 public sealed class TestDb : DbContext, IAppDbContext
 {
     public TestDb(DbContextOptions<TestDb> o) : base(o) { }
-    public DbSet<Store> Stores { get; set; } = null!;
     public DbSet<Mailbox> Mailboxes { get; set; } = null!;
     public DbSet<Printer> Printers { get; set; } = null!;
     public DbSet<Category> Categories { get; set; } = null!;
     public DbSet<Rule> Rules { get; set; } = null!;
     public DbSet<RuleCondition> RuleConditions { get; set; } = null!;
     public DbSet<RuleAction> RuleActions { get; set; } = null!;
-    public DbSet<AllowedSender> AllowedSenders { get; set; } = null!;
     public DbSet<ProcessedMessage> ProcessedMessages { get; set; } = null!;
     public DbSet<Document> Documents { get; set; } = null!;
     public DbSet<RunLog> RunLogs { get; set; } = null!;
