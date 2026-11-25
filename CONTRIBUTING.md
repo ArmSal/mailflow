@@ -1,74 +1,118 @@
-# Contribuer et étendre Mailflow
+# Contributing to Mailflow
 
-Ce guide explique **où modifier le code** pour les extensions les plus courantes. Lisez d'abord la section « Architecture » du [README](README.md) : `Domain` ← `Application` ← `Infrastructure` ← `Web`, aucune dépendance ne remonte, et le cœur ne parle aux services externes qu'à travers des interfaces.
+This guide explains where to change the code for the most common extensions. Read the architecture section of the [README](README.md) first: `Domain` <- `Application` <- `Infrastructure` <- `Web` / `Desktop`. Nothing depends upward, and the core talks to external services only through interfaces.
 
-## Avant de commencer
+## Getting started
+
+Requirements: Windows, the .NET 10 SDK, Git.
 
 ```powershell
 dotnet build
 dotnet test
 ```
 
-Règles : le moteur de règles et le pipeline sont testés en priorité ; écrivez un test qui échoue avant de corriger un bug ; ne committez jamais d'identifiants, de vraies factures ni de noms de clients (anonymisez les PDF d'exemple).
+Workflow: open an issue to discuss the change, create a branch (`feature/<topic>`), keep the layers clean, add tests, and open a pull request. `dotnet build` and `dotnet test` must pass (CI runs both on Windows).
 
-## Ajouter un fournisseur de messagerie IMAP
+Conventions:
 
-Une seule ligne dans [`ImapPresets.cs`](src/Mailflow.Infrastructure/Mail/ImapPresets.cs) :
+- The rule engine and the processing pipeline are tested first. For a bug, write a failing test, then fix it.
+- Keep changes focused: no unrelated refactoring or formatting in the same pull request.
+- Never commit credentials, real invoices or customer data. Anonymise sample PDFs.
+- Code and comments are in English. User-facing text is French in the source and translated to English (see below).
 
-```csharp
-new("Mon fournisseur", "imap.exemple.fr", 993, true, "Remarque affichée à l'utilisateur."),
-```
+## Tests
 
-Le menu « Fournisseur » du formulaire de boîte mail lit cette liste ; un test vérifie qu'ils restent identiques. Tout serveur IMAP fonctionne déjà via « IMAP personnalisé ». Ajoutez un cas dans `ImapPresetsTests` si vous voulez figer l'hôte.
+| Project | Content |
+|---|---|
+| `tests/Mailflow.Domain.Tests` | Rule engine: fields, operators, accents, priority, stop |
+| `tests/Mailflow.Application.Tests` | Pipeline with fake mail client, printer and storage; print policy; address parsing |
+| `tests/Mailflow.Integration.Tests` | Persistence, mail, PDF, printing, security, settings, worker and Razor pages |
+| `tests/Mailflow.Desktop.Tests` | Desktop shell logic (launch options, port owner, startup) |
 
-## Ajouter un champ de condition de règle
+Run one project with `dotnet test tests/Mailflow.Domain.Tests`.
 
-1. Ajoutez la valeur dans l'énumération `ConditionField` ([`Enums.cs`](src/Mailflow.Domain/Enums/Enums.cs)).
-2. Si la donnée n'existe pas encore, ajoutez-la à [`MatchContext`](src/Mailflow.Domain/Rules/MatchContext.cs) et renseignez-la dans `MessagePipeline` **et** dans `MailboxRuleTester` (test de règle).
-3. Ajoutez le `case` dans [`ConditionEvaluator`](src/Mailflow.Domain/Rules/ConditionEvaluator.cs).
-4. Ajoutez le libellé français dans [`RuleSupport.cs`](src/Mailflow.Web/Pages/Rules/RuleSupport.cs).
-5. Ajoutez des tests dans `RuleEngineTests`.
-
-Les énumérations sont stockées en texte : **aucune migration** n'est nécessaire pour une nouvelle valeur.
-
-## Ajouter une action de règle
-
-1. Ajoutez la valeur dans `ActionType`.
-2. Traitez-la dans [`MessagePipeline`](src/Mailflow.Application/Processing/MessagePipeline.cs) (les actions y sont interprétées, y compris la règle « une seule action de chaque famille »).
-3. Libellé dans `RuleSupport.cs` et, si l'action a des paramètres, validation dans [`Rules/Edit.cshtml.cs`](src/Mailflow.Web/Pages/Rules/Edit.cshtml.cs) ; un nouveau champ sur `RuleAction` demande une migration (voir plus bas).
-4. Tests dans `PipelineTests` : vérifiez surtout l'ordre (une action sur la boîte mail ne s'exécute qu'**après** l'enregistrement) et le comportement en cas d'échec.
-
-## Ajouter un backend d'impression, de stockage ou de messagerie
-
-Implémentez l'interface correspondante (dans [`Abstractions.cs`](src/Mailflow.Application/Abstractions/Abstractions.cs)) dans `Infrastructure`, puis enregistrez-la dans l'extension d'injection de dépendances.
-
-| Besoin | Interface | Exemple existant |
-|---|---|---|
-| Autre imprimante (PrintNode, CUPS…) | `IPrinterService` | `SumatraPrinterService` |
-| Stockage distant (cloud, partage réseau) | `IDocumentStore` | `FileSystemDocumentStore` |
-| Autre protocole (Graph API, POP3, OAuth2) | `IMailClient` | `MailKitClient` |
-| Autre extraction de texte (OCR) | `IPdfTextReader` | `PdfPigTextReader` |
-| Autre stockage de secrets | `ISecretStore` | `DpapiSecretStore` |
-
-`IMailClient` est pensée pour IMAP (dossiers, UID). Un protocole très différent peut demander d'ajuster l'interface : ouvrez d'abord une *issue*. L'OAuth2 demande en plus de stocker des jetons au lieu d'un mot de passe.
-
-## Modifier la base de données
+## Database changes
 
 ```powershell
 dotnet tool restore
-dotnet tool run dotnet-ef migrations add NomDeLaMigration -p src/Mailflow.Infrastructure -s src/Mailflow.Infrastructure
+dotnet tool run dotnet-ef migrations add MigrationName -p src/Mailflow.Infrastructure -s src/Mailflow.Infrastructure
 ```
 
-Les migrations s'appliquent automatiquement au démarrage. Ne modifiez jamais une migration déjà publiée. **Toute modification d'une entité du domaine exige sa migration** : sans elle l'application refuse de démarrer (les tests d'intégration le détectent). Pour une nouvelle colonne obligatoire, donnez une valeur par défaut qui convient aux lignes existantes.
+Migrations are applied automatically at startup. Never edit a migration that has been released. Any change to a domain entity needs its migration: without it the application refuses to start (the integration tests detect this). For a new required column, give a default that suits existing rows. Enums are stored as text, so a new enum value needs no migration.
 
-## Sécurité : à ne pas casser
+## Add a mail provider preset
 
-- Ne supprimer **jamais** un e-mail ; ne jamais ouvrir ni exécuter une pièce jointe.
-- Ouvrir un PDF depuis le tableau de bord se fait **par identifiant de document**, jamais avec un chemin venant du navigateur.
-- Tout formulaire POST garde le jeton anti-falsification ; pas de `Html.Raw` sur des données utilisateur.
-- L'impression dépend des règles (conditions sur l'expéditeur), de l'âge du message et de la vérification DKIM/DMARC : toute modification de `PrintPolicy` ou de `ExtractAddress` demande des tests dédiés.
-- Connexion non chiffrée interdite, sauf vers `localhost` (tests).
+Add one line to [`ImapPresets.cs`](src/Mailflow.Infrastructure/Mail/ImapPresets.cs):
 
-## Limites connues
+```csharp
+new("My provider", "imap.example.com", 993, true, "Note shown to the user.", ["example.com"]),
+```
 
-Pensé pour **un PC par magasin** : SQLite, un seul worker séquentiel, pas de tableau de bord central multi-magasins, pas de système de modules complémentaires. Voir la feuille de route du README.
+The arguments are name, host, port, SSL, a note, and optionally the e-mail domains used to auto-detect the provider from the address typed in the mailbox form. The provider list in the form reads this list. Any IMAP server already works through "IMAP personnalisé" and the advanced options. Add a case to the `ImapPresets` tests if you want to pin the host. The note is user-facing text: if you add one in French, add its English entry too.
+
+## Add UI translations
+
+French is the source language and the key. In Razor views (`T` is available through `using static Loc`) and in page code (`Loc.T`), wrap each visible French string:
+
+```cshtml
+<button class="btn btn-primary">@T("Enregistrer")</button>
+```
+
+With arguments: `T("{0} documents", count)`. Then add the English text to a JSON file in `src/Mailflow.Web/Localization/en/` (flat `"French": "English"` objects; all files in the folder are merged):
+
+```json
+{ "Enregistrer": "Save" }
+```
+
+A missing entry falls back to French, so nothing breaks. A test checks that every English entry is non-empty and keeps the same `{0}` placeholders as its French key. The language is chosen with the FR | EN switch (cookie `.Mailflow.Culture`, French by default). Help page text follows the same rule.
+
+## Add a rule condition field
+
+1. Add the value to `ConditionField` ([`Enums.cs`](src/Mailflow.Domain/Enums/Enums.cs)).
+2. If the data does not exist yet, add it to [`MatchContext`](src/Mailflow.Domain/Rules/MatchContext.cs) and fill it in `MessagePipeline` and in `MailboxRuleTester` (the rule test).
+3. Add the `case` in [`ConditionEvaluator`](src/Mailflow.Domain/Rules/ConditionEvaluator.cs).
+4. Add the label in [`RuleSupport.cs`](src/Mailflow.Web/Pages/Rules/RuleSupport.cs), wrapped in `T()` with an English entry.
+5. Add tests in `RuleEngineTests`.
+
+## Add a rule action
+
+1. Add the value to `ActionType`.
+2. Handle it in [`MessagePipeline`](src/Mailflow.Application/Processing/MessagePipeline.cs), which interprets actions, including the "one action per family" rule.
+3. Add the label in `RuleSupport.cs` and, if the action has parameters, validation in [`Rules/Edit.cshtml.cs`](src/Mailflow.Web/Pages/Rules/Edit.cshtml.cs). A new field on `RuleAction` needs a migration.
+4. Add tests in `PipelineTests`, especially ordering (a mailbox action runs only after saving) and failure behaviour.
+
+## Add a printing, storage or mail backend
+
+Implement the matching interface from [`Abstractions.cs`](src/Mailflow.Application/Abstractions/Abstractions.cs) in `Infrastructure` and register it in the dependency-injection extension.
+
+| Need | Interface | Existing example |
+|---|---|---|
+| Another printer backend | `IPrinterService` | `SumatraPrinterService` |
+| Remote document storage | `IDocumentStore` | `FileSystemDocumentStore` |
+| Another mail protocol | `IMailClient` | `MailKitClient` |
+| Another text extraction (OCR) | `IPdfTextReader` | `PdfPigTextReader` |
+| Another secret store | `ISecretStore` | `DpapiSecretStore` |
+
+`IMailClient` is shaped around IMAP (folders, UIDs). A very different protocol may need the interface to change: open an issue first.
+
+## UI conventions
+
+See [Docs/design-system.md](Docs/design-system.md) for tokens, components, htmx conventions and wording.
+
+## Security: do not break these
+
+- Never delete an e-mail; never open or run an attachment.
+- Open a PDF from the dashboard by document id, never with a path coming from the browser.
+- Every POST form keeps its anti-forgery token; no `Html.Raw` on user data.
+- Printing depends on the rules (including exact-sender conditions), the message age and the DKIM/DMARC check. Any change to `PrintPolicy` or address extraction needs dedicated tests.
+- No unencrypted mail connection, except to `localhost` in tests.
+
+Report vulnerabilities privately through GitHub Security Advisories, not in public issues.
+
+## Known limits
+
+Mailflow is built for one site: SQLite, a single sequential worker, no central multi-site dashboard, no plug-in system.
+
+## License
+
+By contributing you agree that your contributions are licensed under the [MIT License](LICENSE).
