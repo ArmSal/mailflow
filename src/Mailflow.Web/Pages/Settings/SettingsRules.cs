@@ -46,9 +46,9 @@ public static class SettingsRules
     public static string? ValidateHours(int hours)
         => hours is < 1 or > 168 ? Loc.T("La durée doit être comprise entre 1 et 168 heures.") : null;
 
-    /// <summary>True unless explicitly disabled ("false").</summary>
+    /// <summary>False unless explicitly enabled ("true").</summary>
     public static bool ParsePrintEmailBody(string? value)
-        => !string.Equals(value?.Trim(), "false", StringComparison.OrdinalIgnoreCase);
+        => string.Equals(value?.Trim(), "true", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Stored enum name; missing or unknown values mean Warn.</summary>
     public static SenderCheckMode ParseSenderCheck(string? value)

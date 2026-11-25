@@ -62,7 +62,7 @@
     <p>Each attached PDF is saved under the path given by the <strong>file name pattern</strong> of Settings. The default is:</p>
     <p><code>{Category}/{yyyy}/{MM}/{yyyy-MM-dd}_{Supplier}_{OriginalName}.pdf</code></p>
     <p>For a PDF named <code>invoice 1042.pdf</code> received from <code>supplier@example.com</code> on 14 March 2026 in a category whose subfolder is <code>Invoices</code>, that gives <code>Invoices/2026/03/2026-03-14_example.com_invoice 1042.pdf</code>. The supplier is the domain of the sender. Forbidden characters are replaced by <code>_</code>, and if a file with that name already exists a number is added: <code>(2)</code>, <code>(3)</code>... Nothing is ever overwritten.</p>
-    <p>If an email has no PDF but a rule asks to print it, and the setting <em>Print the email body when no PDF is attached</em> is on (it is on by default), Mailflow generates a PDF (<code>email.pdf</code>) from the text of the email and processes it like any other document.</p>
+    <p>If an email has no PDF but a rule asks to print it, and the setting <em>Print the email body when no PDF is attached</em> is on (it is off by default), Mailflow generates a PDF (<code>email.pdf</code>) from the text of the email and processes it like any other document.</p>
     <h4>7. Printing</h4>
     <p>A document is printed when a matching rule has a <strong>Print</strong> action with a printer, and when these checks pass:</p>
     <ul>

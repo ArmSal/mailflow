@@ -62,7 +62,7 @@
     <p>Chaque PDF joint est enregistré selon le <strong>modèle de nom de fichier</strong> des Paramètres. Par défaut :</p>
     <p><code>{Category}/{yyyy}/{MM}/{yyyy-MM-dd}_{Supplier}_{OriginalName}.pdf</code></p>
     <p>Pour un PDF nommé <code>facture 1042.pdf</code> reçu de <code>fournisseur@example.com</code> le 14 mars 2026 dans une catégorie dont le sous-dossier est <code>Factures</code>, on obtient <code>Factures/2026/03/2026-03-14_example.com_facture 1042.pdf</code>. Le fournisseur est le domaine de l'expéditeur. Les caractères interdits sont remplacés par <code>_</code> et, si un fichier de ce nom existe déjà, un numéro est ajouté : <code>(2)</code>, <code>(3)</code>... Rien n'est jamais écrasé.</p>
-    <p>Si un e-mail n'a pas de PDF mais qu'une règle demande de l'imprimer, et que l'option <em>Imprimer le contenu de l'e-mail lorsqu'aucun PDF n'est joint</em> est activée (c'est le cas par défaut), Mailflow génère un PDF (<code>email.pdf</code>) à partir du texte de l'e-mail et le traite comme un autre document.</p>
+    <p>Si un e-mail n'a pas de PDF mais qu'une règle demande de l'imprimer, et que l'option <em>Imprimer le contenu de l'e-mail lorsqu'aucun PDF n'est joint</em> est activée (elle est désactivée par défaut), Mailflow génère un PDF (<code>email.pdf</code>) à partir du texte de l'e-mail et le traite comme un autre document.</p>
     <h4>7. L'impression</h4>
     <p>Un document est imprimé quand une règle correspondante a une action <strong>Imprimer</strong> avec une imprimante, et que ces contrôles sont réussis :</p>
     <ul>

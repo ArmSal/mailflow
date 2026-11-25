@@ -211,6 +211,8 @@ public class PipelineTests
     public async Task Print_rule_without_pdf_renders_email_body_and_prints_when_enabled()
     {
         using var f = new Fixture();
+        f.Db.Settings.Add(new Setting { Key = "PrintEmailBodyWithoutPdf", Value = "true" });
+        f.Db.SaveChanges();
         f.Fetch(Fixture.Msg() with { Pdfs = [] });
 
         var log = await f.Processor.RunAsync(f.Mailbox, default);
@@ -223,11 +225,9 @@ public class PipelineTests
     }
 
     [Fact]
-    public async Task Print_rule_without_pdf_does_not_render_when_disabled_in_settings()
+    public async Task Print_rule_without_pdf_does_not_render_unless_enabled_in_settings()
     {
         using var f = new Fixture();
-        f.Db.Settings.Add(new Setting { Key = "PrintEmailBodyWithoutPdf", Value = "false" });
-        f.Db.SaveChanges();
         f.Fetch(Fixture.Msg() with { Pdfs = [] });
 
         var log = await f.Processor.RunAsync(f.Mailbox, default);

@@ -169,7 +169,7 @@ public sealed class MessagePipeline(
     async Task<bool> PrintEmailBodyWithoutPdfAsync(CancellationToken ct)
     {
         var s = await db.Settings.FirstOrDefaultAsync(x => x.Key == "PrintEmailBodyWithoutPdf", ct);
-        return !string.Equals(s?.Value?.Trim(), "false", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(s?.Value?.Trim(), "true", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>Lenient parsing for the To field (it may list several recipients); never used for security decisions.</summary>

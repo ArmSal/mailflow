@@ -54,7 +54,7 @@ Mailflow is designed for a single site: one installation, one database, one set 
 - Rule engine on sender, domain, recipient, subject, body, attachment name, **PDF text** and presence of a PDF. Case- and accent-insensitive; regular expressions with a time limit.
 - Archive layout driven by a file-name pattern, with SHA-256 de-duplication.
 - Silent printing through SumatraPDF, **only** for recent messages that a rule asks to print. To restrict printing to one sender, add an exact-sender condition to the print rule.
-- Optional printing of the e-mail body when a message has no PDF.
+- Optional printing of the e-mail body when a message has no PDF (off by default).
 - Per-rule mailbox action: mark as read, move to an IMAP folder, or leave unchanged.
 - History with search, PDF opening, **reprint** and re-categorisation; run log, per-mailbox errors, "Run now", pause/resume.
 - Folder picker for the documents folder; nightly SQLite backup (last 14 kept).

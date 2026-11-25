@@ -26,7 +26,7 @@ public class IndexModel(
         [Required(ErrorMessage = "Le modèle de nom de fichier est requis.")]
         public string FileNamePattern { get; set; } = "";
         public int PrintMaxAgeHours { get; set; } = 24;
-        public bool PrintEmailBodyWithoutPdf { get; set; } = true;
+        public bool PrintEmailBodyWithoutPdf { get; set; }
     }
 
     public class PasswordInput
