@@ -24,6 +24,11 @@ namespace Mailflow.Web;
 /// <summary>Builds, migrates, seeds and starts the web host; shared by the console entry point and the desktop shell.</summary>
 public static class MailflowHost
 {
+    /// <summary>Paths served before the first admin password exists: the setup page, static files, the language switch and the health check.</summary>
+    public static bool IsAvailableBeforeSetup(PathString path) =>
+        path.StartsWithSegments("/Setup") || path.StartsWithSegments("/language") || path == "/healthz" || path == "/favicon.ico"
+        || path.StartsWithSegments("/lib") || path.StartsWithSegments("/css") || path.StartsWithSegments("/js");
+
     public static async Task<WebApplication> StartAsync(string[] args, CancellationToken ct)
     {
         // As a Windows service the working directory is System32: anchor everything to the exe folder.
@@ -46,7 +51,6 @@ public static class MailflowHost
             builder.WebHost.UseStaticWebAssets();
         }
 
-        builder.Host.UseWindowsService(o => o.ServiceName = "Mailflow");
         builder.Host.UseSerilog((ctx, cfg) => cfg
             .ReadFrom.Configuration(ctx.Configuration)
             .WriteTo.Console()
@@ -143,8 +147,7 @@ public static class MailflowHost
                 ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
                 return;
             }
-            if (!configured && !path.StartsWithSegments("/Setup") && path != "/healthz" && !path.StartsWithSegments("/lib")
-                && !path.StartsWithSegments("/css") && !path.StartsWithSegments("/js") && path != "/favicon.ico")
+            if (!configured && !IsAvailableBeforeSetup(path))
             {
                 var store = ctx.RequestServices.GetRequiredService<IAdminPasswordStore>();
                 if (string.IsNullOrEmpty(await store.GetHashAsync(ctx.RequestAborted)))

@@ -1,7 +1,6 @@
 using Mailflow.Web;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Hosting.WindowsServices;
 
 namespace Mailflow.Desktop;
 
@@ -15,8 +14,8 @@ internal static class Program
     {
         var options = LaunchOptions.Parse(args);
 
-        // Service / headless: web host only, no UI.
-        if (WindowsServiceHelpers.IsWindowsService() || options.Headless)
+        // Headless: web host only, no UI.
+        if (options.Headless)
         {
             var app = MailflowHost.StartAsync(options.HostArgs, CancellationToken.None).GetAwaiter().GetResult();
             app.WaitForShutdownAsync().GetAwaiter().GetResult();

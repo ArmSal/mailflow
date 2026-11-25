@@ -132,7 +132,6 @@ Start Mailflow. A window shows the dashboard (Microsoft Edge WebView2 is require
 
 On first launch a setup page, reachable from the local machine only, asks you to choose the administrator password. Then add a mailbox, a printer, categories and rules. The **Help** page walks through each step.
 
-Advanced: [deploy/install.ps1](deploy/install.ps1) installs Mailflow as a Windows service (elevated PowerShell) and [deploy/uninstall.ps1](deploy/uninstall.ps1) removes it. Mailbox passwords are encrypted for one Windows account, so enter them after the service is installed and running.
 
 ### Run from source
 
@@ -277,7 +276,7 @@ tests/
   Mailflow.Domain.Tests/        Mailflow.Application.Tests/
   Mailflow.Integration.Tests/   Mailflow.Desktop.Tests/
 tools/SumatraPDF/            portable executable (not committed)
-deploy/                      release build, installer, service scripts
+deploy/                      release build and installer
 Docs/                        design system
 ```
 
@@ -304,6 +303,7 @@ To update, install the new version over the old one; database migrations are app
 - Backup of documents to a synced folder (Google Drive, OneDrive)
 - OCR for scanned PDFs
 - More provider presets
+- Remote printing: a small Print Agent installed on the PC that owns the printer, polling Mailflow over HTTPS for jobs (token per agent, no open ports), so Mailflow can run on another PC. The printer type "PrintNode" in the printer form is a placeholder for this and currently prints locally like "Local"
 
 ## Contributing and license
 

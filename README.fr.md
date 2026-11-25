@@ -132,7 +132,6 @@ Lancez Mailflow. Une fenêtre affiche le tableau de bord (Microsoft Edge WebView
 
 Au premier lancement, une page d'installation, accessible uniquement depuis la machine locale, vous demande de choisir le mot de passe administrateur. Ajoutez ensuite une boîte mail, une imprimante, des catégories et des règles. La page **Aide** détaille chaque étape.
 
-Avancé : [deploy/install.ps1](deploy/install.ps1) installe Mailflow comme service Windows (PowerShell administrateur) et [deploy/uninstall.ps1](deploy/uninstall.ps1) le retire. Les mots de passe des boîtes sont chiffrés pour un compte Windows donné : saisissez-les après l'installation et le démarrage du service.
 
 ### Lancer depuis les sources
 
@@ -277,7 +276,7 @@ tests/
   Mailflow.Domain.Tests/        Mailflow.Application.Tests/
   Mailflow.Integration.Tests/   Mailflow.Desktop.Tests/
 tools/SumatraPDF/            exécutable portable (non versionné)
-deploy/                      construction de la version, installateur, scripts du service
+deploy/                      construction de la version et installateur
 Docs/                        système de design
 ```
 
@@ -304,6 +303,7 @@ Pour mettre à jour, installez la nouvelle version par-dessus l'ancienne ; les m
 - Sauvegarde des documents vers un dossier synchronisé (Google Drive, OneDrive)
 - OCR des PDF scannés
 - Davantage de préréglages de fournisseurs
+- Impression à distance : un petit agent d'impression installé sur le PC qui possède l'imprimante, qui interroge Mailflow en HTTPS pour récupérer les travaux (un jeton par agent, aucun port ouvert), afin que Mailflow puisse tourner sur un autre PC. Le type d'imprimante « PrintNode » du formulaire est un emplacement réservé pour cela et imprime pour l'instant en local comme « Local »
 
 ## Contribuer et licence
 
