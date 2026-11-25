@@ -2,13 +2,15 @@
 @{
     var authed = User.Identity?.IsAuthenticated == true;
     var path = Context.Request.Path.Value ?? "/";
+    var otherLang = IsEnglish ? "fr" : "en";
+    var langLink = "/language/" + otherLang + "?returnUrl=" + Uri.EscapeDataString(path + Context.Request.QueryString);
     var groups = new (string Title, (string Url, string Label, string Icon)[] Items)[]
     {
-        ("Tableau de bord", [("/", "Accueil", "home")]),
-        ("Configuration", [("/Mailboxes", "Boîtes mail", "inbox"), ("/Printers", "Imprimantes", "printer"),
-            ("/Categories", "Catégories", "tag"), ("/Rules", "Règles", "rules")]),
-        ("Activité", [("/History", "Historique", "clock"), ("/Journal", "Journal", "list")]),
-        ("Système", [("/Settings", "Paramètres", "sliders")]),
+        (T("Tableau de bord"), [("/", T("Accueil"), "home")]),
+        (T("Configuration"), [("/Mailboxes", T("Boîtes mail"), "inbox"), ("/Printers", T("Imprimantes"), "printer"),
+            ("/Categories", T("Catégories"), "tag"), ("/Rules", T("Règles"), "rules")]),
+        (T("Activité"), [("/History", T("Historique"), "clock"), ("/Journal", T("Journal"), "list")]),
+        (T("Système"), [("/Settings", T("Paramètres"), "sliders"), ("/Help", T("Aide"), "help")]),
     };
     // The most specific matching entry is the active one (longest URL wins).
     var activeUrl = groups.SelectMany(g => g.Items)
@@ -17,7 +19,7 @@
         .OrderByDescending(i => i.Url.Length).Select(i => i.Url).FirstOrDefault();
 }
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="@(IsEnglish ? "en" : "fr")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -34,10 +36,10 @@
     <partial name="_Icons" />
     @if (authed)
     {
-        <a class="skip-link visually-hidden-focusable" href="#main">Aller au contenu</a>
+        <a class="skip-link visually-hidden-focusable" href="#main">@T("Aller au contenu")</a>
         <div class="app-shell">
-            <nav class="sidenav" id="sidenav" aria-label="Navigation principale">
-                <a class="wordmark" href="~/" aria-label="Mailflow, accueil"><svg class="icon" aria-hidden="true"><use href="#i-logo" /></svg>Mailflow</a>
+            <nav class="sidenav" id="sidenav" aria-label="@T("Navigation principale")">
+                <a class="wordmark" href="~/" aria-label="@T("Mailflow, accueil")"><svg class="icon" aria-hidden="true"><use href="#i-logo" /></svg>Mailflow</a>
                 @foreach (var g in groups)
                 {
                     <div class="nav-group">
@@ -54,15 +56,17 @@
             <div class="nav-scrim"></div>
             <div class="main-col">
                 <header class="topbar">
-                    <button type="button" class="btn btn-ghost btn-icon" data-nav-toggle aria-controls="sidenav" aria-expanded="false" aria-label="Afficher le menu"><svg class="icon" aria-hidden="true"><use href="#i-menu" /></svg></button>
-                    <a class="wordmark" href="~/" aria-label="Mailflow, accueil"><svg class="icon" aria-hidden="true"><use href="#i-logo" /></svg>Mailflow</a>
+                    <button type="button" class="btn btn-ghost btn-icon" data-nav-toggle aria-controls="sidenav" aria-expanded="false" aria-label="@T("Afficher le menu")"><svg class="icon" aria-hidden="true"><use href="#i-menu" /></svg></button>
+                    <a class="wordmark" href="~/" aria-label="@T("Mailflow, accueil")"><svg class="icon" aria-hidden="true"><use href="#i-logo" /></svg>Mailflow</a>
                     <span class="topbar-spacer"></span>
                     <partial name="_WorkerPill" model="Worker" />
-                    <button type="button" class="btn btn-ghost btn-icon theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Mode sombre" title="Mode sombre">
+                    <button type="button" class="btn btn-ghost btn-icon theme-toggle" data-theme-toggle aria-pressed="false" aria-label="@T("Mode sombre")" title="@T("Mode sombre")">
                         <svg class="icon icon-moon" aria-hidden="true"><use href="#i-moon" /></svg><svg class="icon icon-sun" aria-hidden="true"><use href="#i-sun" /></svg>
                     </button>
+                    <a class="btn btn-ghost btn-sm" href="@Url.Content("~/Help")"><svg class="icon" aria-hidden="true"><use href="#i-help" /></svg>@T("Aide")</a>
+                    <a class="btn btn-ghost btn-sm" href="@Url.Content("~" + langLink)" hreflang="@otherLang" lang="@otherLang" title="@(IsEnglish ? "Français" : "English")">@otherLang.ToUpperInvariant()</a>
                     <form method="post" asp-page="/Logout" class="m-0">
-                        <button type="submit" class="btn btn-secondary btn-sm"><svg class="icon" aria-hidden="true"><use href="#i-logout" /></svg>Déconnexion</button>
+                        <button type="submit" class="btn btn-secondary btn-sm"><svg class="icon" aria-hidden="true"><use href="#i-logout" /></svg>@T("Déconnexion")</button>
                     </form>
                 </header>
                 <main id="main" class="page" tabindex="-1">
@@ -76,6 +80,7 @@
         <div class="auth-shell">
             <main class="auth-card">
                 <div class="wordmark"><svg class="icon" aria-hidden="true"><use href="#i-logo" /></svg>Mailflow</div>
+                <a class="btn btn-ghost btn-sm" href="@Url.Content("~" + langLink)" hreflang="@otherLang" lang="@otherLang">@(IsEnglish ? "Français" : "English")</a>
                 @RenderBody()
             </main>
         </div>

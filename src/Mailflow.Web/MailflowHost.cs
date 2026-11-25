@@ -1,3 +1,4 @@
+using Mailflow.Web.Localization;
 using Mailflow.Application.Abstractions;
 using Mailflow.Application.Processing;
 using Mailflow.Domain.Rules;
@@ -56,7 +57,7 @@ public static class MailflowHost
         catch (Exception) { /* not fatal */ }
 
         var services = builder.Services;
-        services.AddRazorPages();
+        services.AddRazorPages().AddMvcOptions(o => o.Filters.Add<Mailflow.Web.Localization.TranslateModelStateFilter>());
         services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(dataDir, "keys")));
 
         services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -126,6 +127,7 @@ public static class MailflowHost
         if (!app.Environment.IsDevelopment())
             app.UseExceptionHandler("/Error");
 
+        app.UseMailflowLocalization();
         app.UseRouting();
         app.UseRateLimiter();
         app.UseAuthentication();
@@ -160,6 +162,7 @@ public static class MailflowHost
         app.MapStaticAssets(System.Reflection.Assembly.GetEntryAssembly()!.GetName().Name + ".staticwebassets.endpoints.json").AllowAnonymous();
         app.MapRazorPages().WithStaticAssets();
         // Lets the desktop shell detect an already running instance; reveals nothing.
+        app.MapLanguageSwitch();
         app.MapGet("/healthz", () => "Mailflow").AllowAnonymous();
 
         await app.StartAsync(ct);
