@@ -138,7 +138,7 @@ On first launch a setup page, reachable from the local machine only, asks you to
 Requirements: Windows, the [.NET 10 SDK](https://dotnet.microsoft.com/download), Git, and a printer installed on the machine.
 
 ```powershell
-git clone https://github.com/<owner>/mailflow.git
+git clone https://github.com/ArmSal/mailflow.git
 cd mailflow
 dotnet run --project src/Mailflow.Web
 ```
@@ -307,4 +307,4 @@ To update, install the new version over the old one; database migrations are app
 
 ## Contributing and license
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for conventions, migrations, tests, provider presets and UI translations. Licensed under the [MIT License](LICENSE).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for conventions, migrations, tests, provider presets and UI translations. Mailflow is licensed under the [MIT License](LICENSE). It uses third-party components under their own licences, listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). In particular, the installer bundles the portable [SumatraPDF](https://github.com/sumatrapdfreader/sumatrapdf) (GPL v3) as a separate, unmodified program used for printing; it is not covered by the MIT licence.

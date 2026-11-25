@@ -138,7 +138,7 @@ Au premier lancement, une page d'installation, accessible uniquement depuis la m
 Prérequis : Windows, le [SDK .NET 10](https://dotnet.microsoft.com/download), Git, et une imprimante installée sur la machine.
 
 ```powershell
-git clone https://github.com/<owner>/mailflow.git
+git clone https://github.com/ArmSal/mailflow.git
 cd mailflow
 dotnet run --project src/Mailflow.Web
 ```
@@ -307,4 +307,4 @@ Pour mettre à jour, installez la nouvelle version par-dessus l'ancienne ; les m
 
 ## Contribuer et licence
 
-Voir [CONTRIBUTING.md](CONTRIBUTING.md) (en anglais) pour les conventions, migrations, tests, préréglages de fournisseurs et traductions de l'interface. Licence [MIT](LICENSE).
+Voir [CONTRIBUTING.md](CONTRIBUTING.md) (en anglais) pour les conventions, migrations, tests, préréglages de fournisseurs et traductions de l'interface. Mailflow est sous [licence MIT](LICENSE). Il utilise des composants tiers sous leurs propres licences, listés dans [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) (en anglais). En particulier, l'installateur inclut [SumatraPDF](https://github.com/sumatrapdfreader/sumatrapdf) portable (GPL v3), programme distinct et non modifié utilisé pour l'impression ; il n'est pas couvert par la licence MIT.

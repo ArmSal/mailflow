@@ -48,7 +48,7 @@ Remove-Item (Join-Path $stage '*.pdb'), (Join-Path $stage 'web.config'), (Join-P
     (Join-Path $stage 'appsettings.Development.json'), (Join-Path $stage '*.xml'), (Join-Path $stage 'Mailflow.Web.runtimeconfig.json') -ErrorAction SilentlyContinue
 
 # 2. Extra payload: licence, icon, SumatraPDF.
-Copy-Item (Join-Path $root 'LICENSE') -Destination $stage
+Copy-Item (Join-Path $root 'LICENSE'), (Join-Path $root 'THIRD-PARTY-NOTICES.md') -Destination $stage
 Copy-Item $icon -Destination $stage
 $sumatraDir = Join-Path $stage 'tools\SumatraPDF'
 New-Item -ItemType Directory -Path $sumatraDir -Force | Out-Null
