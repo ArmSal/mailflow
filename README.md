@@ -293,7 +293,7 @@ To build a release from a development machine:
 .\deploy\build-release.ps1 -Version 1.0.0
 ```
 
-This publishes a self-contained win-x64 build and writes `dist\Mailflow-Setup-<version>-win-x64.exe` (FR/EN wizard, no administrator rights needed, uninstaller included) and the matching zip. Put `SumatraPDF.exe` in `tools\SumatraPDF\` first if you want printing in the package: see [tools/SumatraPDF/README.md](tools/SumatraPDF/README.md). Unattended install: `Mailflow-Setup-<version>-win-x64.exe /S /dir=C:\Mailflow /nostartup /nodesktop /noRun /lang=en` (also `/nostartmenu`, `/nowebview2`); the uninstaller takes `/S` (keeps your data) and `/removedata`. CI (`.github/workflows/ci.yml`) restores, builds and tests on Windows for each push to `main` and each pull request.
+This publishes a self-contained win-x64 build and writes `dist\Mailflow-Setup-<version>-win-x64.exe` (FR/EN wizard, no administrator rights needed, uninstaller included) and the matching zip. Put `SumatraPDF.exe` in `tools\SumatraPDF\` first if you want printing in the package: see [tools/SumatraPDF/README.md](tools/SumatraPDF/README.md). Unattended install: `Mailflow-Setup-<version>-win-x64.exe /S /dir=C:\Mailflow /nostartup /nodesktop /noRun /lang=en` (also `/nostartmenu`, `/nowebview2`); the uninstaller takes `/S` (keeps your data) and `/removedata`.
 
 To update, install the new version over the old one; database migrations are applied at startup.
 

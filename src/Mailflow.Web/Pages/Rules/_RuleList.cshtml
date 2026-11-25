@@ -39,6 +39,7 @@ else
                 <td>
                     <span class="rule-name">@r.Name</span>
                     @if (r.StopProcessing) { <span class="badge badge-neutral ms-1" title="@T("Les règles suivantes ne sont pas appliquées")">@T("Arrêt ensuite")</span> }
+                    @if (RuleSafety.PrintsWithoutSenderCondition(r)) { <span class="badge badge-warn ms-1" title="@T("Cette règle imprime pour n'importe quel expéditeur : ajoutez une condition sur l'adresse de l'expéditeur.")">@T("Impression sans expéditeur précis")</span> }
                     <div class="rule-meta">
                         <span>@T("Boîte : {0}", r.MailboxId is int mid && Model.Mailboxes.TryGetValue(mid, out var mn) ? mn : T("toutes"))</span>
                         <span>@(r.MatchMode == MatchMode.Any ? T("Au moins une condition") : T("Toutes les conditions"))</span>

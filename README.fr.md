@@ -293,7 +293,7 @@ Pour construire une version depuis un poste de développement :
 .\deploy\build-release.ps1 -Version 1.0.0
 ```
 
-Le script publie une version autonome win-x64 et produit `dist\Mailflow-<version>-win-x64.zip` et `dist\Mailflow-Setup-<version>-win-x64.exe`. Placez d'abord `SumatraPDF.exe` dans `tools\SumatraPDF\` pour inclure l'impression. L'intégration continue (`.github/workflows/ci.yml`) restaure, compile et teste sous Windows à chaque push sur `main` et chaque pull request.
+Le script publie une version autonome win-x64 et produit `dist\Mailflow-<version>-win-x64.zip` et `dist\Mailflow-Setup-<version>-win-x64.exe`. Placez d'abord `SumatraPDF.exe` dans `tools\SumatraPDF\` pour inclure l'impression.
 
 Pour mettre à jour, installez la nouvelle version par-dessus l'ancienne ; les migrations de base de données s'appliquent au démarrage.
 

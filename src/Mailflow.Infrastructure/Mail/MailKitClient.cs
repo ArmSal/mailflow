@@ -139,28 +139,40 @@ public sealed partial class MailKitClient : IMailClient
         catch { client.Dispose(); throw; }
     }
 
+    /// <summary>HTML beyond this size is not text-extracted: real e-mail bodies are far smaller, hostile ones must stay cheap.</summary>
+    private const int MaxHtmlChars = 200_000;
+    private const int RegexTimeoutMs = 1000;
+
     internal static string ExtractBody(string? textBody, string? htmlBody)
     {
         if (!string.IsNullOrWhiteSpace(textBody)) return textBody;
         if (string.IsNullOrWhiteSpace(htmlBody)) return "";
-        var stripped = StyleOrScriptRegex().Replace(htmlBody, " ");
-        stripped = BlockTagRegex().Replace(stripped, "\n");
-        stripped = AnyTagRegex().Replace(stripped, " ");
-        stripped = WebUtility.HtmlDecode(stripped);
-        stripped = MultiBlankLinesRegex().Replace(stripped, "\n\n");
-        return stripped.Trim();
+        if (htmlBody.Length > MaxHtmlChars) htmlBody = htmlBody[..MaxHtmlChars];
+        try
+        {
+            var stripped = StyleOrScriptRegex().Replace(htmlBody, " ");
+            stripped = BlockTagRegex().Replace(stripped, "\n");
+            stripped = AnyTagRegex().Replace(stripped, " ");
+            stripped = WebUtility.HtmlDecode(stripped);
+            stripped = MultiBlankLinesRegex().Replace(stripped, "\n\n");
+            return stripped.Trim();
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            return "";
+        }
     }
 
-    [GeneratedRegex(@"<(style|script)\b[^>]*>[\s\S]*?</\1>", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"<(style|script)\b[^>]*>[\s\S]*?</\1>", RegexOptions.IgnoreCase, RegexTimeoutMs)]
     private static partial Regex StyleOrScriptRegex();
 
-    [GeneratedRegex(@"<(br\s*/?|/(p|div|li|tr|h[1-6]))\s*>", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"<(br\s*/?|/(p|div|li|tr|h[1-6]))\s*>", RegexOptions.IgnoreCase, RegexTimeoutMs)]
     private static partial Regex BlockTagRegex();
 
-    [GeneratedRegex(@"<[^>]+>")]
+    [GeneratedRegex(@"<[^>]+>", RegexOptions.None, RegexTimeoutMs)]
     private static partial Regex AnyTagRegex();
 
-    [GeneratedRegex(@"\n{3,}")]
+    [GeneratedRegex(@"\n{3,}", RegexOptions.None, RegexTimeoutMs)]
     private static partial Regex MultiBlankLinesRegex();
 }
 

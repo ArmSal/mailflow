@@ -43,7 +43,7 @@
 
     <h3>Step by step</h3>
     <h4>1. Polling</h4>
-    <p>A background task runs when the application starts and then repeats on a regular cycle (every minute by default). It goes through all <em>active</em> mailboxes one after the other; a mailbox in error never blocks the others. On Home, <strong>Run now</strong> starts a poll immediately and <strong>Pause</strong> / <strong>Resume</strong> stops and restarts the scheduled polls.</p>
+    <p>A background task runs when the application starts and then repeats on a regular cycle (every minute by default). On each cycle it checks the <em>active</em> mailboxes that are due, according to their own interval, one after the other; a mailbox in error never blocks the others. On Home, <strong>Run now</strong> starts a poll immediately and <strong>Pause</strong> / <strong>Resume</strong> stops and restarts the scheduled polls.</p>
     <h4>2. Lookback</h4>
     <p>Only emails of the watched folder (by default the Inbox) received in the last <strong>Lookback (days)</strong> are considered. Older messages are never touched.</p>
     <h4>3. Duplicate detection</h4>
@@ -95,7 +95,7 @@
             <tr><td>Provider, IMAP server, Port</td><td>Detected automatically from the email domain for iCloud, Gmail and Yahoo (OVH MX Plan, OVH Email Pro and a custom IMAP server are chosen by hand). For another provider choose the custom IMAP entry and type the server and port (usually 993 with SSL).</td></tr>
             <tr><td>Folder to poll</td><td>The IMAP folder to read (Inbox by default).</td></tr>
             <tr><td>After processing</td><td>Default for the mailbox when no rule says otherwise: leave as is, mark as read or move.</td></tr>
-            <tr><td>Interval (min)</td><td>Polling interval of the mailbox, from 1 to 1440 minutes. Use Run now on Home to poll immediately.</td></tr>
+            <tr><td>Interval (min)</td><td>How often this mailbox is checked, from 1 to 1440 minutes (the app looks every minute, so 1 is the finest granularity). Use Run now on Home to check all mailboxes immediately.</td></tr>
             <tr><td>Lookback (days)</td><td>Maximum age of the emails that are read.</td></tr>
             <tr><td>Active</td><td>An inactive mailbox is not polled.</td></tr>
         </tbody>

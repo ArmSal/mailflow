@@ -289,6 +289,25 @@ public class PipelineTests
         Assert.Contains("unreachable", f.Db.Mailboxes.Single(m => m.Id == 2).LastError);
         Assert.Single(f.Db.Documents);
     }
+
+    [Fact]
+    public async Task Scheduled_pass_only_runs_mailboxes_whose_interval_has_elapsed()
+    {
+        using var f = new Fixture();
+        f.Fetch();
+        var now = f.Clock.UtcNow;
+        f.Mailbox.LastCheckAt = now.AddMinutes(-1);
+        f.Db.Mailboxes.Add(new Mailbox { Id = 2, Email = "b@example.com", Host = "h", LastCheckAt = now.AddMinutes(-6) });
+        f.Db.Mailboxes.Add(new Mailbox { Id = 3, Email = "c@example.com", Host = "h" });
+        f.Db.Mailboxes.Add(new Mailbox { Id = 4, Email = "d@example.com", Host = "h", CheckIntervalMinutes = 1, LastCheckAt = now.AddSeconds(-45) });
+        f.Db.SaveChanges();
+
+        var due = await f.Processor.RunAllAsync(default, onlyDue: true);
+        Assert.Equal([2, 3, 4], due.Select(l => l.MailboxId).Order().Select(id => id!.Value));
+
+        var all = await f.Processor.RunAllAsync(default);
+        Assert.Equal(4, all.Count);
+    }
 }
 
 public class PrintPolicyTests

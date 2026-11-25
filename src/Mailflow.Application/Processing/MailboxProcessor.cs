@@ -6,10 +6,22 @@ namespace Mailflow.Application.Processing;
 
 public sealed class MailboxProcessor(IAppDbContext db, IMailClient mail, IMailboxConnectionFactory connections, MessagePipeline pipeline, IClock clock)
 {
-    /// <summary>Runs every active mailbox; one failing mailbox never stops the others.</summary>
-    public async Task<IReadOnlyList<RunLog>> RunAllAsync(CancellationToken ct)
+    /// <summary>A scheduled pass may start a little early so a 5-minute interval is not stretched to 6 by the 1-minute tick.</summary>
+    private static readonly TimeSpan DueTolerance = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Runs every active mailbox (or, with <paramref name="onlyDue"/>, only those whose check interval has elapsed);
+    /// one failing mailbox never stops the others.
+    /// </summary>
+    public async Task<IReadOnlyList<RunLog>> RunAllAsync(CancellationToken ct, bool onlyDue = false)
     {
         var mailboxes = await db.Mailboxes.Where(m => m.IsActive).ToListAsync(ct);
+        if (onlyDue)
+        {
+            var now = clock.UtcNow;
+            mailboxes = mailboxes.Where(m => m.LastCheckAt is not { } last
+                || now - last >= TimeSpan.FromMinutes(m.CheckIntervalMinutes) - DueTolerance).ToList();
+        }
         var logs = new List<RunLog>();
         foreach (var mailbox in mailboxes)
             logs.Add(await RunAsync(mailbox, ct));

@@ -158,5 +158,7 @@
   "Impression bloquée : expéditeur non vérifié (DKIM/DMARC).": "Printing blocked: sender not verified (DKIM/DMARC).",
   "Catégorie introuvable.": "Category not found.",
   "Document introuvable.": "Document not found.",
-  "Aucune imprimante active disponible.": "No active printer available."
+  "Aucune imprimante active disponible.": "No active printer available.",
+  "Impression sans expéditeur précis": "Prints for any sender",
+  "Cette règle imprime pour n'importe quel expéditeur : ajoutez une condition sur l'adresse de l'expéditeur.": "This rule prints for any sender: add a condition on the sender's address."
 }

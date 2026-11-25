@@ -54,3 +54,26 @@ public class ImapPresetsTests
         Assert.False(string.IsNullOrEmpty(r.Error));
     }
 }
+
+public class ExtractBodyTests
+{
+    [Fact]
+    public void Hostile_html_cannot_stall_the_text_extraction()
+    {
+        var hostile = string.Concat(Enumerable.Repeat("<script>", 40_000)) + string.Concat(Enumerable.Repeat("<", 40_000));
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        var text = MailKitClient.ExtractBody(null, hostile);
+        watch.Stop();
+        Assert.NotNull(text);
+        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(8), $"took {watch.Elapsed}");
+    }
+
+    [Fact]
+    public void Normal_html_still_becomes_text()
+    {
+        var text = MailKitClient.ExtractBody(null, "<html><style>p{}</style><body><p>Bonjour</p><p>Monde &amp; co</p></body></html>");
+        Assert.Contains("Bonjour", text);
+        Assert.Contains("Monde & co", text);
+        Assert.DoesNotContain("p{}", text);
+    }
+}

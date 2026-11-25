@@ -43,7 +43,7 @@
 
     <h3>Étape par étape</h3>
     <h4>1. La relève</h4>
-    <p>Une tâche de fond démarre avec l'application puis se répète à intervalle régulier (toutes les minutes par défaut). Elle parcourt les boîtes <em>actives</em> l'une après l'autre ; une boîte en erreur ne bloque jamais les autres. Sur l'Accueil, <strong>Lancer maintenant</strong> déclenche une relève immédiate, et <strong>Pause</strong> / <strong>Reprendre</strong> arrête et relance les relèves programmées.</p>
+    <p>Une tâche de fond démarre avec l'application puis se répète à intervalle régulier (toutes les minutes par défaut). À chaque passage, elle relève les boîtes <em>actives</em> dont l'intervalle est écoulé, l'une après l'autre ; une boîte en erreur ne bloque jamais les autres. Sur l'Accueil, <strong>Lancer maintenant</strong> déclenche une relève immédiate, et <strong>Pause</strong> / <strong>Reprendre</strong> arrête et relance les relèves programmées.</p>
     <h4>2. La période d'historique</h4>
     <p>Seuls les e-mails du dossier surveillé (par défaut la boîte de réception) reçus durant les derniers <strong>Historique (jours)</strong> sont pris en compte. Les messages plus anciens ne sont jamais touchés.</p>
     <h4>3. La détection des doublons</h4>
@@ -95,7 +95,7 @@
             <tr><td>Fournisseur, Serveur IMAP, Port</td><td>Détectés automatiquement d'après le domaine de l'adresse pour iCloud, Gmail et Yahoo (OVH MX Plan, OVH Email Pro et IMAP personnalisé se choisissent à la main). Pour un autre fournisseur, choisissez IMAP personnalisé et saisissez le serveur et le port (en général 993 avec SSL).</td></tr>
             <tr><td>Dossier à relever</td><td>Le dossier IMAP à lire (la boîte de réception par défaut).</td></tr>
             <tr><td>Après traitement</td><td>Réglage par défaut de la boîte quand aucune règle n'en décide autrement : laisser tel quel, marquer comme lu ou déplacer.</td></tr>
-            <tr><td>Intervalle (min)</td><td>Intervalle de relève de la boîte, de 1 à 1440 minutes. Utilisez Lancer maintenant sur l'Accueil pour relever tout de suite.</td></tr>
+            <tr><td>Intervalle (min)</td><td>Fréquence de relève de cette boîte, de 1 à 1440 minutes (l'application regarde chaque minute : 1 est donc la plus fine). Utilisez Lancer maintenant sur l'Accueil pour relever toutes les boîtes tout de suite.</td></tr>
             <tr><td>Historique (jours)</td><td>Ancienneté maximale des messages relevés.</td></tr>
             <tr><td>Actif</td><td>Une boîte inactive n'est pas relevée.</td></tr>
         </tbody>

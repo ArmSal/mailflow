@@ -12,8 +12,10 @@ public class MailflowWorkerTests
         private int _calls;
         public Func<int, CancellationToken, Task>? Behaviour { get; init; }
         public int Calls => Volatile.Read(ref _calls);
-        public async Task RunAsync(CancellationToken ct)
+        public System.Collections.Concurrent.ConcurrentQueue<bool> OnlyDueFlags { get; } = new();
+        public async Task RunAsync(CancellationToken ct, bool onlyDue = false)
         {
+            OnlyDueFlags.Enqueue(onlyDue);
             var n = Interlocked.Increment(ref _calls);
             if (Behaviour is not null) await Behaviour(n, ct);
         }
@@ -53,6 +55,19 @@ public class MailflowWorkerTests
         await worker.StopAsync(CancellationToken.None);
         Assert.NotNull(state.LastRunUtc);
         Assert.Null(state.LastError);
+    }
+
+    [Fact]
+    public async Task Scheduled_runs_only_ask_for_due_mailboxes_but_run_now_asks_for_all()
+    {
+        var runner = new FakeRunner();
+        var (worker, signal, _) = Create(runner, TimeSpan.FromHours(1));
+        await worker.StartAsync(CancellationToken.None);
+        await WaitUntil(() => runner.Calls >= 1);
+        signal.Request();
+        await WaitUntil(() => runner.Calls >= 2);
+        await worker.StopAsync(CancellationToken.None);
+        Assert.Equal([true, false], runner.OnlyDueFlags.Take(2));
     }
 
     [Fact]

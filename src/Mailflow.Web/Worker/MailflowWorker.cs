@@ -31,7 +31,7 @@ public sealed class MailflowWorker(
                 if (winner == runNow)
                 {
                     runNow = signal.WaitAsync(stoppingToken);
-                    await RunOnceAsync(stoppingToken); // explicit request: allowed while paused
+                    await RunOnceAsync(stoppingToken, onlyDue: false); // explicit request: all mailboxes, allowed while paused
                     continue;
                 }
 
@@ -41,7 +41,7 @@ public sealed class MailflowWorker(
                     logger.LogDebug("Worker paused, scheduled run skipped");
                     continue;
                 }
-                await RunOnceAsync(stoppingToken);
+                await RunOnceAsync(stoppingToken, onlyDue: true);
             }
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -50,13 +50,13 @@ public sealed class MailflowWorker(
         }
     }
 
-    private async Task RunOnceAsync(CancellationToken ct)
+    private async Task RunOnceAsync(CancellationToken ct, bool onlyDue)
     {
         string? error = null;
         state.SetRunning(true);
         try
         {
-            await runner.RunAsync(ct);
+            await runner.RunAsync(ct, onlyDue);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {

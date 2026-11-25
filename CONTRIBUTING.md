@@ -11,7 +11,7 @@ dotnet build
 dotnet test
 ```
 
-Workflow: open an issue to discuss the change, create a branch (`feature/<topic>`), keep the layers clean, add tests, and open a pull request. `dotnet build` and `dotnet test` must pass (CI runs both on Windows).
+Workflow: open an issue to discuss the change, create a branch (`feature/<topic>`), keep the layers clean, add tests, and open a pull request. `dotnet build` and `dotnet test` must pass.
 
 Conventions:
 
