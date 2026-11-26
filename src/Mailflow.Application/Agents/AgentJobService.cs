@@ -46,17 +46,34 @@ public sealed class AgentJobService(IAppDbContext db, IClock clock)
         Copies = copies, Duplex = printer.Duplex, Status = PrintJobStatus.Pending, CreatedAt = now,
     };
 
-    public async Task<PrintAgent?> AuthenticateAsync(string? token, CancellationToken ct)
+    /// <summary>Hash checked when the name is unknown, so an unknown name takes as long to refuse as a wrong password.</summary>
+    private static readonly string UnknownAgentHash = HashToken("unknown-agent");
+
+    /// <summary>The agent is identified by its name and proved by its password; only that agent's hash is computed.</summary>
+    public async Task<PrintAgent?> AuthenticateAsync(string? name, string? token, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(token)) return null;
+        if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(token)) return null;
+        name = name.Trim().ToLowerInvariant();
         token = token.Trim();
-        // The password carries no agent id, so it is checked against each (few) agent's salted hash.
-        var agent = (await db.PrintAgents.ToListAsync(ct)).FirstOrDefault(a => VerifyToken(token, a.TokenHash));
-        if (agent is null) return null;
+        var agent = await db.PrintAgents.FirstOrDefaultAsync(a => a.Name.ToLower() == name, ct);
+        if (agent is null) { VerifyToken(token, UnknownAgentHash); return null; }
+        if (!VerifyToken(token, agent.TokenHash)) return null;
         agent.LastSeenAt = clock.UtcNow;
         await db.SaveChangesAsync(ct);
         return agent;
     }
+
+    /// <summary>Stores the printers installed on the agent's PC (what the printer form offers for a remote printer).</summary>
+    public async Task SetPrintersAsync(PrintAgent agent, IEnumerable<string> names, CancellationToken ct)
+    {
+        var clean = names.Select(n => n?.Trim() ?? "").Where(n => n.Length is > 0 and <= 260).Distinct(StringComparer.OrdinalIgnoreCase).Take(200);
+        agent.PrinterNames = string.Join("\n", clean);
+        agent.PrintersReportedAt = clock.UtcNow;
+        await db.SaveChangesAsync(ct);
+    }
+
+    public static IReadOnlyList<string> PrinterList(PrintAgent agent) =>
+        string.IsNullOrEmpty(agent.PrinterNames) ? [] : agent.PrinterNames.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
     public async Task<AgentJobInfo?> ClaimNextAsync(PrintAgent agent, CancellationToken ct)
     {

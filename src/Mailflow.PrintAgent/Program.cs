@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
@@ -40,17 +39,24 @@ internal static class Program
         if (config is null) { Log("agent.json introuvable. Lancez MailflowPrintAgent.exe --setup."); return 1; }
         if (config.Validate() is { } problem) { Log("Configuration invalide : " + problem); return 1; }
 
-        using var http = NewClient(config);
+        using var http = config.NewHttpClient();
         var worker = new AgentWorker(http, new SumatraPrinter(config.SumatraPath), Log);
+        var printers = new WindowsPrinterLister();
+        var nextPrinterReport = DateTime.MinValue;
         using var stop = new CancellationTokenSource();
         Console.CancelKeyPress += (_, e) => { e.Cancel = true; stop.Cancel(); };
-        Log($"Agent démarré, serveur {config.ServerUrl}.");
+        Log($"Agent « {config.AgentName} » démarré, serveur {config.ServerUrl}.");
 
         var failures = 0;
         while (!stop.IsCancellationRequested)
         {
             try
             {
+                if (DateTime.UtcNow >= nextPrinterReport)
+                {
+                    await worker.ReportPrintersAsync(printers.List(), stop.Token);
+                    nextPrinterReport = DateTime.UtcNow.AddMinutes(10);
+                }
                 if (await worker.RunOnceAsync(stop.Token)) { failures = 0; continue; }
                 failures = 0;
                 await Task.Delay(TimeSpan.FromSeconds(config.PollSeconds), stop.Token);
@@ -80,6 +86,9 @@ internal static class Program
         Console.Write($"Adresse de Mailflow (par exemple http://100.64.0.5:5089){(config.ServerUrl.Length > 0 ? $" [{config.ServerUrl}]" : "")} : ");
         var url = Console.ReadLine()?.Trim();
         if (!string.IsNullOrEmpty(url)) config.ServerUrl = url;
+        Console.Write($"Nom de cet agent, tel que créé dans Mailflow{(config.AgentName.Length > 0 ? $" [{config.AgentName}]" : "")} : ");
+        var agentName = Console.ReadLine()?.Trim();
+        if (!string.IsNullOrEmpty(agentName)) config.AgentName = agentName;
         Console.Write("Mot de passe de l'agent (le même que dans Mailflow) : ");
         var password = ReadHidden();
         if (string.IsNullOrWhiteSpace(password)) { Console.WriteLine("Mot de passe vide : abandon."); return 1; }
@@ -89,9 +98,9 @@ internal static class Program
         Console.Write("Test de la connexion... ");
         try
         {
-            using var http = NewClient(config);
+            using var http = config.NewHttpClient();
             using var r = await http.GetAsync("api/agent/ping");
-            if (r.StatusCode == HttpStatusCode.Unauthorized) { Console.WriteLine("mot de passe refusé par Mailflow."); return 1; }
+            if (r.StatusCode == HttpStatusCode.Unauthorized) { Console.WriteLine("nom ou mot de passe refusé par Mailflow."); return 1; }
             r.EnsureSuccessStatusCode();
             var name = (await r.Content.ReadFromJsonAsync<Dictionary<string, string>>())?.GetValueOrDefault("name");
             Console.WriteLine($"OK (agent « {name} »).");
@@ -128,13 +137,6 @@ internal static class Program
         }
         Console.WriteLine("Démarrage automatique désactivé. Supprimez le dossier pour retirer l'agent.");
         return 0;
-    }
-
-    private static HttpClient NewClient(AgentConfig config)
-    {
-        var http = new HttpClient { BaseAddress = config.BaseAddress, Timeout = TimeSpan.FromSeconds(60) };
-        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.ResolvedPassword);
-        return http;
     }
 
     private static string ReadHidden()

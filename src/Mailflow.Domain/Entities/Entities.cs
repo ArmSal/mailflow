@@ -46,6 +46,9 @@ public class PrintAgent
     public string TokenHash { get; set; } = "";
     public DateTime CreatedAt { get; set; }
     public DateTime? LastSeenAt { get; set; }
+    /// <summary>The printers installed on the agent's PC, one per line, as last reported by the agent.</summary>
+    public string? PrinterNames { get; set; }
+    public DateTime? PrintersReportedAt { get; set; }
 }
 
 public enum PrintJobStatus { Pending, Sent, Done, Failed }

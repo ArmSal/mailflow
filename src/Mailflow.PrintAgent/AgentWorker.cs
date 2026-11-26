@@ -8,6 +8,11 @@ public interface IPdfPrinter
     Task PrintAsync(string pdfPath, string printerName, int copies, bool duplex, CancellationToken ct);
 }
 
+public interface IPrinterLister
+{
+    IReadOnlyList<string> List();
+}
+
 public sealed record AgentJob(int Id, string PrinterName, int Copies, bool Duplex, string FileName);
 
 public sealed class RejectedPasswordException() : Exception("Mailflow a refusé le mot de passe de l'agent.");
@@ -53,6 +58,14 @@ public sealed class AgentWorker(HttpClient http, IPdfPrinter printer, Action<str
             try { File.Delete(temp); } catch (IOException) { /* temp file, harmless */ }
         }
         return true;
+    }
+
+    /// <summary>Tells Mailflow which printers are installed on this PC, so they can be picked when a remote printer is set up.</summary>
+    public async Task ReportPrintersAsync(IReadOnlyList<string> names, CancellationToken ct)
+    {
+        using var r = await http.PostAsJsonAsync("api/agent/printers", new { names }, ct);
+        if (r.StatusCode == HttpStatusCode.Unauthorized) throw new RejectedPasswordException();
+        r.EnsureSuccessStatusCode();
     }
 
     /// <summary>Retried: if the report is lost, Mailflow offers the job again after a few minutes and it would print twice.</summary>

@@ -10,9 +10,11 @@ public class PrintAgentTests
     private sealed class FakeServer(Func<HttpRequestMessage, HttpResponseMessage> respond) : HttpMessageHandler
     {
         public List<(HttpMethod Method, string Path, string Body)> Calls { get; } = [];
+        public List<KeyValuePair<string, string>> Headers { get; } = [];
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
+            foreach (var h in request.Headers) Headers.Add(new(h.Key, string.Join(",", h.Value)));
             Calls.Add((request.Method, request.RequestUri!.AbsolutePath, request.Content is null ? "" : await request.Content.ReadAsStringAsync(ct)));
             return respond(request);
         }
@@ -110,13 +112,19 @@ public class PrintAgentTests
     [InlineData("https://mailflow.example.com", true)]
     public void Server_url_must_be_a_full_http_address(string url, bool ok)
     {
-        var c = new AgentConfig { ServerUrl = url, Password = "secret-secret" };
+        var c = new AgentConfig { ServerUrl = url, AgentName = "Boutique", Password = "secret-secret" };
         Assert.Equal(ok, c.Validate() is null);
     }
 
     [Fact]
     public void Missing_password_is_invalid()
-        => Assert.NotNull(new AgentConfig { ServerUrl = "http://x:1" }.Validate());
+        => Assert.NotNull(new AgentConfig { ServerUrl = "http://x:1", AgentName = "Boutique" }.Validate());
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void The_agent_needs_a_name(string name)
+        => Assert.NotNull(new AgentConfig { ServerUrl = "http://x:1", AgentName = name, Password = "secret-secret" }.Validate());
 
     [Fact]
     public void Saved_password_round_trips_and_is_not_written_in_clear()
@@ -124,7 +132,7 @@ public class PrintAgentTests
         var path = Path.Combine(Path.GetTempPath(), "agent-" + Guid.NewGuid().ToString("N") + ".json");
         try
         {
-            var c = new AgentConfig { ServerUrl = "http://x:1" };
+            var c = new AgentConfig { ServerUrl = "http://x:1", AgentName = "Boutique" };
             c.SetPassword("a-long-secret-password");
             c.Save(path);
 
@@ -134,6 +142,47 @@ public class PrintAgentTests
             Assert.Null(loaded.Validate());
         }
         finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public async Task Every_request_carries_the_agent_name_and_password()
+    {
+        var server = new FakeServer(_ => new HttpResponseMessage(HttpStatusCode.NoContent));
+        var config = new AgentConfig { ServerUrl = "http://mailflow.test:5089", AgentName = "Boutique Centre", Password = "secret-secret" };
+        using var http = config.NewHttpClient(server);
+
+        await http.GetAsync("api/agent/jobs/next");
+
+        Assert.Equal("http://mailflow.test:5089/", http.BaseAddress!.ToString());
+        Assert.Equal("Bearer secret-secret", server.Headers.Single(h => h.Key == "Authorization").Value);
+        Assert.Equal("Boutique%20Centre", server.Headers.Single(h => h.Key == "X-Agent-Name").Value);
+    }
+
+    [Fact]
+    public async Task An_accented_name_travels_url_encoded_and_decodes_back()
+    {
+        var server = new FakeServer(_ => new HttpResponseMessage(HttpStatusCode.NoContent));
+        using var http = new AgentConfig { ServerUrl = "http://x:1", AgentName = "Entrepôt Nord", Password = "secret-secret" }.NewHttpClient(server);
+
+        await http.GetAsync("api/agent/ping");
+
+        var sent = server.Headers.Single(h => h.Key == "X-Agent-Name").Value;
+        Assert.DoesNotContain("ô", sent);
+        Assert.Equal("Entrepôt Nord", Uri.UnescapeDataString(sent));
+    }
+
+    [Fact]
+    public async Task The_printer_list_is_sent_to_mailflow()
+    {
+        var server = new FakeServer(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var worker = Worker(server, new FakePrinter());
+
+        await worker.ReportPrintersAsync(["HP LaserJet", "Brother"], default);
+
+        var call = Assert.Single(server.Calls);
+        Assert.Equal((HttpMethod.Post, "/api/agent/printers"), (call.Method, call.Path));
+        using var body = JsonDocument.Parse(call.Body);
+        Assert.Equal(["HP LaserJet", "Brother"], body.RootElement.GetProperty("names").EnumerateArray().Select(e => e.GetString()).ToArray());
     }
 
     [Fact]

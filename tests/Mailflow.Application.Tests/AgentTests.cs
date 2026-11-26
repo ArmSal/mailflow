@@ -109,14 +109,41 @@ public class AgentJobServiceTests
     {
         var (svc, f, agent, token) = Make();
         using var _ = f;
-        Assert.Null(await svc.AuthenticateAsync(null, default));
-        Assert.Null(await svc.AuthenticateAsync("", default));
-        Assert.Null(await svc.AuthenticateAsync(token + "x", default));
+        Assert.Null(await svc.AuthenticateAsync("Boutique", null, default));
+        Assert.Null(await svc.AuthenticateAsync("Boutique", "", default));
+        Assert.Null(await svc.AuthenticateAsync("Boutique", token + "x", default));
+        Assert.Null(await svc.AuthenticateAsync(null, token, default));
 
-        var found = await svc.AuthenticateAsync(token, default);
+        var found = await svc.AuthenticateAsync("Boutique", token, default);
 
         Assert.Equal(agent.Id, found!.Id);
         Assert.Equal(Now, found.LastSeenAt);
+    }
+
+    [Fact]
+    public async Task The_agent_name_must_match_too_but_not_its_letter_case()
+    {
+        var (svc, f, agent, token) = Make();
+        using var _f = f;
+        f.Db.PrintAgents.Add(new PrintAgent { Name = "Entrepot", TokenHash = AgentJobService.HashToken("another-password-1"), CreatedAt = Now });
+        f.Db.SaveChanges();
+
+        Assert.Null(await svc.AuthenticateAsync("Unknown", token, default));
+        Assert.Null(await svc.AuthenticateAsync("Entrepot", token, default)); // right password, but another agent's name
+        Assert.Equal(agent.Id, (await svc.AuthenticateAsync("  boutique ", token, default))!.Id);
+    }
+
+    [Fact]
+    public async Task Reported_printers_are_stored_cleaned_and_listed()
+    {
+        var (svc, f, agent, _) = Make();
+        using var _f = f;
+
+        await svc.SetPrintersAsync(agent, ["HP LaserJet", " ", "Brother", "HP LaserJet", new string('x', 300)], default);
+
+        Assert.Equal(["HP LaserJet", "Brother"], AgentJobService.PrinterList(f.Db.PrintAgents.Single()));
+        Assert.Equal(Now, f.Db.PrintAgents.Single().PrintersReportedAt);
+        Assert.Empty(AgentJobService.PrinterList(new PrintAgent()));
     }
 
     [Fact]

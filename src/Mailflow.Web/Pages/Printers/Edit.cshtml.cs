@@ -72,8 +72,17 @@ public class EditModel(IAppDbContext db, IPrinterService printers) : PageModel
         return RedirectToPage("Index");
     }
 
-    public IActionResult OnPostDetect()
+    public async Task<IActionResult> OnPostDetectAsync()
     {
+        // A remote printer is installed on the agent's PC: offer what that agent reported, not this PC's printers.
+        if (Input.Kind == PrinterKind.PrintNode)
+        {
+            if (Input.PrintAgentId is null) return Content(System.Net.WebUtility.HtmlEncode(Loc.T("Choisissez d'abord un agent d'impression.")), "text/html");
+            var agent = await db.PrintAgents.AsNoTracking().FirstOrDefaultAsync(a => a.Id == Input.PrintAgentId);
+            if (agent?.PrintersReportedAt is null)
+                return Content(System.Net.WebUtility.HtmlEncode(Loc.T("L'agent n'a pas encore envoyé la liste de ses imprimantes : démarrez-le, puis réessayez dans un instant.")), "text/html");
+            return Partial("_Detected", Mailflow.Application.Agents.AgentJobService.PrinterList(agent));
+        }
         try { return Partial("_Detected", printers.GetInstalledPrinters()); }
         catch (Exception ex) { return Content(Loc.T("Détection impossible :") + " " + System.Net.WebUtility.HtmlEncode(ex.Message), "text/html"); }
     }

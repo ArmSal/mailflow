@@ -183,6 +183,12 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("PrinterNames")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("PrintersReportedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("TokenHash")
                         .IsRequired()
                         .HasColumnType("TEXT");

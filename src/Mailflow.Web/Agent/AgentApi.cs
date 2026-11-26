@@ -8,10 +8,13 @@ namespace Mailflow.Web.Agent;
 
 public sealed record JobResult(bool Ok, string? Error);
 
+public sealed record PrinterReport(List<string>? Names);
+
 /// <summary>The only part of Mailflow a print agent talks to. Every call needs the agent's bearer token.</summary>
 public static class AgentApi
 {
     public const string Prefix = "/api/agent";
+    public const string NameHeader = "X-Agent-Name";
 
     public static IEndpointRouteBuilder MapAgentApi(this IEndpointRouteBuilder app)
     {
@@ -22,6 +25,15 @@ public static class AgentApi
         {
             var (agent, reject) = await Authenticate(ctx, svc, throttle);
             return agent is null ? reject! : Results.Json(new { agent.Name });
+        });
+
+        // The printers installed on the agent's PC, so Mailflow can offer them when a remote printer is set up.
+        g.MapPost("/printers", async (PrinterReport body, HttpContext ctx, AgentJobService svc, AgentAuthThrottle throttle) =>
+        {
+            var (agent, reject) = await Authenticate(ctx, svc, throttle);
+            if (agent is null) return reject!;
+            await svc.SetPrintersAsync(agent, body.Names ?? [], ctx.RequestAborted);
+            return Results.Ok();
         });
 
         g.MapGet("/jobs/next", async (HttpContext ctx, AgentJobService svc, AgentAuthThrottle throttle) =>
@@ -63,7 +75,7 @@ public static class AgentApi
 
         var header = ctx.Request.Headers.Authorization.ToString();
         var token = header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) ? header[7..] : null;
-        var agent = await svc.AuthenticateAsync(token, ctx.RequestAborted);
+        var agent = await svc.AuthenticateAsync(Uri.UnescapeDataString(ctx.Request.Headers[NameHeader].ToString()), token, ctx.RequestAborted);
         if (agent is null)
         {
             throttle.Fail(ip, now);
