@@ -95,6 +95,12 @@
 
         <section aria-labelledby="errors-title">
             <h2 id="errors-title" class="section-title">@T("Dernières erreurs")</h2>
+            @if (Model.MailboxErrors.Count > 0 || Model.RunErrors.Count > 0)
+            {
+                <form method="post" hx-post="@Url.Page("/Index", "ClearErrors")" hx-target="@target" hx-swap="outerHTML" hx-confirm="@T("Effacer toutes les erreurs ?")" class="mb-2">
+                    <button class="btn btn-sm btn-secondary" type="submit">@T("Effacer les erreurs")</button>
+                </form>
+            }
             <div class="card">
                 @if (Model.MailboxErrors.Count == 0 && Model.RunErrors.Count == 0)
                 {

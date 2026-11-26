@@ -53,6 +53,15 @@ public class IndexModel(IAppDbContext db, WorkerState state, RunNowSignal signal
         return Partial("_StatusBlock", this);
     }
 
+    public async Task<IActionResult> OnPostClearErrorsAsync()
+    {
+        foreach (var m in await db.Mailboxes.Where(m => m.LastError != null).ToListAsync()) m.LastError = null;
+        db.RunLogs.RemoveRange(await db.RunLogs.Where(r => r.Error != null).ToListAsync());
+        await db.SaveChangesAsync();
+        await LoadAsync();
+        return Partial("_StatusBlock", this);
+    }
+
     private async Task LoadAsync()
     {
         // "Today" is the local calendar day; log rows are stored in UTC.

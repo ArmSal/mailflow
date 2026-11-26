@@ -64,6 +64,23 @@ public class OpsPageTests : IDisposable
     }
 
     [Fact]
+    public async Task Clear_errors_removes_mailbox_and_run_errors_but_keeps_ok_runs()
+    {
+        using var db = _fx.NewDb();
+        db.Mailboxes.Add(new Mailbox { DisplayName = "M", Email = "a@b.fr", Host = "h", LastError = "boom" });
+        db.RunLogs.AddRange(Run(Now, msgs: 2, error: "bad"), Run(Now, msgs: 3));
+        db.SaveChanges();
+
+        var page = Dashboard(db);
+        Assert.IsType<PartialViewResult>(await page.OnPostClearErrorsAsync());
+
+        Assert.Empty(page.MailboxErrors);
+        Assert.Empty(page.RunErrors);
+        Assert.Null(db.Mailboxes.Single().LastError);
+        Assert.Equal(3, db.RunLogs.Single().MessagesHandled);
+    }
+
+    [Fact]
     public async Task Pause_resume_and_run_now_call_state_and_signal()
     {
         using var db = _fx.NewDb();
