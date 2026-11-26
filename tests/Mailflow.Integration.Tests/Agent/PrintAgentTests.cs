@@ -11,10 +11,12 @@ public class PrintAgentTests
     {
         public List<(HttpMethod Method, string Path, string Body)> Calls { get; } = [];
         public List<KeyValuePair<string, string>> Headers { get; } = [];
+        public List<string> Urls { get; } = [];
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             foreach (var h in request.Headers) Headers.Add(new(h.Key, string.Join(",", h.Value)));
+            Urls.Add(request.RequestUri!.PathAndQuery);
             Calls.Add((request.Method, request.RequestUri!.AbsolutePath, request.Content is null ? "" : await request.Content.ReadAsStringAsync(ct)));
             return respond(request);
         }
@@ -54,6 +56,16 @@ public class PrintAgentTests
         Assert.False(await Worker(server, printer).RunOnceAsync(default));
         Assert.Empty(printer.Printed);
         Assert.Single(server.Calls);
+    }
+
+    [Fact]
+    public async Task The_agent_asks_mailflow_to_hold_the_request_until_a_job_exists()
+    {
+        var server = new FakeServer(_ => new HttpResponseMessage(HttpStatusCode.NoContent));
+
+        await Worker(server, new FakePrinter()).RunOnceAsync(default);
+
+        Assert.Equal("/api/agent/jobs/next?wait=25", Assert.Single(server.Urls));
     }
 
     [Fact]

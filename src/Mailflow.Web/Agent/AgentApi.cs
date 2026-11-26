@@ -40,7 +40,9 @@ public static class AgentApi
         {
             var (agent, reject) = await Authenticate(ctx, svc, throttle);
             if (agent is null) return reject!;
-            return await svc.ClaimNextAsync(agent, ctx.RequestAborted) is { } job ? Results.Json(job) : Results.NoContent();
+            // ?wait=N keeps the request open up to N seconds (at most 30) until a job is queued; no wait = answer at once.
+            var wait = TimeSpan.FromSeconds(Math.Clamp(int.TryParse(ctx.Request.Query["wait"], out var seconds) ? seconds : 0, 0, 30));
+            return await svc.ClaimNextAsync(agent, wait, ctx.RequestAborted) is { } job ? Results.Json(job) : Results.NoContent();
         });
 
         g.MapGet("/jobs/{id:int}/pdf", async (int id, HttpContext ctx, AgentJobService svc, AgentAuthThrottle throttle) =>

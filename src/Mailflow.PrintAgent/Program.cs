@@ -57,9 +57,13 @@ internal static class Program
                     await worker.ReportPrintersAsync(printers.List(), stop.Token);
                     nextPrinterReport = DateTime.UtcNow.AddMinutes(10);
                 }
-                if (await worker.RunOnceAsync(stop.Token)) { failures = 0; continue; }
+                var asked = DateTime.UtcNow;
+                var handled = await worker.RunOnceAsync(stop.Token);
                 failures = 0;
-                await Task.Delay(TimeSpan.FromSeconds(config.PollSeconds), stop.Token);
+                if (handled) continue;
+                // Mailflow normally holds the request open and the next one starts at once. If it answered straight away
+                // (an older Mailflow without waiting), pause so the agent does not hammer it.
+                if (DateTime.UtcNow - asked < TimeSpan.FromSeconds(2)) await Task.Delay(TimeSpan.FromSeconds(config.PollSeconds), stop.Token);
             }
             catch (OperationCanceledException) when (stop.IsCancellationRequested) { break; }
             catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or RejectedPasswordException)

@@ -63,8 +63,28 @@ Other switches: `--run` (hidden, used by the autostart entry), `--uninstall` (re
 
 ## Behaviour to know
 
+- **Instant delivery.** The agent keeps a request open to Mailflow, which holds it until something needs printing and then answers at once, so a print reaches the agent in about a second (measured: 0.3 s). The agent authenticates with its name and password each time it connects, and prints only what Mailflow hands over after that. `PollSeconds` is only the pause used if Mailflow answers straight away (an older Mailflow without waiting).
 - If Mailflow cannot be reached the agent keeps trying (every 5 seconds, then up to once a minute) and prints what is waiting as soon as it is back.
 - If the agent takes a job but never reports (it crashed or lost the network), Mailflow offers the job again after 5 minutes. In that rare case a page can print twice.
 - **Changing the password:** in Mailflow, on the Print agents page, type a new password next to the agent and press "Changer le mot de passe" (empty = generate one). The old password stops working at once, so then run `MailflowPrintAgent.exe --setup` on the printer PC (or run the installer again) and enter the new one. Printers and queued jobs are kept. The Mailflow administrator password is changed separately, under Settings > Sécurité.
 - **Printers:** every 10 minutes (and at start) the agent sends Mailflow the list of printers installed on its PC, including network printers added to Windows there. It cannot discover printers that are not installed on that PC.
 - SumatraPDF is a separate program under the GNU GPL v3, see `THIRD-PARTY-NOTICES.md`.
+
+## Security notes
+
+What protects the link:
+
+- **No open port on the printer PC.** The agent only makes outgoing connections, so nothing on that PC listens for the network.
+- **Tailscale** encrypts and authenticates the traffic between the two PCs (WireGuard). Its access rules can limit which devices may reach Mailflow's agent port.
+- **Name and password on every connection.** Mailflow checks one salted PBKDF2 hash per request, refuses an address after 10 wrong tries a minute, and answers an unknown name as slowly as a wrong password.
+- **The agent API is the only thing on that port.** An agent can only fetch and report its own jobs; the file path of a PDF comes from Mailflow's database, never from the request.
+
+Known limits you should understand:
+
+1. **The application itself speaks plain HTTP.** Over Tailscale that is encrypted by the network. Anywhere else (the open internet, an untrusted network) the password and the PDFs are readable and alterable by anyone on the path, and the agent cannot tell a fake Mailflow from the real one. Use Tailscale or put HTTPS in front.
+2. **The password is the whole identity.** Whoever has an agent's name and password can read that agent's queued PDFs and mark jobs done. Choose a long password, change it (Print agents page) if it leaks, and prefer the wizard or `--setup` to `/password=` on the command line, which other programs on the PC can see.
+3. **Guessing is slowed, not impossible.** The lockout is per address, so many different devices can still try. Limit who can reach the port with Tailscale access rules.
+4. **PDFs are opened by SumatraPDF.** A hostile PDF sent by a compromised Mailflow could try to exploit a flaw in it. Keep SumatraPDF up to date.
+5. **A Windows user who is logged in on the printer PC can read the agent's saved password** (it is encrypted for that user, not hidden from them), and anything running as that user can too.
+6. **The programs are not code-signed**, so Windows SmartScreen may warn when you run them, and you cannot verify the publisher. Check the file comes from your own release page.
+7. **A page can print twice** if the agent takes a job and loses the network before reporting (Mailflow offers it again after 5 minutes).

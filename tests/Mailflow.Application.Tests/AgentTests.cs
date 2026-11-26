@@ -192,6 +192,62 @@ public class AgentJobServiceTests
     }
 
     [Fact]
+    public async Task Waiting_for_a_job_gives_up_after_the_wait_when_nothing_arrives()
+    {
+        var (svc, f, agent, _) = Make();
+        using var _f = f;
+        var pauses = 0;
+
+        var job = await svc.ClaimNextAsync(agent, TimeSpan.FromSeconds(3), default, (_, _) => { pauses++; return Task.CompletedTask; });
+
+        Assert.Null(job);
+        Assert.Equal(3, pauses); // checked again once a second for 3 seconds
+    }
+
+    [Fact]
+    public async Task A_job_queued_while_the_agent_waits_is_handed_over_at_once()
+    {
+        var (svc, f, agent, _) = Make();
+        using var _f = f;
+        var pauses = 0;
+
+        var job = await svc.ClaimNextAsync(agent, TimeSpan.FromSeconds(25), default, (_, _) =>
+        {
+            if (++pauses == 2) { f.Db.PrintJobs.Add(Job(agent.Id)); f.Db.SaveChanges(); } // Mailflow queues a print after 2 s
+            return Task.CompletedTask;
+        });
+
+        Assert.NotNull(job);
+        Assert.Equal(2, pauses);
+        Assert.Equal(PrintJobStatus.Sent, f.Db.PrintJobs.Single().Status);
+    }
+
+    [Fact]
+    public async Task A_job_that_is_already_waiting_is_returned_without_any_pause()
+    {
+        var (svc, f, agent, _) = Make();
+        using var _f = f;
+        f.Db.PrintJobs.Add(Job(agent.Id));
+        f.Db.SaveChanges();
+
+        var job = await svc.ClaimNextAsync(agent, TimeSpan.FromSeconds(25), default, (_, _) => throw new InvalidOperationException("must not wait"));
+
+        Assert.NotNull(job);
+    }
+
+    [Fact]
+    public async Task The_wait_is_capped_so_a_request_cannot_be_held_for_ever()
+    {
+        var (svc, f, agent, _) = Make();
+        using var _f = f;
+        var pauses = 0;
+
+        await svc.ClaimNextAsync(agent, TimeSpan.FromHours(1), default, (_, _) => { pauses++; return Task.CompletedTask; });
+
+        Assert.Equal((int)AgentJobService.MaxWait.TotalSeconds, pauses);
+    }
+
+    [Fact]
     public async Task A_job_sent_but_never_completed_is_offered_again_after_five_minutes()
     {
         var (svc, f, agent, _) = Make();

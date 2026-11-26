@@ -20,10 +20,11 @@ public sealed class RejectedPasswordException() : Exception("Mailflow a refusé 
 /// <summary>One poll of the Mailflow server: take a job, download its PDF, print it, report the result.</summary>
 public sealed class AgentWorker(HttpClient http, IPdfPrinter printer, Action<string> log)
 {
-    /// <summary>Returns true when a job was handled (so the caller can poll again immediately).</summary>
+    /// <summary>Returns true when a job was handled. False means nothing came in the waiting time.</summary>
     public async Task<bool> RunOnceAsync(CancellationToken ct)
     {
-        using var next = await http.GetAsync("api/agent/jobs/next", ct);
+        // Mailflow holds this request open until a job is queued (up to 25 s), so a print arrives almost at once.
+        using var next = await http.GetAsync("api/agent/jobs/next?wait=25", ct);
         if (next.StatusCode == HttpStatusCode.NoContent) return false;
         if (next.StatusCode == HttpStatusCode.Unauthorized) throw new RejectedPasswordException();
         next.EnsureSuccessStatusCode();

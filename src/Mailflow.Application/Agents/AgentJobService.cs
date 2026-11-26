@@ -75,6 +75,29 @@ public sealed class AgentJobService(IAppDbContext db, IClock clock)
     public static IReadOnlyList<string> PrinterList(PrintAgent agent) =>
         string.IsNullOrEmpty(agent.PrinterNames) ? [] : agent.PrinterNames.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
+    /// <summary>How often a request that is waiting for a job looks again.</summary>
+    public static readonly TimeSpan PollEvery = TimeSpan.FromSeconds(1);
+    /// <summary>The longest a request may be held open; the agent then simply asks again.</summary>
+    public static readonly TimeSpan MaxWait = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Hands over the next job, or keeps the request open (checking every second, for at most <paramref name="wait"/>)
+    /// until one is queued: a print reaches a connected agent within about a second. <paramref name="delay"/> is for tests.
+    /// </summary>
+    public async Task<AgentJobInfo?> ClaimNextAsync(PrintAgent agent, TimeSpan wait, CancellationToken ct, Func<TimeSpan, CancellationToken, Task>? delay = null)
+    {
+        delay ??= Task.Delay;
+        if (wait > MaxWait) wait = MaxWait;
+        var waited = TimeSpan.Zero;
+        while (true)
+        {
+            if (await ClaimNextAsync(agent, ct) is { } job) return job;
+            if (waited >= wait) return null;
+            await delay(PollEvery, ct);
+            waited += PollEvery;
+        }
+    }
+
     public async Task<AgentJobInfo?> ClaimNextAsync(PrintAgent agent, CancellationToken ct)
     {
         var now = clock.UtcNow;
