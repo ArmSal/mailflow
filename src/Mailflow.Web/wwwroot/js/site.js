@@ -15,6 +15,15 @@
     });
   }
 
+  // Update banner: dismissal is remembered per version.
+  var banner = document.querySelector("[data-update-banner]");
+  if (banner) {
+    var key = "mf-update-dismissed";
+    var ver = banner.getAttribute("data-update-banner");
+    try { if (localStorage.getItem(key) === ver) banner.remove(); } catch (e) { }
+    banner.addEventListener("close.bs.alert", function () { try { localStorage.setItem(key, ver); } catch (e) { } });
+  }
+
   // Narrow screens: side navigation opens as a drawer. <button data-nav-toggle>
   var navBtn = document.querySelector("[data-nav-toggle]");
   if (navBtn) {

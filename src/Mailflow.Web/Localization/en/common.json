@@ -18,5 +18,10 @@
   "Paramètres": "Settings",
   "Aide": "Help",
   "Mailflow, accueil": "Mailflow, home",
-  "IMAP personnalisé": "Custom IMAP"
+  "IMAP personnalisé": "Custom IMAP",
+  "Mises à jour": "Updates",
+  "Vérifier les nouvelles versions": "Check for new versions",
+  "Une fois par jour, Mailflow demande à GitHub si une version plus récente existe et l'indique par un bandeau. Aucune donnée personnelle n'est envoyée ; rien n'est installé automatiquement.": "Once a day, Mailflow asks GitHub whether a newer version exists and shows a banner. No personal data is sent; nothing is installed automatically.",
+  "Une nouvelle version de Mailflow est disponible ({0}).": "A new version of Mailflow is available ({0}).",
+  "Voir la version": "View the release"
 }

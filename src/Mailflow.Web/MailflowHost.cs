@@ -140,6 +140,14 @@ public static class MailflowHost
         services.AddSingleton(new BackupOptions(connectionString, documentsRoot));
         services.AddSingleton<BackupService>();
         services.AddHostedService<NightlyBackupService>();
+        services.AddHttpClient<Mailflow.Web.Updates.IReleaseSource, Mailflow.Web.Updates.GitHubReleaseSource>(c =>
+        {
+            c.Timeout = TimeSpan.FromSeconds(10);
+            c.DefaultRequestHeaders.UserAgent.ParseAdd("update-check");
+            c.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+        });
+        services.AddSingleton<Mailflow.Web.Updates.UpdateChecker>();
+        services.AddHostedService<Mailflow.Web.Updates.UpdateCheckService>();
 
         configureServices?.Invoke(services);
         var app = builder.Build();

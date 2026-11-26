@@ -12,6 +12,8 @@ Each agent has a **name** and a **password**. You choose both when you create th
 
 ### Letting the agent reach Mailflow
 
+Tailscale is used as the example below, but it is only one option: any private network, VPN or trusted LAN works the same way. Use that network's address of the Mailflow PC wherever the Tailscale address appears.
+
 Mailflow's web interface only listens on this PC (`127.0.0.1:5088`). To let agents in, add a **second listener that serves nothing but the agent API**, on the PC's Tailscale address, in `appsettings.json` next to `Mailflow.exe`. Use an `https://` address so the connection is encrypted and the agent can check it is talking to the real Mailflow:
 
 ```json
