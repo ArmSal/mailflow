@@ -29,10 +29,6 @@ public class IndexModel(IAppDbContext db) : PageModel
     {
         var m = await db.Mailboxes.FindAsync(id);
         if (m is null) return Content("");
-        if (await db.ProcessedMessages.AnyAsync(p => p.MailboxId == id))
-        {
-                return this.PartialWith("_MailboxRow", m, ("Error", Loc.T("Suppression impossible : des messages ont été traités. Désactivez la boîte.")));
-        }
         db.Mailboxes.Remove(m);
         await db.SaveChangesAsync();
         return Content("");

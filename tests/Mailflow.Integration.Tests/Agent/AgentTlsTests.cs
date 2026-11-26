@@ -112,7 +112,8 @@ public sealed class AgentTlsTests : IDisposable
     {
         var cert = Load();
         var port = FreePort();
-        var builder = WebApplication.CreateBuilder();
+        // Content root = an empty temp folder, so the server does not read Mailflow's own appsettings.json (port 5088).
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { ContentRootPath = _dir });
         builder.Logging.ClearProviders();
         builder.WebHost.ConfigureKestrel(o => o.Listen(IPAddress.Loopback, port, l => l.UseHttps(cert)));
         var app = builder.Build();

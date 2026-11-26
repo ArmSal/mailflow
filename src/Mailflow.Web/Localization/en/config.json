@@ -139,7 +139,6 @@
   "Ajoutez une boîte mail pour que Mailflow relève ses messages et en archive les documents.": "Add a mailbox so that Mailflow polls its messages and archives their documents.",
   "Dernière relève": "Last poll",
   "Statut": "Status",
-  "Suppression impossible : des messages ont été traités. Désactivez la boîte.": "Cannot delete: messages have been processed. Deactivate the mailbox instead.",
   "Ce serveur refuse la connexion par mot de passe : activez l'accès IMAP ou utilisez un mot de passe d'application.": "This server refuses password sign-in: enable IMAP access or use an app-specific password.",
   "Authentification refusée : Gmail, iCloud et Yahoo exigent un mot de passe d'application (et non le mot de passe habituel) ainsi que l'accès IMAP activé.": "Authentication refused: Gmail, iCloud and Yahoo require an app-specific password (not your usual password) and IMAP access enabled.",
   "Échec de connexion sécurisée (SSL/TLS) : utilisez le port 993 avec SSL activé, ou le port 143 avec SSL désactivé (STARTTLS).": "Secure connection failed (SSL/TLS): use port 993 with SSL enabled, or port 143 with SSL disabled (STARTTLS).",

@@ -26,6 +26,44 @@ public sealed class DocumentsRootSettingsTests : IDisposable
     }
 
     [Fact]
+    public async Task Saving_is_not_blocked_by_the_other_forms_on_the_page()
+    {
+        using var db = _fx.NewDb();
+        var root = Path.Combine(_tmp, "docs-other-forms");
+        var page = NewSettings(db);
+        // A browser posts only the Settings form, so model binding finds the password form's [Required] fields empty
+        // and the sender-check mode missing. Those errors belong to other forms and must not stop this save.
+        // The keys are the ones ASP.NET really produces (bare names, found by inspecting a real post), not "Password.Current".
+        page.ModelState.AddModelError("Current", "required");
+        page.ModelState.AddModelError("New", "required");
+        page.ModelState.AddModelError("Confirm", "required");
+        page.ModelState.AddModelError("Password.Current", "required");
+        page.ModelState.AddModelError("SenderCheck.Mode", "invalid");
+        page.Input = new SettingsIndex.SettingsInput { DocumentsRoot = root, FileNamePattern = "{Category}/{OriginalName}.pdf" };
+
+        await page.OnPostSettingsAsync();
+
+        Assert.NotNull(page.SettingsMessage);
+        using var check = _fx.NewDb();
+        Assert.Equal(root, check.Settings.Single(s => s.Key == "DocumentsRoot").Value);
+    }
+
+    [Fact]
+    public async Task A_real_error_in_the_settings_fields_still_blocks_the_save()
+    {
+        using var db = _fx.NewDb();
+        var page = NewSettings(db);
+        page.Input = new SettingsIndex.SettingsInput { DocumentsRoot = "relative\\path", FileNamePattern = "{Category}/{OriginalName}.pdf" };
+
+        await page.OnPostSettingsAsync();
+
+        Assert.Null(page.SettingsMessage);
+        Assert.False(page.ModelState.IsValid);
+        using var check = _fx.NewDb();
+        Assert.Empty(check.Settings.Where(s => s.Key == "DocumentsRoot"));
+    }
+
+    [Fact]
     public async Task Chosen_documents_folder_and_pattern_are_saved_and_shown_again()
     {
         using var db = _fx.NewDb();

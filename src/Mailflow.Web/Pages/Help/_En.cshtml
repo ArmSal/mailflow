@@ -21,7 +21,7 @@
         <li><strong>Read</strong> the mailboxes over IMAP (OVH, iCloud, Gmail, Yahoo or any IMAP server).</li>
         <li><strong>Sort</strong> each email with your rules (sender, subject, text of the PDF...).</li>
         <li><strong>Save</strong> every PDF into a category folder, with a file name built from a pattern.</li>
-        <li><strong>Print</strong> the documents chosen by your rules.</li>
+        <li><strong>Print</strong> the documents chosen by your rules, on this PC's printers or, through a <strong>Print Agent</strong>, on a printer at another site.</li>
         <li><strong>Tidy up the mailbox</strong>: leave the email alone, mark it as read or move it to an IMAP folder.</li>
         <li><strong>Keep a history</strong> of everything so you can open, reprint or reclassify a document later.</li>
     </ul>
@@ -71,6 +71,7 @@
         <li>in Strict mode, the sender is <strong>verified</strong> (see Settings and section 4).</li>
     </ul>
     <p>Printing is silent, through the bundled SumatraPDF tool. The number of copies is the one of the action if filled in, otherwise the printer's default; duplex follows the printer. If a check blocks printing or the printer fails, the document is still saved and History shows the reason; you can reprint it by hand.</p>
+    <p><strong>Printer at another site.</strong> If the rule's printer is of type <em>PrintNode</em>, nothing is printed on this PC: the PDF is queued for a <strong>Print Agent</strong> installed on the PC that owns the printer (see "Print agents" in section 3). A connected agent receives it within about a second and prints it; History shows the document as printed once the agent confirms, or shows the agent's error. If the agent is switched off, the print waits and is done when it reconnects.</p>
     <h4>8. What happens to the email afterwards</h4>
     <p>Only after the documents are saved, Mailflow acts on the mailbox. The matching rule's action decides: <strong>Mark as read</strong>, <strong>Move to an IMAP folder</strong> (the folder named in the action, otherwise the IMAP folder of the category) or <strong>Leave unread</strong>. When no rule gives such an action, the mailbox's <strong>After processing</strong> setting applies (Leave as is, Mark as read, Move). If saving a document fails, nothing is recorded and the email is retried at the next poll. If only the mailbox action fails, the documents are kept and a warning appears in the Log.</p>
     <h4>9. History and Log</h4>
@@ -81,7 +82,7 @@
     <h2>3. The pages, field by field</h2>
 
     <h3 id="p-home">Home</h3>
-    <p>The dashboard. The status panel shows whether Mailflow is polling, paused or idle, the time of the last poll and of the next one, and the last error if any. Buttons: <strong>Run now</strong>, <strong>Pause</strong> and <strong>Resume</strong>. Below, the figures for today (messages processed, documents saved, documents printed, errors). The page refreshes by itself every 10 seconds.</p>
+    <p>The dashboard. The status panel shows whether Mailflow is polling, paused or idle, the time of the last poll and of the next one, and the last error if any. Buttons: <strong>Run now</strong>, <strong>Pause</strong> and <strong>Resume</strong>. Below, the figures for today (messages processed, documents saved, documents printed, errors). The page refreshes by itself every 10 seconds. The <strong>Latest errors</strong> list has a <strong>Clear errors</strong> button: it empties the list (the mailbox error messages and the failed polls of the Log). If a problem is still there, the error comes back at the next poll.</p>
 
     <h3 id="p-mailboxes">Mailboxes</h3>
     <p>The list shows each mailbox, its last poll, its status (click the badge to enable or disable it) and any last error, with a hint when the error is a known one. <strong>Add a mailbox</strong> opens the form.</p>
@@ -110,14 +111,39 @@
         <thead><tr><th scope="col">Field</th><th scope="col">Meaning</th></tr></thead>
         <tbody>
             <tr><td>Display name</td><td>The name shown in Mailflow and in the rule's printer list.</td></tr>
-            <tr><td>Windows printer</td><td>The exact Windows name of the printer. <strong>Detect printers</strong> lists those installed on the PC; click one to fill the field.</td></tr>
-            <tr><td>Type</td><td>The kind of printer. Use Local for a printer installed on this PC.</td></tr>
+            <tr><td>Windows printer</td><td>The exact Windows name of the printer. <strong>Detect printers</strong> lists those installed on this PC; click one to fill the field. For a PrintNode printer it lists the printers the chosen agent reported, and the name is the printer's name <em>on the agent PC</em>.</td></tr>
+            <tr><td>Type</td><td><strong>Local</strong>: a printer installed on this PC. <strong>PrintNode</strong>: a printer on another PC, reached through a Print Agent (this is Mailflow's own name for it, not an outside service).</td></tr>
+            <tr><td>Print agent</td><td>For a PrintNode printer: the agent that prints for it. Create agents under Print agents (below).</td></tr>
             <tr><td>Default copies</td><td>Number of copies, from 1 to 99, unless the rule's action sets its own number.</td></tr>
             <tr><td>Duplex</td><td>Print on both sides.</td></tr>
             <tr><td>Active</td><td>An inactive printer never prints: the document is saved and History says why.</td></tr>
         </tbody>
     </table></div>
-    <p>The <strong>Print test</strong> button of the list sends a test page to that printer: do it once after adding a printer.</p>
+    <p>The <strong>Print test</strong> button of the list sends a test page to that printer: do it once after adding a printer. For a PrintNode printer the page is queued and the agent prints it as soon as it is connected.</p>
+
+    <h3 id="p-agents">Print agents</h3>
+    <p>A <strong>Print Agent</strong> is a small program installed on a PC that owns a printer, for example at another shop. It connects to Mailflow, receives the PDFs to print and prints them on its own printers. Nothing has to be opened on the printer PC's network. Agents are managed under <strong>Printers &gt; Print agents</strong>.</p>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th scope="col">Item</th><th scope="col">Meaning</th></tr></thead>
+        <tbody>
+            <tr><td>Name</td><td>Identifies the agent (unique, whatever the letters' case). The same name is typed in the agent's installer.</td></tr>
+            <tr><td>Password</td><td>At least 12 characters. The same password is typed in the agent's installer. Leave it empty when creating the agent and Mailflow generates one and shows it once. Mailflow keeps only a scrambled form (hash) of it.</td></tr>
+            <tr><td>Change password</td><td>Type a new password next to the agent (empty = generate one) and press <strong>Change password</strong>. The old one stops working at once, so run the agent's installer or <code>--setup</code> again with the new one. Printers and queued prints are kept.</td></tr>
+            <tr><td>Last connection</td><td>When the agent last contacted Mailflow. "Never" means it is not installed yet or cannot reach Mailflow.</td></tr>
+            <tr><td>Printers detected</td><td>How many printers the agent reported: those installed on its PC, including network printers added to Windows there (sent at start and every 10 minutes). They are what <strong>Detect printers</strong> offers for a PrintNode printer. An agent cannot discover a printer that is not installed on its PC.</td></tr>
+            <tr><td>Delete</td><td>Not possible while a printer uses the agent.</td></tr>
+        </tbody>
+    </table></div>
+    <h4>Setting up a remote printer</h4>
+    <ol>
+        <li>Create the agent on the Print agents page (name and password).</li>
+        <li>On the printer PC run <code>MailflowPrintAgent-Setup-&lt;version&gt;-win-x64.exe</code> and enter Mailflow's address, the agent's name and its password.</li>
+        <li>Add a printer of type <strong>PrintNode</strong>, choose the agent, press <strong>Detect printers</strong>, pick the printer, and use <strong>Print test</strong>.</li>
+        <li>Use that printer in a rule's Print action like any other.</li>
+    </ol>
+    <h4>The connection: address, Tailscale and HTTPS</h4>
+    <p>Mailflow normally listens on this PC only. To receive agents it opens a second port that serves nothing but the agent API: add it in <code>appsettings.json</code> next to <code>Mailflow.exe</code> (the exact lines are in the Print Agent's README) on the PC's <strong>Tailscale</strong> address, with an <code>https://</code> address, for example <code>https://100.72.79.89:5089</code>, then restart Mailflow. To find the address, click the Tailscale icon near the clock ("This device") or run <code>tailscale ip -4</code>.</p>
+    <p>The Print agents page shows how agents connect. With HTTPS it shows the <strong>fingerprint</strong> (SHA-256) of Mailflow's own certificate. When you install an agent it shows the fingerprint it received: check that the two are identical, once. From then on the agent accepts only that certificate, so a fake Mailflow cannot take its password or send it documents. If the fingerprint changes (the <code>data</code> folder was deleted, or Mailflow now runs under another Windows account) the agents must be installed again. A plain <code>http://</code> address still works on a private network such as Tailscale, but the page then shows a warning.</p>
 
     <h3 id="p-categories">Categories</h3>
     <p>A category decides where a document is filed. Mailflow creates <code>A trier</code> ("to sort") for emails that no rule recognises.</p>
@@ -130,7 +156,7 @@
             <tr><td>Display order</td><td>Position in the lists.</td></tr>
         </tbody>
     </table></div>
-    <p>A category used by documents or rules cannot be deleted.</p>
+    <p>A category used by documents or rules cannot be deleted. The <code>A trier</code> category can neither be deleted nor renamed, because Mailflow files there every email that no rule recognises (you can change its colour and folders).</p>
 
     <h3 id="p-rules">Rules</h3>
     <p>The list is ordered: rules are tested from top to bottom, and the arrows move a rule up or down. Each rule has these parts.</p>
@@ -224,7 +250,7 @@
     <div class="table-wrap"><table class="table">
         <thead><tr><th scope="col">Setting</th><th scope="col">Meaning</th></tr></thead>
         <tbody>
-            <tr><td>Documents folder</td><td>Where PDFs are archived. Type a path or use <strong>Browse...</strong> to pick a folder. Backups go in a <code>backups</code> subfolder of it.</td></tr>
+            <tr><td>Documents folder</td><td>Where PDFs are archived. Type a path, or use <strong>Browse...</strong> and click <strong>Choose this folder</strong>: the choice is saved at once. If you typed the path, press <strong>Save</strong> at the bottom of the section. Documents already filed stay where they are; new ones go to the new folder, and the nightly backups go in its <code>backups</code> subfolder.</td></tr>
             <tr><td>File name pattern</td><td>Must contain <code>{OriginalName}</code>. Tokens: <code>{Category}</code>, <code>{Supplier}</code>, <code>{OriginalName}</code>, and dates <code>{yyyy}</code>, <code>{MM}</code>, <code>{dd}</code>, <code>{yyyy-MM-dd}</code>, <code>{dd-MM-yyyy}</code>. Use <code>/</code> to separate folders. Applies to documents saved from now on.</td></tr>
             <tr><td>Print the email body when no PDF is attached</td><td>If a print rule matches an email without PDF, Mailflow prints a PDF made from its text.</td></tr>
             <tr><td>Sender check</td><td>Off, Warn (recommended) or Strict; see below.</td></tr>
@@ -247,6 +273,7 @@
     <ul>
         <li><strong>Admin password.</strong> You choose it the first time the application runs. Without it nothing is accessible. Login attempts are limited to five per minute, and the session ends after 30 minutes of inactivity.</li>
         <li><strong>Local only.</strong> The interface listens on <code>127.0.0.1</code> (this PC only) and is not reachable from the network by default.</li>
+        <li><strong>Print agents.</strong> If you enable them, a separate port serves only the agent API: the login page and the interface stay hidden there. Each agent proves itself with its name and password (stored hashed, wrong tries from one address are throttled), and over HTTPS it also checks Mailflow's certificate fingerprint. Choose long agent passwords, change one if it leaks, and prefer <code>https://</code> to plain <code>http://</code>. The agent's README lists the known limits.</li>
         <li><strong>Encrypted mailbox passwords.</strong> They are protected with Windows (DPAPI) for the current Windows user and are never shown again. A copy of the database restored on another PC or user account cannot decrypt them: you would re-enter the passwords.</li>
         <li><strong>Data stays on the PC.</strong> Emails, documents and the database are not sent anywhere. The only outgoing connections are those to your mail servers.</li>
     </ul>
@@ -269,6 +296,8 @@
             <tr><td>Nightly backups (14 kept)</td><td><code>backups</code> inside the documents folder, files named <code>mailflow-YYYYMMDD-HHMM.db</code></td></tr>
             <tr><td>Logs (30 days)</td><td><code>data\logs\mailflow-YYYYMMDD.log</code></td></tr>
             <tr><td>Encryption keys</td><td><code>data\keys</code>: do not delete</td></tr>
+            <tr><td>Certificate for Print agents (HTTPS)</td><td><code>data\agent-tls.dat</code>, created when the agent address is <code>https://</code>. If it is deleted a new one is made and agents must be installed again.</td></tr>
+            <tr><td>Application settings (port, Print agents)</td><td><code>appsettings.json</code> next to <code>Mailflow.exe</code></td></tr>
             <tr><td>Window state and browser component</td><td><code>%LOCALAPPDATA%\Mailflow</code></td></tr>
         </tbody>
     </table></div>
@@ -300,6 +329,15 @@
     <p>The interface uses port 5088 on this PC. If another program, or another instance of Mailflow, already holds it, Mailflow checks who owns the port: it reuses a running Mailflow, otherwise it reports the conflict. Close the other program and start Mailflow again.</p>
     <h4>The window stays empty and mentions WebView2</h4>
     <p>The window uses the Microsoft Edge WebView2 component. If it is missing, install the "WebView2 Runtime" from Microsoft, then restart Mailflow.</p>
+    <h4>A remote printer does not print</h4>
+    <ol>
+        <li>On the Print agents page, look at <strong>Last connection</strong>. "Never" or an old time means the agent is not running or cannot reach Mailflow.</li>
+        <li>On the printer PC, open <code>agent.log</code> next to the agent: it says what the agent did and why it could not connect.</li>
+        <li>Check the name and password are exactly those of the agent in Mailflow (change the password and set the agent up again if unsure).</li>
+        <li>From the printer PC run <code>Test-NetConnection &lt;Mailflow address&gt; -Port 5089</code> in PowerShell. If it fails, Tailscale is off on one PC or Windows Firewall blocks the port.</li>
+        <li>If the agent refuses the connection after Mailflow was reinstalled, the certificate fingerprint changed: run the agent's installer again and confirm the new fingerprint.</li>
+        <li>History shows the agent's error for a failed print, for example a printer name that does not exist on the agent PC.</li>
+    </ol>
     <h4>Does an update or uninstall remove my data?</h4>
     <p>No. Updating by running the installer again keeps the <code>data</code> folder, and with it your settings, rules and history. To be safe, keep a copy of the <code>data</code> folder before uninstalling.</p>
 </section>
@@ -322,6 +360,10 @@
         <dt>Spoofing</dt><dd>Forging the sender address of an email.</dd>
         <dt>DPAPI</dt><dd>The Windows facility that encrypts data for one Windows user. Mailflow uses it for mailbox passwords.</dd>
         <dt>SumatraPDF</dt><dd>The small PDF reader used silently to send documents to the printer.</dd>
+        <dt>Print Agent</dt><dd>A small program on another PC that fetches the PDFs queued for its printer from Mailflow and prints them.</dd>
+        <dt>PrintNode</dt><dd>Mailflow's printer type for a printer reached through a Print Agent (not an outside service).</dd>
+        <dt>Tailscale</dt><dd>A private network between your PCs over the internet. Each PC gets an address starting with 100. that only your own devices can reach.</dd>
+        <dt>HTTPS and fingerprint</dt><dd>HTTPS encrypts the link. The certificate's fingerprint (SHA-256) is a short code identifying Mailflow's certificate: the agent checks it so it only talks to the real Mailflow.</dd>
     </dl>
 </section>
 

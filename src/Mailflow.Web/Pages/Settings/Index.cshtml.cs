@@ -115,6 +115,11 @@ public class IndexModel(
     public async Task<IActionResult> OnPostSettingsAsync()
     {
         var ct = HttpContext.RequestAborted;
+        // This page has three forms. A browser posts only this one, so the password form's [Required] fields arrive
+        // empty (ASP.NET files those errors under the bare names "Current", "New", "Confirm"). They are not about this
+        // save and must not stop it: only the Input.* fields count here.
+        foreach (var key in ModelState.Keys.Where(k => !k.StartsWith("Input.")).ToList())
+            ModelState.Remove(key);
         await LoadSecondarySectionsAsync(ct);
         Input.DocumentsRoot = (Input.DocumentsRoot ?? "").Trim();
         Input.FileNamePattern = (Input.FileNamePattern ?? "").Trim();

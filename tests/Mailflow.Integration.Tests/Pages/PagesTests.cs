@@ -109,7 +109,7 @@ public class PagesTests : IDisposable
     }
 
     [Fact]
-    public async Task Mailbox_delete_blocked_when_messages_were_processed_else_removed()
+    public async Task Mailbox_delete_succeeds_even_when_messages_were_processed()
     {
         var id = await CreateMailbox("p");
         using (var db = _fx.NewDb())
@@ -117,12 +117,9 @@ public class PagesTests : IDisposable
             db.ProcessedMessages.Add(new ProcessedMessage { MailboxId = id, MessageId = "m" });
             db.SaveChanges();
             var page = new MailboxIndex(db).With();
-            Assert.IsType<PartialViewResult>(await page.OnPostDeleteAsync(id));
-            Assert.Single(db.Mailboxes);
-            db.ProcessedMessages.RemoveRange(db.ProcessedMessages);
-            db.SaveChanges();
             Assert.IsType<ContentResult>(await page.OnPostDeleteAsync(id));
             Assert.Empty(db.Mailboxes);
+            Assert.Empty(db.ProcessedMessages);
         }
     }
 
