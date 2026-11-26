@@ -4,7 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Mailflow.Application.Processing;
 
-public sealed class MailboxProcessor(IAppDbContext db, IMailClient mail, IMailboxConnectionFactory connections, MessagePipeline pipeline, IClock clock)
+public sealed class MailboxProcessor(IAppDbContext db, IMailClient mail, IMailboxConnectionFactory connections, MessagePipeline pipeline, IClock clock,
+    IFailureNotifier? notifier = null, RetryPolicy? retry = null)
 {
     /// <summary>A scheduled pass may start a little early so a 5-minute interval is not stretched to 6 by the 1-minute tick.</summary>
     private static readonly TimeSpan DueTolerance = TimeSpan.FromSeconds(30);
@@ -35,8 +36,13 @@ public sealed class MailboxProcessor(IAppDbContext db, IMailClient mail, IMailbo
         var errors = new List<string>();
         try
         {
-            var connection = await connections.CreateAsync(mailbox, ct);
-            var messages = await mail.FetchSinceAsync(connection, mailbox.InboxFolder, mailbox.SortFromDate, ct);
+            MailboxConnection connection = null!;
+            IReadOnlyList<MailMessage> messages = [];
+            await (retry ?? RetryPolicy.Default).RunAsync(async () =>
+            {
+                connection = await connections.CreateAsync(mailbox, ct);
+                messages = await mail.FetchSinceAsync(connection, mailbox.InboxFolder, mailbox.SortFromDate, ct);
+            }, ct);
             foreach (var message in messages)
             {
                 try
@@ -57,6 +63,8 @@ public sealed class MailboxProcessor(IAppDbContext db, IMailClient mail, IMailbo
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             errors.Add($"Mailbox error: {ex.Message}");
+            await FailureAlerts.NotifyAsync(db, notifier ?? new NullFailureNotifier(), "Connexion à la boîte mail impossible",
+                $"{(string.IsNullOrWhiteSpace(mailbox.DisplayName) ? mailbox.Email : mailbox.DisplayName)} : {ex.Message}", ct);
         }
 
         log.Error = errors.Count == 0 ? null : string.Join(" | ", errors);

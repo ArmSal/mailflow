@@ -250,5 +250,8 @@
   "Ce PC": "This PC",
   "Aucun sous-dossier.": "No subfolders.",
   "Choisir ce dossier": "Choose this folder",
-  "Fermer": "Close"
+  "Fermer": "Close",
+  "Notifications": "Notifications",
+  "Afficher une notification Windows après un échec définitif": "Show a Windows notification after a final failure",
+  "Connexion à une boîte mail impossible ou impression en échec, après plusieurs tentatives. L'échec reste visible dans l'Historique. Disponible dans l'application de bureau.": "Mailbox connection impossible or printing failed, after several attempts. The failure stays visible in History. Available in the desktop app."
 }

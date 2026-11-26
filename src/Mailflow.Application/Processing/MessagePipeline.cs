@@ -11,7 +11,8 @@ public sealed record MessageOutcome(bool AlreadyProcessed, int DocumentsSaved, i
 
 public sealed class MessagePipeline(
     IAppDbContext db, IMailClient mail, IPdfTextReader pdfReader, IDocumentStore store,
-    IPrinterService printerService, IClock clock, RuleEngine ruleEngine, IEmailPdfRenderer? emailPdfRenderer = null)
+    IPrinterService printerService, IClock clock, RuleEngine ruleEngine, IEmailPdfRenderer? emailPdfRenderer = null,
+    IFailureNotifier? notifier = null, RetryPolicy? retry = null)
 {
     public const string DefaultCategoryName = "A trier";
 
@@ -109,7 +110,8 @@ public sealed class MessagePipeline(
                     {
                         try
                         {
-                            await printerService.PrintAsync(stored.Path, printer!.WindowsName, printAction!.Copies ?? printer.DefaultCopies, printer.Duplex, ct);
+                            await (retry ?? RetryPolicy.Default).RunAsync(
+                                () => printerService.PrintAsync(stored.Path, printer!.WindowsName, printAction!.Copies ?? printer.DefaultCopies, printer.Duplex, ct), ct);
                             doc.PrintedAt = clock.UtcNow;
                             doc.PrinterId = printer.Id;
                             printed++;
@@ -118,6 +120,8 @@ public sealed class MessagePipeline(
                         {
                             doc.PrinterId = printer!.Id;
                             doc.PrintError = ex.Message;
+                            await FailureAlerts.NotifyAsync(db, notifier ?? new NullFailureNotifier(), "Échec de l'impression",
+                                $"{printer.DisplayName} : {ex.Message}", ct);
                         }
                     }
                     db.Documents.Add(doc);

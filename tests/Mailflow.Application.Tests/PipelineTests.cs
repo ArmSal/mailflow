@@ -44,6 +44,7 @@ public sealed class Fixture : IDisposable
     public IPrinterService Printer = Substitute.For<IPrinterService>();
     public IMailboxConnectionFactory Connections = Substitute.For<IMailboxConnectionFactory>();
     public IClock Clock = Substitute.For<IClock>();
+    public IFailureNotifier Notifier = Substitute.For<IFailureNotifier>();
     public IEmailPdfRenderer EmailPdf = Substitute.For<IEmailPdfRenderer>();
     public Mailbox Mailbox;
     public MessagePipeline Pipeline;
@@ -81,8 +82,8 @@ public sealed class Fixture : IDisposable
         });
         Db.SaveChanges();
 
-        Pipeline = new MessagePipeline(Db, Mail, Pdf, Store, Printer, Clock, new RuleEngine(), EmailPdf);
-        Processor = new MailboxProcessor(Db, Mail, Connections, Pipeline, Clock);
+        Pipeline = new MessagePipeline(Db, Mail, Pdf, Store, Printer, Clock, new RuleEngine(), EmailPdf, Notifier, RetryPolicy.Instant);
+        Processor = new MailboxProcessor(Db, Mail, Connections, Pipeline, Clock, Notifier, RetryPolicy.Instant);
     }
 
     public static MailMessage Msg(string id = "m1", string subject = "Facture 1", string from = "compta@fournisseur.fr",
@@ -414,5 +415,112 @@ public class SenderCheckTests
         foreach (var m in Enum.GetValues<SenderCheckMode>())
             foreach (var v in Enum.GetValues<SenderVerification>())
                 Assert.Equal(m == SenderCheckMode.Strict && v != SenderVerification.Pass, PrintPolicy.SenderBlocksPrint(m, v));
+    }
+}
+
+
+public class RetryAndToastTests
+{
+    [Fact]
+    public async Task Mailbox_connection_is_retried_then_succeeds_without_toast()
+    {
+        using var f = new Fixture();
+        f.Fetch(Fixture.Msg());
+        var calls = 0;
+        f.Connections.CreateAsync(Arg.Any<Mailbox>(), Arg.Any<CancellationToken>())
+            .Returns(_ => ++calls < 3 ? throw new IOException("login failed") : Task.FromResult(f.Conn));
+
+        var log = await f.Processor.RunAsync(f.Mailbox, default);
+
+        Assert.Null(log.Error);
+        Assert.Equal(3, calls);
+        f.Notifier.DidNotReceiveWithAnyArgs().Notify(default!, default!);
+    }
+
+    [Fact]
+    public async Task Mailbox_failure_after_all_attempts_is_logged_and_toasted_once()
+    {
+        using var f = new Fixture();
+        f.Connections.CreateAsync(Arg.Any<Mailbox>(), Arg.Any<CancellationToken>()).Returns<Task<MailboxConnection>>(_ => throw new IOException("login failed"));
+
+        var log = await f.Processor.RunAsync(f.Mailbox, default);
+
+        Assert.Contains("login failed", log.Error);
+        Assert.Single(f.Db.RunLogs);
+        await f.Connections.Received(3).CreateAsync(Arg.Any<Mailbox>(), Arg.Any<CancellationToken>());
+        f.Notifier.Received(1).Notify("Connexion à la boîte mail impossible", Arg.Is<string>(m => m.Contains("login failed")));
+    }
+
+    [Fact]
+    public async Task Toast_is_not_shown_when_switched_off()
+    {
+        using var f = new Fixture();
+        f.Db.Settings.Add(new Setting { Key = FailureAlerts.SettingKey, Value = "false" });
+        f.Db.SaveChanges();
+        f.Connections.CreateAsync(Arg.Any<Mailbox>(), Arg.Any<CancellationToken>()).Returns<Task<MailboxConnection>>(_ => throw new IOException("x"));
+
+        var log = await f.Processor.RunAsync(f.Mailbox, default);
+
+        Assert.NotNull(log.Error);
+        f.Notifier.DidNotReceiveWithAnyArgs().Notify(default!, default!);
+    }
+
+    [Fact]
+    public async Task Print_is_retried_and_a_final_failure_stays_in_history_and_is_toasted()
+    {
+        using var f = new Fixture();
+        f.Fetch(Fixture.Msg());
+        f.Printer.PrintAsync(default!, default!, default, default, default).ReturnsForAnyArgs<Task>(_ => throw new InvalidOperationException("offline"));
+
+        await f.Processor.RunAsync(f.Mailbox, default);
+
+        await f.Printer.ReceivedWithAnyArgs(3).PrintAsync(default!, default!, default, default, default);
+        Assert.Equal("offline", Assert.Single(f.Db.Documents).PrintError);
+        f.Notifier.Received(1).Notify("Échec de l'impression", Arg.Is<string>(m => m.Contains("offline")));
+    }
+
+    [Fact]
+    public async Task Print_that_succeeds_on_the_second_attempt_raises_no_toast()
+    {
+        using var f = new Fixture();
+        f.Fetch(Fixture.Msg());
+        var calls = 0;
+        f.Printer.PrintAsync(default!, default!, default, default, default).ReturnsForAnyArgs<Task>(_ => ++calls < 2 ? throw new InvalidOperationException("busy") : Task.CompletedTask);
+
+        await f.Processor.RunAsync(f.Mailbox, default);
+
+        Assert.NotNull(Assert.Single(f.Db.Documents).PrintedAt);
+        f.Notifier.DidNotReceiveWithAnyArgs().Notify(default!, default!);
+    }
+
+    [Fact]
+    public async Task Retry_waits_between_attempts_using_the_configured_delays()
+    {
+        var waits = new List<TimeSpan>();
+        var policy = new RetryPolicy([TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(4)], (d, _) => { waits.Add(d); return Task.CompletedTask; });
+
+        await Assert.ThrowsAsync<IOException>(() => policy.RunAsync(() => throw new IOException(), default));
+
+        Assert.Equal([TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(4)], waits);
+    }
+
+    [Fact]
+    public async Task Agent_job_failure_is_toasted_success_is_not()
+    {
+        using var f = new Fixture();
+        f.Clock.UtcNow.Returns(new DateTime(2026, 1, 10, 12, 0, 0, DateTimeKind.Utc));
+        f.Db.PrintAgents.Add(new PrintAgent { Id = 1, Name = "a", TokenHash = "x" });
+        f.Db.PrintJobs.AddRange(
+            new PrintJob { Id = 1, PrintAgentId = 1, PrinterName = "Lobby", Status = PrintJobStatus.Sent },
+            new PrintJob { Id = 2, PrintAgentId = 1, PrinterName = "Lobby", Status = PrintJobStatus.Sent });
+        f.Db.SaveChanges();
+        var svc = new Mailflow.Application.Agents.AgentJobService(f.Db, f.Clock, f.Notifier);
+        var agent = f.Db.PrintAgents.Single();
+
+        await svc.CompleteAsync(agent, 2, true, null, default);
+        f.Notifier.DidNotReceiveWithAnyArgs().Notify(default!, default!);
+        await svc.CompleteAsync(agent, 1, false, "printer offline", default);
+
+        f.Notifier.Received(1).Notify("Échec de l'impression", Arg.Is<string>(m => m.Contains("Lobby") && m.Contains("printer offline")));
     }
 }
