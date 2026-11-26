@@ -18,18 +18,23 @@ public static class AgentApi
         var g = app.MapGroup(Prefix).AllowAnonymous();
 
         // Lets the agent's setup check the URL and password without taking a job.
-        g.MapGet("/ping", async (HttpContext ctx, AgentJobService svc) =>
-            await Authenticate(ctx, svc) is { } agent ? Results.Json(new { agent.Name }) : Results.Unauthorized());
-
-        g.MapGet("/jobs/next", async (HttpContext ctx, AgentJobService svc) =>
+        g.MapGet("/ping", async (HttpContext ctx, AgentJobService svc, AgentAuthThrottle throttle) =>
         {
-            if (await Authenticate(ctx, svc) is not { } agent) return Results.Unauthorized();
+            var (agent, reject) = await Authenticate(ctx, svc, throttle);
+            return agent is null ? reject! : Results.Json(new { agent.Name });
+        });
+
+        g.MapGet("/jobs/next", async (HttpContext ctx, AgentJobService svc, AgentAuthThrottle throttle) =>
+        {
+            var (agent, reject) = await Authenticate(ctx, svc, throttle);
+            if (agent is null) return reject!;
             return await svc.ClaimNextAsync(agent, ctx.RequestAborted) is { } job ? Results.Json(job) : Results.NoContent();
         });
 
-        g.MapGet("/jobs/{id:int}/pdf", async (int id, HttpContext ctx, AgentJobService svc) =>
+        g.MapGet("/jobs/{id:int}/pdf", async (int id, HttpContext ctx, AgentJobService svc, AgentAuthThrottle throttle) =>
         {
-            if (await Authenticate(ctx, svc) is not { } agent) return Results.Unauthorized();
+            var (agent, reject) = await Authenticate(ctx, svc, throttle);
+            if (agent is null) return reject!;
             if (await svc.GetClaimedAsync(agent, id, ctx.RequestAborted) is not { } job) return Results.NotFound();
             if (!File.Exists(job.PdfPath))
             {
@@ -39,19 +44,32 @@ public static class AgentApi
             return Results.File(job.PdfPath, "application/pdf");
         });
 
-        g.MapPost("/jobs/{id:int}/result", async (int id, JobResult body, HttpContext ctx, AgentJobService svc) =>
+        g.MapPost("/jobs/{id:int}/result", async (int id, JobResult body, HttpContext ctx, AgentJobService svc, AgentAuthThrottle throttle) =>
         {
-            if (await Authenticate(ctx, svc) is not { } agent) return Results.Unauthorized();
+            var (agent, reject) = await Authenticate(ctx, svc, throttle);
+            if (agent is null) return reject!;
             return await svc.CompleteAsync(agent, id, body.Ok, body.Error, ctx.RequestAborted) ? Results.Ok() : Results.NotFound();
         });
 
         return app;
     }
 
-    private static Task<PrintAgent?> Authenticate(HttpContext ctx, AgentJobService svc)
+    /// <summary>The agent, or the response to send instead (401 wrong password, 429 too many wrong passwords from this address).</summary>
+    private static async Task<(PrintAgent? Agent, IResult? Reject)> Authenticate(HttpContext ctx, AgentJobService svc, AgentAuthThrottle throttle)
     {
+        var ip = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var now = DateTime.UtcNow;
+        if (throttle.IsBlocked(ip, now)) return (null, Results.StatusCode(StatusCodes.Status429TooManyRequests));
+
         var header = ctx.Request.Headers.Authorization.ToString();
         var token = header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) ? header[7..] : null;
-        return svc.AuthenticateAsync(token, ctx.RequestAborted);
+        var agent = await svc.AuthenticateAsync(token, ctx.RequestAborted);
+        if (agent is null)
+        {
+            throttle.Fail(ip, now);
+            return (null, Results.Unauthorized());
+        }
+        throttle.Succeed(ip);
+        return (agent, null);
     }
 }

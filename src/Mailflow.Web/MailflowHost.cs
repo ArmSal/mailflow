@@ -104,6 +104,7 @@ public static class MailflowHost
         services.AddSingleton(new RuleEngine());
         services.AddScoped<MessagePipeline>();
         services.AddScoped<Mailflow.Application.Agents.AgentJobService>();
+        services.AddSingleton<AgentAuthThrottle>();
         services.AddScoped<MailboxProcessor>();
         services.AddScoped<IRuleTester, MailboxRuleTester>();
         services.AddScoped<Mailflow.Application.Queries.DocumentSearch>();
