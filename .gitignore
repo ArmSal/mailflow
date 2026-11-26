@@ -487,10 +487,8 @@ $RECYCLE.BIN/
 # Web/Backup is source code (nightly backup service), not a backup folder
 !src/Mailflow.Web/Backup/
 
-# release output
-dist/*
-!dist/Mailflow-Setup-*-win-x64.exe
-!dist/MailflowPrintAgent-Setup-*-win-x64.exe
+# release output: installers are published as GitHub Releases (built by .github/workflows/release.yml), not committed
+dist/
 
 # SumatraPDF.exe is committed (GPL v3, see tools/SumatraPDF/); it writes its own settings file next to itself when run
 tools/SumatraPDF/SumatraPDF-settings.txt
