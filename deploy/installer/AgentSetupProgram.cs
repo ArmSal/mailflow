@@ -1,6 +1,6 @@
 // Installer for the Mailflow Print Agent. Plain C# 5 (built with the .NET Framework csc.exe that ships with Windows).
 // Built twice by deploy\build-release.ps1: with /define:UNINSTALL (Uninstall.exe, no payload) and without (Setup.exe, payload.zip embedded).
-// Per-user install, no administrator rights. Options: /S or /silent, /dir=PATH, /server=URL, /password=TEXT, /nostartup, /noRun, /lang=fr|en
+// Per-user install, no administrator rights. Options: /S or /silent, /dir=PATH, /server=URL, /name=NAME, /password=TEXT, /nostartup, /noRun, /lang=fr|en
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -26,7 +26,7 @@ namespace Mailflow.AgentSetup
     internal sealed class Options
     {
         public bool Silent, Startup = true, Launch = true, Stage2, DirGiven;
-        public string InstallDir, Server, Password, BadArg;
+        public string InstallDir, Server, Name, Password, BadArg;
 
         public static Options Parse(string[] args)
         {
@@ -43,6 +43,7 @@ namespace Mailflow.AgentSetup
                     case "s": case "silent": o.Silent = true; break;
                     case "dir": if (!string.IsNullOrEmpty(val)) { o.InstallDir = val; o.DirGiven = true; } break;
                     case "server": o.Server = val; break;
+                    case "name": o.Name = val; break;
                     case "password": o.Password = val; break;
                     case "nostartup": o.Startup = false; break;
                     case "norun": o.Launch = false; break;
@@ -93,7 +94,7 @@ namespace Mailflow.AgentSetup
         }
 
         /// <summary>Checks the address and password. Returns null when Mailflow accepted them, otherwise the reason.</summary>
-        public static string TestConnection(string server, string password)
+        public static string TestConnection(string server, string name, string password)
         {
             try
             {
@@ -101,13 +102,14 @@ namespace Mailflow.AgentSetup
                 HttpWebRequest req = (HttpWebRequest)WebRequest.Create(server.TrimEnd('/') + "/api/agent/ping");
                 req.Timeout = 8000;
                 req.Headers["Authorization"] = "Bearer " + password;
+                req.Headers["X-Agent-Name"] = Uri.EscapeDataString(name.Trim());
                 using (req.GetResponse()) { }
                 return null;
             }
             catch (WebException ex)
             {
                 HttpWebResponse r = ex.Response as HttpWebResponse;
-                if (r != null && r.StatusCode == HttpStatusCode.Unauthorized) return L.T("Mailflow a refusé le mot de passe.", "Mailflow refused the password.");
+                if (r != null && r.StatusCode == HttpStatusCode.Unauthorized) return L.T("Mailflow a refusé le nom ou le mot de passe.", "Mailflow refused the name or the password.");
                 return ex.Message;
             }
             catch (Exception ex) { return ex.Message; }
@@ -184,9 +186,11 @@ namespace Mailflow.AgentSetup
             string config = Path.Combine(dir, "agent.json");
             if (!string.IsNullOrEmpty(o.Server) && !string.IsNullOrEmpty(o.Password))
             {
+                if (string.IsNullOrWhiteSpace(o.Name) || o.Name.Trim().Length > 100)
+                    throw new InvalidOperationException(L.T("Le nom de l'agent est requis (/name=NOM, 100 caractères maximum).", "The agent name is required (/name=NAME, 100 characters maximum)."));
                 string protectedPw = Convert.ToBase64String(ProtectedData.Protect(Encoding.UTF8.GetBytes(o.Password), null, DataProtectionScope.CurrentUser));
                 File.WriteAllText(config,
-                    "{\r\n  \"ServerUrl\": " + Sys.JsonString(o.Server.Trim()) + ",\r\n  \"PasswordProtected\": " + Sys.JsonString(protectedPw)
+                    "{\r\n  \"ServerUrl\": " + Sys.JsonString(o.Server.Trim()) + ",\r\n  \"AgentName\": " + Sys.JsonString(o.Name.Trim()) + ",\r\n  \"PasswordProtected\": " + Sys.JsonString(protectedPw)
                     + ",\r\n  \"SumatraPath\": \"SumatraPDF.exe\",\r\n  \"PollSeconds\": 5\r\n}\r\n", new UTF8Encoding(false));
             }
 
@@ -216,7 +220,7 @@ namespace Mailflow.AgentSetup
     internal sealed class SetupForm : Form
     {
         private readonly Options _o;
-        private readonly TextBox _dir = new TextBox(), _server = new TextBox(), _password = new TextBox();
+        private readonly TextBox _dir = new TextBox(), _server = new TextBox(), _name = new TextBox(), _password = new TextBox();
         private readonly CheckBox _startup = new CheckBox(), _launch = new CheckBox();
         private readonly Button _install = new Button();
 
@@ -224,24 +228,25 @@ namespace Mailflow.AgentSetup
         {
             _o = o;
             Text = "Mailflow Print Agent - " + BuildInfo.Version;
-            ClientSize = new Size(540, 400);
+            ClientSize = new Size(540, 462);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
             Font = SystemFonts.MessageBoxFont;
 
             Label intro = new Label { Left = 16, Top = 14, Width = 508, Height = 56,
-                Text = L.T("Cet agent imprime sur cet ordinateur les PDF envoyés par Mailflow. Saisissez l'adresse de Mailflow et le mot de passe de l'agent (le même que dans Mailflow, sous Imprimantes > Agents d'impression).",
-                           "This agent prints on this computer the PDFs sent by Mailflow. Enter Mailflow's address and the agent's password (the same one as in Mailflow, under Printers > Print agents).") };
+                Text = L.T("Cet agent imprime sur cet ordinateur les PDF envoyés par Mailflow. Saisissez l'adresse de Mailflow, puis le nom et le mot de passe de cet agent, tels qu'ils ont été créés dans Mailflow (Imprimantes > Agents d'impression).",
+                           "This agent prints on this computer the PDFs sent by Mailflow. Enter Mailflow's address, then this agent's name and password exactly as created in Mailflow (Printers > Print agents).") };
             Controls.Add(intro);
 
             AddField(L.T("Adresse de Mailflow (par exemple http://100.64.0.5:5089)", "Mailflow address (for example http://100.64.0.5:5089)"), _server, 82);
-            AddField(L.T("Mot de passe de l'agent", "Agent password"), _password, 140);
+            AddField(L.T("Nom de cet agent dans Mailflow (par exemple Boutique Centre)", "Name of this agent in Mailflow (for example Main Shop)"), _name, 140);
+            AddField(L.T("Mot de passe de l'agent", "Agent password"), _password, 198);
             _password.UseSystemPasswordChar = true;
-            AddField(L.T("Dossier d'installation", "Install folder"), _dir, 198);
+            AddField(L.T("Dossier d'installation", "Install folder"), _dir, 256);
             _dir.Width = 410;
             _dir.Text = _o.InstallDir;
-            Button browse = new Button { Left = 434, Top = 217, Width = 90, Height = _dir.Height + 2, Text = L.T("Parcourir...", "Browse...") };
+            Button browse = new Button { Left = 434, Top = 275, Width = 90, Height = _dir.Height + 2, Text = L.T("Parcourir...", "Browse...") };
             browse.Click += delegate
             {
                 using (FolderBrowserDialog d = new FolderBrowserDialog())
@@ -250,15 +255,15 @@ namespace Mailflow.AgentSetup
             Controls.Add(browse);
 
             _startup.Text = L.T("Démarrer l'agent avec Windows", "Start the agent with Windows");
-            _startup.Left = 16; _startup.Top = 262; _startup.Width = 500; _startup.Checked = _o.Startup;
+            _startup.Left = 16; _startup.Top = 320; _startup.Width = 500; _startup.Checked = _o.Startup;
             _launch.Text = L.T("Démarrer l'agent à la fin de l'installation", "Start the agent when the installation finishes");
-            _launch.Left = 16; _launch.Top = 290; _launch.Width = 500; _launch.Checked = _o.Launch;
+            _launch.Left = 16; _launch.Top = 348; _launch.Width = 500; _launch.Checked = _o.Launch;
             Controls.Add(_startup); Controls.Add(_launch);
 
             _install.Text = L.T("Installer", "Install");
-            _install.Left = 330; _install.Top = 350; _install.Width = 90; _install.Height = 30;
+            _install.Left = 330; _install.Top = 412; _install.Width = 90; _install.Height = 30;
             _install.Click += OnInstall;
-            Button cancel = new Button { Text = L.T("Annuler", "Cancel"), Left = 434, Top = 350, Width = 90, Height = 30, DialogResult = DialogResult.Cancel };
+            Button cancel = new Button { Text = L.T("Annuler", "Cancel"), Left = 434, Top = 412, Width = 90, Height = 30, DialogResult = DialogResult.Cancel };
             Controls.Add(_install); Controls.Add(cancel);
             AcceptButton = _install; CancelButton = cancel;
 
@@ -275,9 +280,9 @@ namespace Mailflow.AgentSetup
 
         private void OnInstall(object sender, EventArgs e)
         {
-            string server = _server.Text.Trim(), password = _password.Text;
+            string server = _server.Text.Trim(), name = _name.Text.Trim(), password = _password.Text;
             Uri uri;
-            bool keepExisting = server.Length == 0 && password.Length == 0 && File.Exists(Path.Combine(Sys.Full(_dir.Text), "agent.json"));
+            bool keepExisting = server.Length == 0 && name.Length == 0 && password.Length == 0 && File.Exists(Path.Combine(Sys.Full(_dir.Text), "agent.json"));
             if (!keepExisting)
             {
                 if (!Uri.TryCreate(server, UriKind.Absolute, out uri) || (uri.Scheme != "http" && uri.Scheme != "https"))
@@ -285,15 +290,16 @@ namespace Mailflow.AgentSetup
                     Warn(L.T("Saisissez l'adresse complète de Mailflow, en commençant par http:// ou https://.", "Enter Mailflow's full address, starting with http:// or https://."));
                     return;
                 }
+                if (name.Length == 0 || name.Length > 100) { Warn(L.T("Saisissez le nom de cet agent, tel qu'il a été créé dans Mailflow.", "Enter this agent's name, as created in Mailflow.")); return; }
                 if (password.Length == 0) { Warn(L.T("Saisissez le mot de passe de l'agent.", "Enter the agent password.")); return; }
                 Cursor = Cursors.WaitCursor;
-                string problem = Sys.TestConnection(server, password);
+                string problem = Sys.TestConnection(server, name, password);
                 Cursor = Cursors.Default;
                 if (problem != null && MessageBox.Show(this,
                         L.T("Connexion à Mailflow impossible :\r\n", "Cannot connect to Mailflow:\r\n") + problem + "\r\n\r\n" + L.T("Installer quand même ?", "Install anyway?"),
                         Text, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
             }
-            _o.InstallDir = _dir.Text; _o.Server = server; _o.Password = password; _o.Startup = _startup.Checked; _o.Launch = _launch.Checked;
+            _o.InstallDir = _dir.Text; _o.Server = server; _o.Name = name; _o.Password = password; _o.Startup = _startup.Checked; _o.Launch = _launch.Checked;
             try
             {
                 _install.Enabled = false; Cursor = Cursors.WaitCursor;
@@ -321,7 +327,7 @@ namespace Mailflow.AgentSetup
             if (o.Silent) Sys.AttachParentConsole();
             if (o.BadArg != null)
             {
-                string m = L.T("Option inconnue : ", "Unknown option: ") + o.BadArg + "\r\n/S, /dir=CHEMIN, /server=URL, /password=TEXTE, /nostartup, /noRun, /lang=fr|en";
+                string m = L.T("Option inconnue : ", "Unknown option: ") + o.BadArg + "\r\n/S, /dir=CHEMIN, /server=URL, /name=NOM, /password=TEXTE, /nostartup, /noRun, /lang=fr|en";
                 if (o.Silent) Console.Error.WriteLine(m); else MessageBox.Show(m, "Mailflow Print Agent", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return 2;
             }
