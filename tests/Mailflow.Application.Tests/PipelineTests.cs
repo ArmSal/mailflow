@@ -22,6 +22,8 @@ public sealed class TestDb : DbContext, IAppDbContext
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<RunLog> RunLogs => Set<RunLog>();
     public DbSet<Setting> Settings => Set<Setting>();
+    public DbSet<PrintAgent> PrintAgents => Set<PrintAgent>();
+    public DbSet<PrintJob> PrintJobs => Set<PrintJob>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {

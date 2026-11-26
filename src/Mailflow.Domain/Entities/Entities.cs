@@ -33,6 +33,39 @@ public class Printer
     public int DefaultCopies { get; set; } = 1;
     public bool Duplex { get; set; }
     public bool IsActive { get; set; } = true;
+    /// <summary>For PrinterKind.PrintNode: the print agent (on the PC that owns the printer) that prints for this printer.</summary>
+    public int? PrintAgentId { get; set; }
+}
+
+/// <summary>A small program on another PC that fetches queued PDFs over the network and prints them.</summary>
+public class PrintAgent
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    /// <summary>SHA-256 (hex) of the agent's secret token; the token itself is shown once and never stored.</summary>
+    public string TokenHash { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+    public DateTime? LastSeenAt { get; set; }
+}
+
+public enum PrintJobStatus { Pending, Sent, Done, Failed }
+
+public class PrintJob
+{
+    public int Id { get; set; }
+    public int PrintAgentId { get; set; }
+    /// <summary>Path on the Mailflow PC; comes from the database only, never from a request.</summary>
+    public string PdfPath { get; set; } = "";
+    public string PrinterName { get; set; } = "";
+    public int Copies { get; set; } = 1;
+    public bool Duplex { get; set; }
+    public PrintJobStatus Status { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? SentAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public string? Error { get; set; }
+    public Document? Document { get; set; }
+    public int? DocumentId { get; set; }
 }
 
 public class Category

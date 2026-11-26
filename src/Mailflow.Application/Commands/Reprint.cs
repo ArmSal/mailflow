@@ -1,4 +1,6 @@
 using Mailflow.Application.Abstractions;
+using Mailflow.Application.Agents;
+using Mailflow.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Mailflow.Application.Commands;
@@ -20,6 +22,23 @@ public sealed class Reprint(IAppDbContext db, IPrinterService printers, IClock c
         if (printer is null && printerId is null)
             printer = await db.Printers.Where(p => p.IsActive).OrderBy(p => p.Id).FirstOrDefaultAsync(ct);
         if (printer is null) return new(false, "Aucune imprimante active disponible.");
+
+        if (printer.Kind == PrinterKind.PrintNode)
+        {
+            if (printer.PrintAgentId is null)
+            {
+                doc.PrintError = "Aucun agent d'impression n'est associé à cette imprimante.";
+                await db.SaveChangesAsync(ct);
+                return new(false, doc.PrintError);
+            }
+            var job = AgentJobService.NewJob(printer, doc.StoredPath, printer.DefaultCopies, clock.UtcNow);
+            job.DocumentId = doc.Id;
+            db.PrintJobs.Add(job);
+            doc.PrinterId = printer.Id;
+            doc.PrintError = null;
+            await db.SaveChangesAsync(ct);
+            return new(true, null);
+        }
 
         try
         {

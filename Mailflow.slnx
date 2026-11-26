@@ -5,6 +5,7 @@
     <Project Path="src/Mailflow.Infrastructure/Mailflow.Infrastructure.csproj" />
     <Project Path="src/Mailflow.Desktop/Mailflow.Desktop.csproj" />
     <Project Path="src/Mailflow.Web/Mailflow.Web.csproj" />
+    <Project Path="src/Mailflow.PrintAgent/Mailflow.PrintAgent.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Mailflow.Application.Tests/Mailflow.Application.Tests.csproj" />

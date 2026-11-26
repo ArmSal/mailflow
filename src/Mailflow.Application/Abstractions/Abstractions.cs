@@ -85,5 +85,7 @@ public interface IAppDbContext
     DbSet<Document> Documents { get; }
     DbSet<RunLog> RunLogs { get; }
     DbSet<Setting> Settings { get; }
+    DbSet<PrintAgent> PrintAgents { get; }
+    DbSet<PrintJob> PrintJobs { get; }
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

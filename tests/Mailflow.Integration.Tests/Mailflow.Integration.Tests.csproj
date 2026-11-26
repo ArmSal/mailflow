@@ -25,6 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Mailflow.Infrastructure\Mailflow.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Mailflow.Web\Mailflow.Web.csproj" />
+    <ProjectReference Include="..\..\src\Mailflow.PrintAgent\Mailflow.PrintAgent.csproj" />
   </ItemGroup>
 
 </Project>

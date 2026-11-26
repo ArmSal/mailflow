@@ -18,6 +18,7 @@ public class EditModel(IAppDbContext db, IPrinterService printers) : PageModel
         [Required(ErrorMessage = "L'imprimante Windows est requise."), StringLength(260)]
         public string WindowsName { get; set; } = "";
         public PrinterKind Kind { get; set; } = PrinterKind.Local;
+        public int? PrintAgentId { get; set; }
         [Range(1, 99, ErrorMessage = "Copies : 1 à 99.")]
         public int DefaultCopies { get; set; } = 1;
         public bool Duplex { get; set; }
@@ -25,13 +26,15 @@ public class EditModel(IAppDbContext db, IPrinterService printers) : PageModel
     }
 
     [BindProperty] public PrinterInput Input { get; set; } = new();
+    public List<PrintAgent> Agents { get; private set; } = [];
 
     public async Task<IActionResult> OnGetAsync(int? id)
     {
+        Agents = await db.PrintAgents.OrderBy(a => a.Name).ToListAsync();
         if (id is null) return Page();
         var p = await db.Printers.FindAsync(id.Value);
         if (p is null) return NotFound();
-        Input = new PrinterInput { DisplayName = p.DisplayName, WindowsName = p.WindowsName, Kind = p.Kind, DefaultCopies = p.DefaultCopies, Duplex = p.Duplex, IsActive = p.IsActive };
+        Input = new PrinterInput { DisplayName = p.DisplayName, WindowsName = p.WindowsName, Kind = p.Kind, PrintAgentId = p.PrintAgentId, DefaultCopies = p.DefaultCopies, Duplex = p.Duplex, IsActive = p.IsActive };
         return Page();
     }
 
@@ -43,7 +46,13 @@ public class EditModel(IAppDbContext db, IPrinterService printers) : PageModel
         if (Input.WindowsName.Length == 0) ModelState.AddModelError("Input.WindowsName", Loc.T("L'imprimante Windows est requise."));
         if (Input.DefaultCopies is < 1 or > 99) ModelState.AddModelError("Input.DefaultCopies", Loc.T("Copies : 1 à 99."));
         if (!Enum.IsDefined(Input.Kind)) ModelState.AddModelError("Input.Kind", Loc.T("Type invalide."));
-        if (!ModelState.IsValid) return Page();
+        if (Input.Kind == PrinterKind.PrintNode && (Input.PrintAgentId is null || !await db.PrintAgents.AnyAsync(a => a.Id == Input.PrintAgentId)))
+            ModelState.AddModelError("Input.PrintAgentId", Loc.T("Choisissez un agent d'impression pour une imprimante PrintNode."));
+        if (!ModelState.IsValid)
+        {
+            Agents = await db.PrintAgents.OrderBy(a => a.Name).ToListAsync();
+            return Page();
+        }
 
         Printer? p = null;
         if (id is not null)
@@ -55,6 +64,7 @@ public class EditModel(IAppDbContext db, IPrinterService printers) : PageModel
         p.DisplayName = Input.DisplayName;
         p.WindowsName = Input.WindowsName;
         p.Kind = Input.Kind;
+        p.PrintAgentId = Input.Kind == PrinterKind.PrintNode ? Input.PrintAgentId : null;
         p.DefaultCopies = Input.DefaultCopies;
         p.Duplex = Input.Duplex;
         p.IsActive = Input.IsActive;

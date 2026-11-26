@@ -167,6 +167,80 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
                     b.ToTable("Mailboxes");
                 });
 
+            modelBuilder.Entity("Mailflow.Domain.Entities.PrintAgent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastSeenAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PrintAgents");
+                });
+
+            modelBuilder.Entity("Mailflow.Domain.Entities.PrintJob", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Copies")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("DocumentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("Duplex")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Error")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PdfPath")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PrintAgentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("PrinterName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentId");
+
+                    b.ToTable("PrintJobs");
+                });
+
             modelBuilder.Entity("Mailflow.Domain.Entities.Printer", b =>
                 {
                     b.Property<int>("Id")
@@ -190,6 +264,9 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
                     b.Property<string>("Kind")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("PrintAgentId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("WindowsName")
                         .IsRequired()
@@ -423,6 +500,15 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ProcessedMessageId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Mailflow.Domain.Entities.PrintJob", b =>
+                {
+                    b.HasOne("Mailflow.Domain.Entities.Document", "Document")
+                        .WithMany()
+                        .HasForeignKey("DocumentId");
+
+                    b.Navigation("Document");
                 });
 
             modelBuilder.Entity("Mailflow.Domain.Entities.ProcessedMessage", b =>

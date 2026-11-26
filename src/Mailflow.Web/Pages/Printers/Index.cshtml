@@ -7,7 +7,7 @@
         <h1 class="page-title">@T("Imprimantes")</h1>
         <p class="page-subtitle">@T("Les imprimantes Windows utilisées pour imprimer les documents reçus.")</p>
     </div>
-    <div class="page-actions"><a class="btn btn-primary" asp-page="Edit"><svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg>@T("Ajouter une imprimante")</a></div>
+    <div class="page-actions"><a class="btn btn-secondary" asp-page="Agents">@T("Agents d'impression")</a> <a class="btn btn-primary" asp-page="Edit"><svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg>@T("Ajouter une imprimante")</a></div>
 </div>
 @if (!Model.Items.Any())
 {

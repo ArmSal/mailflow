@@ -26,6 +26,13 @@
             <div id="detected" aria-live="polite"></div></div>
         <div class="field"><label class="form-label" asp-for="Input.Kind">@T("Type")</label>
             <select class="form-select" asp-for="Input.Kind" asp-items="@Html.GetEnumSelectList<PrinterKind>()"></select></div>
+        <div class="field"><label class="form-label" asp-for="Input.PrintAgentId">@T("Agent d'impression")</label>
+            <select class="form-select" asp-for="Input.PrintAgentId">
+                <option value="">@T("(aucun)")</option>
+                @foreach (var a in Model.Agents) { <option value="@a.Id" selected="@(Model.Input.PrintAgentId == a.Id)">@a.Name</option> }
+            </select>
+            <span class="form-text">@T("Pour le type PrintNode : l'imprimante est sur un autre PC, et l'imprimante Windows ci-dessus est son nom sur ce PC. Créez les agents dans « Agents d'impression ».")</span>
+            <span class="field-validation-error" asp-validation-for="Input.PrintAgentId"></span></div>
     </section>
     <section class="form-section">
         <h2 class="form-section-title">@T("Impression")</h2>

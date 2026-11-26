@@ -4,6 +4,7 @@ using Mailflow.Application.Processing;
 using Mailflow.Domain.Rules;
 using Mailflow.Infrastructure;
 using Mailflow.Infrastructure.Persistence;
+using Mailflow.Web.Agent;
 using Mailflow.Web.Auth;
 using Mailflow.Web.Backup;
 using Mailflow.Web.Pages.Printers;
@@ -102,6 +103,7 @@ public static class MailflowHost
         services.AddMailPrintingSecurity();
         services.AddSingleton(new RuleEngine());
         services.AddScoped<MessagePipeline>();
+        services.AddScoped<Mailflow.Application.Agents.AgentJobService>();
         services.AddScoped<MailboxProcessor>();
         services.AddScoped<IRuleTester, MailboxRuleTester>();
         services.AddScoped<Mailflow.Application.Queries.DocumentSearch>();
@@ -130,6 +132,19 @@ public static class MailflowHost
 
         if (!app.Environment.IsDevelopment())
             app.UseExceptionHandler("/Error");
+
+        // Optional second listener for print agents (e.g. on the Tailscale address): it serves nothing but the agent API.
+        var agentPort = builder.Configuration.GetValue<int?>("Agent:Port");
+        if (agentPort is int ap)
+            app.Use(async (ctx, next) =>
+            {
+                if (ctx.Connection.LocalPort == ap && !ctx.Request.Path.StartsWithSegments(Mailflow.Web.Agent.AgentApi.Prefix))
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status404NotFound;
+                    return;
+                }
+                await next();
+            });
 
         app.UseMailflowLocalization();
         app.UseRouting();
@@ -167,6 +182,7 @@ public static class MailflowHost
         // Lets the desktop shell detect an already running instance; reveals nothing.
         app.MapLanguageSwitch();
         app.MapGet("/healthz", () => "Mailflow").AllowAnonymous();
+        app.MapAgentApi();
 
         await app.StartAsync(ct);
 

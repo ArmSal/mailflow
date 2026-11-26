@@ -22,6 +22,8 @@ public sealed class HistoryDb : DbContext, IAppDbContext
     public DbSet<Document> Documents { get; set; } = null!;
     public DbSet<RunLog> RunLogs { get; set; } = null!;
     public DbSet<Setting> Settings { get; set; } = null!;
+    public DbSet<PrintAgent> PrintAgents { get; set; } = null!;
+    public DbSet<PrintJob> PrintJobs { get; set; } = null!;
     protected override void OnModelCreating(ModelBuilder b) => b.Entity<Setting>().HasKey(s => s.Key);
 }
 

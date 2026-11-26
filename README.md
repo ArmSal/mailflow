@@ -297,13 +297,18 @@ This publishes a self-contained win-x64 build and writes `dist\Mailflow-Setup-<v
 
 To update, install the new version over the old one; database migrations are applied at startup.
 
+## Remote printing (Print Agent)
+
+Mailflow can print on a printer that is on another network. Install the small **Mailflow Print Agent** (`MailflowPrintAgent-Setup-<version>-win-x64.exe`, a wizard built next to the Mailflow installer; a portable `MailflowPrintAgent-<version>-win-x64.zip` is built too) on the PC that owns the printer. The agent connects out to Mailflow (for example over Tailscale), downloads the PDFs queued for its printer and prints them with SumatraPDF. Nothing has to be opened on the printer PC's network.
+
+The agent and Mailflow share a password that you choose: type it under **Printers > Print agents** in Mailflow, and in the agent's setup. Mailflow stores only a hash of it. Then give a printer the type **PrintNode**, pick the agent, and use the printer's Windows name on the agent PC. Mailflow listens for agents on a separate port that serves nothing but the agent API. Setup, firewall and security notes: [src/Mailflow.PrintAgent/README.md](src/Mailflow.PrintAgent/README.md).
+
 ## Roadmap
 
 - Daily digest of what needs attention
 - Backup of documents to a synced folder (Google Drive, OneDrive)
 - OCR for scanned PDFs
 - More provider presets
-- Remote printing: a small Print Agent installed on the PC that owns the printer, polling Mailflow over HTTPS for jobs (token per agent, no open ports), so Mailflow can run on another PC. The printer type "PrintNode" in the printer form is a placeholder for this and currently prints locally like "Local"
 
 ## Contributing and license
 

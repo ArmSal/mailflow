@@ -297,13 +297,18 @@ Le script publie une version autonome win-x64 et produit `dist\Mailflow-<version
 
 Pour mettre à jour, installez la nouvelle version par-dessus l'ancienne ; les migrations de base de données s'appliquent au démarrage.
 
+## Impression à distance (agent d'impression)
+
+Mailflow peut imprimer sur une imprimante située sur un autre réseau. Installez le petit **Mailflow Print Agent** (`MailflowPrintAgent-Setup-<version>-win-x64.exe`, un assistant généré à côté de l'installateur de Mailflow ; un zip portable `MailflowPrintAgent-<version>-win-x64.zip` est généré aussi) sur le PC qui possède l'imprimante. L'agent se connecte à Mailflow (par exemple via Tailscale), récupère les PDF mis en file pour son imprimante et les imprime avec SumatraPDF. Rien n'a besoin d'être ouvert sur le réseau du PC d'impression.
+
+L'agent et Mailflow partagent un mot de passe que vous choisissez : saisissez-le dans **Imprimantes > Agents d'impression** de Mailflow, puis dans la configuration de l'agent. Mailflow n'en conserve qu'une empreinte. Donnez ensuite à une imprimante le type **PrintNode**, choisissez l'agent et indiquez le nom Windows de l'imprimante sur le PC de l'agent. Mailflow écoute les agents sur un port distinct qui ne sert que l'API des agents. Installation, pare-feu et sécurité (en anglais) : [src/Mailflow.PrintAgent/README.md](src/Mailflow.PrintAgent/README.md).
+
 ## Feuille de route
 
 - Récapitulatif quotidien de ce qui demande votre attention
 - Sauvegarde des documents vers un dossier synchronisé (Google Drive, OneDrive)
 - OCR des PDF scannés
 - Davantage de préréglages de fournisseurs
-- Impression à distance : un petit agent d'impression installé sur le PC qui possède l'imprimante, qui interroge Mailflow en HTTPS pour récupérer les travaux (un jeton par agent, aucun port ouvert), afin que Mailflow puisse tourner sur un autre PC. Le type d'imprimante « PrintNode » du formulaire est un emplacement réservé pour cela et imprime pour l'instant en local comme « Local »
 
 ## Contribuer et licence
 

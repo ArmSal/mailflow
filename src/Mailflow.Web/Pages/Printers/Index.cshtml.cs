@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Mailflow.Web.Pages.Printers;
 
-public class IndexModel(IAppDbContext db, IPrinterService printers, ITestPageProvider testPage) : PageModel
+public class IndexModel(IAppDbContext db, IPrinterService printers, ITestPageProvider testPage, IClock clock) : PageModel
 {
     public List<Printer> Items { get; private set; } = [];
 
@@ -45,6 +45,17 @@ public class IndexModel(IAppDbContext db, IPrinterService printers, ITestPagePro
         if (p is null) return NotFound();
         bool ok;
         string message;
+        if (p.Kind == Mailflow.Domain.Enums.PrinterKind.PrintNode)
+        {
+            ok = p.PrintAgentId is not null;
+            if (ok)
+            {
+                db.PrintJobs.Add(Mailflow.Application.Agents.AgentJobService.NewJob(p, testPage.GetTestPagePath(), 1, clock.UtcNow));
+                await db.SaveChangesAsync(ct);
+            }
+            message = ok ? Loc.T("Page de test mise en file : l'agent l'imprimera à sa prochaine connexion.") : Loc.T("Aucun agent d'impression n'est associé à cette imprimante.");
+            return this.PartialWith("_TestPrintResult", null, ("Ok", ok), ("Message", message));
+        }
         try
         {
             await printers.PrintAsync(testPage.GetTestPagePath(), p.WindowsName, 1, p.Duplex, ct);

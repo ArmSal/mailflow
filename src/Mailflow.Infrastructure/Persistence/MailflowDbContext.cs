@@ -16,6 +16,8 @@ public class MailflowDbContext(DbContextOptions<MailflowDbContext> options) : Db
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<RunLog> RunLogs => Set<RunLog>();
     public DbSet<Setting> Settings => Set<Setting>();
+    public DbSet<PrintAgent> PrintAgents => Set<PrintAgent>();
+    public DbSet<PrintJob> PrintJobs => Set<PrintJob>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => modelBuilder.ApplyConfigurationsFromAssembly(typeof(MailflowDbContext).Assembly);

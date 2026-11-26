@@ -1,0 +1,60 @@
+@page
+@model Mailflow.Web.Pages.Printers.AgentsModel
+@{ ViewData["Title"] = T("Agents d'impression"); }
+<link rel="stylesheet" href="~/css/page-config.css" asp-append-version="true" />
+<div class="page-header">
+    <div>
+        <h1 class="page-title">@T("Agents d'impression")</h1>
+        <p class="page-subtitle">@T("Un agent est un petit programme installé sur le PC qui possède l'imprimante. Il récupère les PDF à imprimer depuis Mailflow.")</p>
+    </div>
+    <div class="page-actions"><a class="btn btn-secondary" asp-page="Index">@T("Imprimantes")</a></div>
+</div>
+@if (Model.Error is not null) { <div class="alert alert-danger" role="alert">@Model.Error</div> }
+@if (Model.CreatedName is not null)
+{
+    <div class="alert alert-success" role="status">
+        <strong>@T("Agent créé :") @Model.CreatedName</strong>
+        @if (Model.GeneratedPassword is not null)
+        {
+            <p class="mb-1">@T("Mot de passe généré. Saisissez-le dans la configuration de l'agent ; il ne sera plus affiché.")</p>
+            <code class="text-break">@Model.GeneratedPassword</code>
+        }
+        else
+        {
+            <p class="mb-0">@T("Le mot de passe saisi doit être identique à celui de la configuration de l'agent.")</p>
+        }
+    </div>
+}
+<form method="post" asp-page-handler="Create" class="form-section">
+    <h2 class="form-section-title">@T("Nouvel agent")</h2>
+    <p class="form-section-hint">@T("Le mot de passe est le secret partagé avec l'agent : le même doit être saisi dans l'agent et ici. Laissez vide pour en générer un.")</p>
+    <div class="form-grid">
+        <div class="field"><label class="form-label" asp-for="Name">@T("Nom")</label>
+            <input class="form-control" asp-for="Name" maxlength="100" placeholder="@T("Par exemple : Boutique Centre")" /></div>
+        <div class="field"><label class="form-label" asp-for="Password">@T("Mot de passe de l'agent (12 caractères minimum)")</label>
+            <input class="form-control" asp-for="Password" type="password" autocomplete="new-password" /></div>
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" type="submit">@T("Créer l'agent")</button></div>
+</form>
+@if (Model.Items.Count > 0)
+{
+<div class="table-wrap">
+    <table class="table align-middle">
+        <thead><tr><th scope="col">@T("Nom")</th><th scope="col">@T("Dernière connexion")</th><th scope="col"><span class="visually-hidden">@T("Actions")</span></th></tr></thead>
+        <tbody>
+        @foreach (var a in Model.Items)
+        {
+            <tr>
+                <td><strong>@a.Name</strong></td>
+                <td>@(a.LastSeenAt is { } seen ? seen.ToLocalTime().ToString("dd/MM/yyyy HH:mm") : T("Jamais"))</td>
+                <td>
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@a.Id" onsubmit="return confirm(this.dataset.confirm)" data-confirm="@T("Supprimer cet agent ?")">
+                        <button class="btn btn-sm btn-danger" type="submit">@T("Supprimer")</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+}

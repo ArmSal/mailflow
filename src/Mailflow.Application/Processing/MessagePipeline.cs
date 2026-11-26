@@ -1,4 +1,5 @@
 using Mailflow.Application.Abstractions;
+using Mailflow.Application.Agents;
 using Mailflow.Domain.Entities;
 using Mailflow.Domain.Enums;
 using Mailflow.Domain.Rules;
@@ -90,6 +91,19 @@ public sealed class MessagePipeline(
                     {
                         doc.PrinterId = printer!.Id;
                         doc.PrintError = PrintPolicy.SenderBlockedMessage;
+                    }
+                    else if (print && printer!.Kind == PrinterKind.PrintNode)
+                    {
+                        // Printed later by the print agent, which reports back (see AgentJobService).
+                        doc.PrinterId = printer.Id;
+                        if (printer.PrintAgentId is null) doc.PrintError = "Aucun agent d'impression n'est associé à cette imprimante.";
+                        else
+                        {
+                            var job = AgentJobService.NewJob(printer, stored.Path, printAction!.Copies ?? printer.DefaultCopies, now);
+                            job.Document = doc;
+                            db.PrintJobs.Add(job);
+                            tracked.Add(job);
+                        }
                     }
                     else if (print)
                     {
