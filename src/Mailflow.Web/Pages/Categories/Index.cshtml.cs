@@ -1,4 +1,5 @@
 using Mailflow.Application.Abstractions;
+using Mailflow.Application.Processing;
 using Mailflow.Domain.Entities;
 using Mailflow.Web.Localization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,8 @@ public class IndexModel(IAppDbContext db) : PageModel
     {
         var c = await db.Categories.FindAsync(id);
         if (c is null) return Content("");
+        if (c.Name == MessagePipeline.DefaultCategoryName)
+            return this.PartialWith("_CategoryRow", c, ("Error", Loc.T("Suppression impossible : la catégorie « A trier » est utilisée par défaut pour les e-mails sans règle.")));
         if (await db.Documents.AnyAsync(d => d.CategoryId == id) || await db.RuleActions.AnyAsync(a => a.CategoryId == id))
         {
             return this.PartialWith("_CategoryRow", c, ("Error", Loc.T("Suppression impossible : la catégorie est utilisée par des documents ou des règles.")));

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Mailflow.Application.Abstractions;
+using Mailflow.Application.Processing;
 using Mailflow.Domain.Entities;
 using Mailflow.Web.Localization;
 using Microsoft.AspNetCore.Mvc;
@@ -41,15 +42,17 @@ public class EditModel(IAppDbContext db) : PageModel
             ModelState.AddModelError("Input.LocalSubfolder", Loc.T("Sous-dossier invalide : chemin relatif sans « .. », sans lecteur ni caractères interdits."));
         if (!System.Text.RegularExpressions.Regex.IsMatch(Input.Color ?? "", "^#[0-9a-fA-F]{6}$"))
             ModelState.AddModelError("Input.Color", Loc.T("Couleur invalide (#RRGGBB)."));
-        if (!ModelState.IsValid) return Page();
-
         Category? c = null;
         if (id is not null)
         {
             c = await db.Categories.FindAsync(id.Value);
             if (c is null) return NotFound();
+            if (c.Name == MessagePipeline.DefaultCategoryName && Input.Name != c.Name)
+                ModelState.AddModelError("Input.Name", Loc.T("La catégorie « A trier » ne peut pas être renommée : elle reçoit les e-mails sans règle."));
         }
-        else db.Categories.Add(c = new Category());
+        if (!ModelState.IsValid) return Page();
+
+        if (c is null) db.Categories.Add(c = new Category());
         c.Name = Input.Name;
         c.LocalSubfolder = Input.LocalSubfolder;
         c.ImapFolder = string.IsNullOrWhiteSpace(Input.ImapFolder) ? null : Input.ImapFolder.Trim();
