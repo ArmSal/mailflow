@@ -94,7 +94,8 @@ internal sealed class DocumentConfiguration : IEntityTypeConfiguration<Document>
         b.Property(x => x.Sha256).IsRequired().HasMaxLength(64);
         b.Property(x => x.OriginalName).IsRequired().HasMaxLength(500);
         b.Property(x => x.StoredPath).IsRequired();
-        b.HasIndex(x => x.Sha256).IsUnique();
+        b.HasIndex(x => x.Sha256).IsUnique().HasFilter("DuplicateOfDocumentId IS NULL");
+        b.HasOne<Document>().WithMany().HasForeignKey(x => x.DuplicateOfDocumentId).OnDelete(DeleteBehavior.SetNull);
         b.HasOne<ProcessedMessage>().WithMany().HasForeignKey(x => x.ProcessedMessageId).OnDelete(DeleteBehavior.Cascade);
         b.HasOne<Category>().WithMany().HasForeignKey(x => x.CategoryId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Printer>().WithMany().HasForeignKey(x => x.PrinterId).OnDelete(DeleteBehavior.SetNull);

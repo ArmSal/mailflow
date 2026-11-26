@@ -1,3 +1,4 @@
+using Mailflow.Application.Processing;
 using Mailflow.Web;
 using Mailflow.Web.Worker;
 using Microsoft.AspNetCore.Builder;
@@ -70,7 +71,8 @@ internal sealed class TrayApp : ApplicationContext
     {
         var outcome = await StartupFlow.RunAsync(_url.Port, ct => AttachOrStart.HttpProbeAsync(_url, ct),
             () => PortOwner.GetListenerImagePath(_url.Port), Environment.ProcessPath,
-            async () => _host = await Task.Run(() => MailflowHost.StartAsync(_options.HostArgs, CancellationToken.None)),
+            async () => _host = await Task.Run(() => MailflowHost.StartAsync(_options.HostArgs, CancellationToken.None,
+                services => services.AddSingleton<IFailureNotifier>(new ToastNotifier(ShowToast)))),
             Dialogs.ShowError);
         ExitCode = StartupFlow.ExitCode(outcome);
         if (ExitCode != 0)
@@ -80,6 +82,13 @@ internal sealed class TrayApp : ApplicationContext
             return;
         }
         await _form.InitializeAsync();
+    }
+
+    /// <summary>Called from worker threads: the balloon is raised on the UI thread.</summary>
+    private void ShowToast(string title, string message)
+    {
+        try { _form.BeginInvoke(() => _tray.ShowBalloonTip(10000, title, message, ToolTipIcon.Error)); }
+        catch (Exception) { /* window already gone */ }
     }
 
     private void ShowWindow()

@@ -30,7 +30,7 @@ public static class MailflowHost
         path.StartsWithSegments("/Setup") || path.StartsWithSegments("/language") || path == "/healthz" || path == "/favicon.ico"
         || path.StartsWithSegments("/lib") || path.StartsWithSegments("/css") || path.StartsWithSegments("/js");
 
-    public static async Task<WebApplication> StartAsync(string[] args, CancellationToken ct)
+    public static async Task<WebApplication> StartAsync(string[] args, CancellationToken ct, Action<IServiceCollection>? configureServices = null)
     {
         // As a Windows service the working directory is System32: anchor everything to the exe folder.
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -119,6 +119,7 @@ public static class MailflowHost
         services.AddPdfAndStorage(o => o.DocumentsRoot = documentsRoot);
         services.AddMailPrintingSecurity();
         services.AddSingleton(new RuleEngine());
+        services.AddSingleton<IFailureNotifier, NullFailureNotifier>();   // the desktop shell replaces it with a toast
         services.AddScoped<MessagePipeline>();
         services.AddScoped<Mailflow.Application.Agents.AgentJobService>();
         services.AddSingleton<AgentAuthThrottle>();
@@ -139,7 +140,16 @@ public static class MailflowHost
         services.AddSingleton(new BackupOptions(connectionString, documentsRoot));
         services.AddSingleton<BackupService>();
         services.AddHostedService<NightlyBackupService>();
+        services.AddHttpClient<Mailflow.Web.Updates.IReleaseSource, Mailflow.Web.Updates.GitHubReleaseSource>(c =>
+        {
+            c.Timeout = TimeSpan.FromSeconds(10);
+            c.DefaultRequestHeaders.UserAgent.ParseAdd("update-check");
+            c.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+        });
+        services.AddSingleton<Mailflow.Web.Updates.UpdateChecker>();
+        services.AddHostedService<Mailflow.Web.Updates.UpdateCheckService>();
 
+        configureServices?.Invoke(services);
         var app = builder.Build();
         // Releases the certificate's key from the user profile when Mailflow stops.
         app.Lifetime.ApplicationStopped.Register(() => agentCertificate?.Dispose());

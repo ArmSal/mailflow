@@ -44,6 +44,22 @@
             <div class="form-text">@T("Si une règle d'impression correspond à un e-mail sans pièce jointe PDF, Mailflow génère un PDF avec son texte et l'envoie à l'imprimante.")</div>
         </div>
     </section>
+    <section class="form-section">
+        <h2 class="form-section-title">@T("Notifications")</h2>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" asp-for="Input.ToastNotifications" />
+            <label class="form-check-label" asp-for="Input.ToastNotifications">@T("Afficher une notification Windows après un échec définitif")</label>
+            <div class="form-text">@T("Connexion à une boîte mail impossible ou impression en échec, après plusieurs tentatives. L'échec reste visible dans l'Historique. Disponible dans l'application de bureau.")</div>
+        </div>
+    </section>
+    <section class="form-section">
+        <h2 class="form-section-title">@T("Mises à jour")</h2>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" asp-for="Input.UpdateCheck" />
+            <label class="form-check-label" asp-for="Input.UpdateCheck">@T("Vérifier les nouvelles versions")</label>
+            <div class="form-text">@T("Une fois par jour, Mailflow demande à GitHub si une version plus récente existe et l'indique par un bandeau. Aucune donnée personnelle n'est envoyée ; rien n'est installé automatiquement.")</div>
+        </div>
+    </section>
     <div class="form-actions mb-4"><button class="btn btn-primary" type="submit">@T("Enregistrer")</button></div>
 </form>
 
@@ -86,6 +102,44 @@
     </section>
     <div class="form-actions mb-4"><button class="btn btn-primary" type="submit">@T("Changer le mot de passe")</button></div>
 </form>
+
+<section class="form-section">
+    <h2 class="form-section-title">@T("Export et import des règles")</h2>
+    <p class="form-section-hint">@T("Exportez les règles, les catégories et les paramètres d'impression dans un fichier JSON, par exemple pour les copier sur un autre PC. Les mots de passe des boîtes mail, les jetons et les agents d'impression ne sont jamais exportés.")</p>
+    <p><a class="btn btn-secondary" asp-page="/Settings/Index" asp-page-handler="Export">@T("Exporter les règles")</a></p>
+    @if (Model.ImportMessage is not null) { <div class="alert alert-success" role="status">@Model.ImportMessage</div> }
+    @if (Model.ImportError is not null) { <div class="alert alert-danger" role="alert">@Model.ImportError</div> }
+    @if (Model.ImportAnalysis is { } a && Model.ImportJson is not null)
+    {
+        <form method="post" asp-page-handler="ImportApply">
+            <div class="alert alert-warning" role="alert">
+                <strong>@T("Attention : l'import REMPLACE toutes vos règles actuelles, vos catégories et les paramètres d'impression. Cette action est irréversible.")</strong>
+                <ul class="mb-0 mt-2">
+                    <li>@T("{0} règle(s) et {1} catégorie(s) seront importées.", a.Rules, a.Categories)</li>
+                    <li>@T("Les catégories contenant déjà des documents sont conservées même si le fichier ne les contient pas.")</li>
+                    @if (a.SkippedNoMailbox.Count > 0) { <li>@T("Règles ignorées, car leur boîte mail n'existe pas ici (les identifiants ne sont pas importés : ajoutez d'abord la boîte, puis réimportez) :") @string.Join(", ", a.SkippedNoMailbox)</li> }
+                    @if (a.DeactivatedNoPrinter.Count > 0) { <li>@T("Règles importées mais désactivées, car leur imprimante n'existe pas ici (ajoutez l'imprimante, puis réactivez la règle) :") @string.Join(", ", a.DeactivatedNoPrinter)</li> }
+                </ul>
+            </div>
+            <input type="hidden" name="ImportJson" value="@Model.ImportJson" />
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="import-confirm" name="ImportConfirm" value="true" />
+                <label class="form-check-label" for="import-confirm">@T("Je comprends que mes règles actuelles seront remplacées.")</label>
+            </div>
+            <button class="btn btn-danger" type="submit">@T("Remplacer par ce fichier")</button>
+        </form>
+    }
+    else
+    {
+        <form method="post" asp-page-handler="ImportPreview" enctype="multipart/form-data">
+            <div class="field">
+                <label class="form-label" for="import-file">@T("Fichier d'export (.json)")</label>
+                <input class="form-control" type="file" id="import-file" name="importFile" accept=".json,application/json" />
+            </div>
+            <button class="btn btn-secondary mt-2" type="submit">@T("Vérifier le fichier")</button>
+        </form>
+    }
+</section>
 
 <section class="form-section">
     <h2 class="form-section-title">@T("Sauvegarde")</h2>

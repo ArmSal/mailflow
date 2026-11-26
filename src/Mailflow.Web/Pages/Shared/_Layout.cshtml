@@ -1,4 +1,5 @@
 @inject Mailflow.Web.Worker.WorkerState Worker
+@inject Mailflow.Web.Updates.UpdateChecker Updates
 @{
     var authed = User.Identity?.IsAuthenticated == true;
     var path = Context.Request.Path.Value ?? "/";
@@ -69,6 +70,14 @@
                         <button type="submit" class="btn btn-secondary btn-sm"><svg class="icon" aria-hidden="true"><use href="#i-logout" /></svg>@T("Déconnexion")</button>
                     </form>
                 </header>
+                @if (Updates.Available is { } update)
+                {
+                    <div class="alert alert-info alert-dismissible m-3 mb-0" role="status" data-update-banner="@update.Tag">
+                        @T("Une nouvelle version de Mailflow est disponible ({0}).", update.Tag)
+                        <a class="alert-link" href="@update.Url" target="_blank" rel="noopener noreferrer">@T("Voir la version")</a>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="@T("Fermer")"></button>
+                    </div>
+                }
                 <main id="main" class="page" tabindex="-1">
                     @RenderBody()
                 </main>
