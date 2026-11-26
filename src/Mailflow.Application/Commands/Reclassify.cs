@@ -13,6 +13,7 @@ public sealed class Reclassify(IAppDbContext db, IDocumentStore store)
         if (doc is null) return new(false, "Document introuvable.");
         var category = await db.Categories.FirstOrDefaultAsync(c => c.Id == categoryId, ct);
         if (category is null) return new(false, "Catégorie introuvable.");
+        if (doc.DuplicateOfDocumentId is not null) return new(false, "Un doublon partage le fichier de l'original : changez la catégorie de l'original.");
         if (doc.CategoryId == categoryId) return new(true, null);
 
         string newPath;

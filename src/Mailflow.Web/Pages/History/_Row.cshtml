@@ -9,7 +9,8 @@
     </td>
     <td>@r.Category</td>
     <td class="cell-result">
-        @if (r.PrintedAt is { } p) { <span class="badge badge-ok">@T("Imprimé")</span><span class="print-detail">@p.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span> }
+        @if (r.DuplicateOfDocumentId is not null) { <span class="badge badge-warn" title="@T("Ce PDF a déjà été reçu : il n'est ni enregistré ni imprimé une deuxième fois.")">@T("Doublon")</span> }
+        else if (r.PrintedAt is { } p) { <span class="badge badge-ok">@T("Imprimé")</span><span class="print-detail">@p.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span> }
         else if (!string.IsNullOrEmpty(r.PrintError)) { <span class="badge badge-error">@T("Erreur")</span> }
         else { <span class="badge badge-neutral">@T("Non imprimé")</span> }
         @if (!string.IsNullOrEmpty(r.PrintError)) { <span class="print-error">@T(r.PrintError)</span> }
@@ -45,6 +46,8 @@
                             <button class="btn btn-sm btn-secondary" type="submit">@T("Réimprimer")</button>
                         </div>
                     </form>
+                    @if (r.DuplicateOfDocumentId is null)
+                    {
                     <form method="post" hx-post="@Url.Page("/History/Index", "Reclassify", new { id = r.DocumentId })" hx-target="closest tr" hx-swap="outerHTML">
                         <label class="form-label" for="category-@r.DocumentId">@T("Catégorie")</label>
                         <div class="menu-line">
@@ -57,6 +60,7 @@
                             <button class="btn btn-sm btn-secondary" type="submit">@T("Changer de catégorie")</button>
                         </div>
                     </form>
+                    }
                 </div>
             </details>
         </div>

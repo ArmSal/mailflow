@@ -141,6 +141,8 @@ public class Document
     public DateTime? PrintedAt { get; set; }
     public int? PrinterId { get; set; }
     public string? PrintError { get; set; }
+    /// <summary>Set when the same PDF (same SHA-256) was already processed: this row only records the repeat and shares the original's file.</summary>
+    public int? DuplicateOfDocumentId { get; set; }
 }
 
 public class RunLog

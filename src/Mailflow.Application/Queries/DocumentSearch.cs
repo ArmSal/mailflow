@@ -12,7 +12,8 @@ public sealed record DocumentSearchFilter(
     int? CategoryId = null,
     bool PrintErrorsOnly = false,
     int Page = 1,
-    bool UnverifiedOnly = false);
+    bool UnverifiedOnly = false,
+    bool DuplicatesOnly = false);
 
 public sealed record DocumentRow(
     int DocumentId,
@@ -24,7 +25,8 @@ public sealed record DocumentRow(
     string Category,
     DateTime? PrintedAt,
     string? PrintError,
-    SenderVerification SenderVerification = SenderVerification.Unknown);
+    SenderVerification SenderVerification = SenderVerification.Unknown,
+    int? DuplicateOfDocumentId = null);
 
 public sealed record PagedResult<T>(IReadOnlyList<T> Items, int Total, int Page, int PageSize)
 {
@@ -49,7 +51,7 @@ public sealed class DocumentSearch(IAppDbContext db)
     }
 
     private static DocumentRow ToRow(Joined j) => new(j.D.Id, j.Pm.ReceivedAt, j.Pm.From, j.Pm.Subject, j.D.OriginalName,
-        j.C.Id, j.C.Name, j.D.PrintedAt, j.D.PrintError, j.Pm.SenderVerification);
+        j.C.Id, j.C.Name, j.D.PrintedAt, j.D.PrintError, j.Pm.SenderVerification, j.D.DuplicateOfDocumentId);
 
     public async Task<DocumentRow?> GetRowAsync(int documentId, CancellationToken ct = default)
     {
@@ -71,6 +73,8 @@ public sealed class DocumentSearch(IAppDbContext db)
         if (f.PrintErrorsOnly) q = q.Where(r => r.D.PrintError != null && r.D.PrintError != "");
 
         if (f.UnverifiedOnly) q = q.Where(r => r.Pm.SenderVerification != SenderVerification.Pass);
+
+        if (f.DuplicatesOnly) q = q.Where(r => r.D.DuplicateOfDocumentId != null);
 
         var total = await q.CountAsync(ct);
         var page = Math.Max(1, f.Page);
