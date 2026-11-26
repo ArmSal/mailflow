@@ -1,0 +1,64 @@
+name: Release
+
+# Push a tag such as v1.2.0 to build the installers and publish a GitHub Release.
+# "Run workflow" (with a version) does the same build but publishes nothing: the files are kept as a run artifact.
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build, for example 1.2.0 (nothing is published)'
+        required: true
+
+permissions:
+  contents: write   # create the release and upload its files
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Work out the version
+        id: v
+        shell: pwsh
+        env:
+          EVENT: ${{ github.event_name }}
+          TAG: ${{ github.ref_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          $version = if ($env:EVENT -eq 'push') { $env:TAG.TrimStart('v') } else { $env:INPUT_VERSION }
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "Version must look like 1.2.3 (got '$version')." }
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      # Never publish an installer from code whose tests fail.
+      - name: Test
+        run: dotnet test -c Release
+
+      - name: Build the installers
+        shell: pwsh
+        run: ./deploy/build-release.ps1 -Version ${{ steps.v.outputs.version }}
+
+      - name: Keep the files as a run artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mailflow-${{ steps.v.outputs.version }}
+          path: dist/*-${{ steps.v.outputs.version }}-win-x64.*
+          retention-days: 30
+
+      - name: Publish the GitHub Release
+        if: github.event_name == 'push'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          $files = Get-ChildItem "dist/*-$env:VERSION-win-x64.*" | ForEach-Object FullName
+          gh release create $env:TAG @files --title "Mailflow $env:VERSION" --generate-notes
