@@ -44,6 +44,14 @@
             <div class="form-text">@T("Si une règle d'impression correspond à un e-mail sans pièce jointe PDF, Mailflow génère un PDF avec son texte et l'envoie à l'imprimante.")</div>
         </div>
     </section>
+    <section class="form-section">
+        <h2 class="form-section-title">@T("Mises à jour")</h2>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" asp-for="Input.UpdateCheck" />
+            <label class="form-check-label" asp-for="Input.UpdateCheck">@T("Vérifier les nouvelles versions")</label>
+            <div class="form-text">@T("Une fois par jour, Mailflow demande à GitHub si une version plus récente existe et l'indique par un bandeau. Aucune donnée personnelle n'est envoyée ; rien n'est installé automatiquement.")</div>
+        </div>
+    </section>
     <div class="form-actions mb-4"><button class="btn btn-primary" type="submit">@T("Enregistrer")</button></div>
 </form>
 

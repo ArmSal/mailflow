@@ -207,7 +207,7 @@ Comparisons ignore case and accents by default. For `PdfText` with `Contains`, t
 | Mailbox passwords | Encrypted with Windows **DPAPI** (scope: the Windows account running Mailflow); write-only in the UI |
 | Malicious PDFs | Never opened or executed: only text is read (PdfPig); SumatraPDF only prints |
 | Path traversal | Documents are opened by id, never by a browser-supplied path; folder and pattern settings reject `..` and absolute patterns |
-| Remote access | Local only (`127.0.0.1`). If you need remote access, use a private network such as Tailscale rather than opening a port |
+| Remote access | Local only (`127.0.0.1`). If you need remote access, use a private network (Tailscale is one option; any private network, VPN or trusted LAN works) rather than opening a port |
 | Data loss | Nightly SQLite backup (`VACUUM INTO`), last 14 kept |
 
 DPAPI ties a password to one Windows account: a password saved under another account cannot be decrypted by the account that runs Mailflow, so enter passwords after choosing how Mailflow runs.
@@ -299,7 +299,7 @@ To update, install the new version over the old one; database migrations are app
 
 ## Remote printing (Print Agent)
 
-Mailflow can print on a printer that is on another network. Install the small **Mailflow Print Agent** (`MailflowPrintAgent-Setup-<version>-win-x64.exe`, a wizard built next to the Mailflow installer; a portable `MailflowPrintAgent-<version>-win-x64.zip` is built too) on the PC that owns the printer. The agent connects out to Mailflow (for example over Tailscale), downloads the PDFs queued for its printer and prints them with SumatraPDF. Nothing has to be opened on the printer PC's network.
+Mailflow can print on a printer that is on another network. Install the small **Mailflow Print Agent** (`MailflowPrintAgent-Setup-<version>-win-x64.exe`, a wizard built next to the Mailflow installer; a portable `MailflowPrintAgent-<version>-win-x64.zip` is built too) on the PC that owns the printer. The agent connects out to Mailflow (for example over Tailscale or any other private network, VPN or trusted LAN), downloads the PDFs queued for its printer and prints them with SumatraPDF. Nothing has to be opened on the printer PC's network.
 
 Each agent has a name and a password that you choose: create it under **Printers > Print agents** in Mailflow, then type the same name and password in the agent's setup. Mailflow stores only a hash of the password, and the printers installed on the agent's PC are offered when you set up a remote printer. Then give a printer the type **PrintNode**, pick the agent, and use the printer's Windows name on the agent PC. Mailflow listens for agents on a separate port that serves nothing but the agent API, over HTTPS with a certificate whose fingerprint the agent verifies. Setup, firewall and security notes: [src/Mailflow.PrintAgent/README.md](src/Mailflow.PrintAgent/README.md).
 
