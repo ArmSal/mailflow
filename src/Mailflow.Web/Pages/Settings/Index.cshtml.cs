@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Mailflow.Application.Abstractions;
+using Mailflow.Application.Processing;
 using Mailflow.Domain.Enums;
 using Mailflow.Infrastructure.Storage;
 using Mailflow.Web.Auth;
@@ -26,6 +27,7 @@ public class IndexModel(
         [Required(ErrorMessage = "Le modèle de nom de fichier est requis.")]
         public string FileNamePattern { get; set; } = "";
         public bool PrintEmailBodyWithoutPdf { get; set; }
+        public bool ToastNotifications { get; set; } = true;
     }
 
     public class PasswordInput
@@ -72,6 +74,7 @@ public class IndexModel(
         await SettingsRules.SaveAsync(db, SettingsRules.RootKey, Input.DocumentsRoot, ct);
         await SettingsRules.SaveAsync(db, SettingsRules.PatternKey, Input.FileNamePattern, ct);
         await SettingsRules.SaveAsync(db, SettingsRules.PrintEmailBodyKey, Input.PrintEmailBodyWithoutPdf ? "true" : "false", ct);
+        await SettingsRules.SaveAsync(db, FailureAlerts.SettingKey, Input.ToastNotifications ? "true" : "false", ct);
         await db.SaveChangesAsync(ct);
         SettingsMessage = Loc.T("Paramètres enregistrés.");
         return Page();
@@ -129,6 +132,7 @@ public class IndexModel(
             DocumentsRoot = s.GetValueOrDefault(SettingsRules.RootKey) is { Length: > 0 } r ? r : storeOptions.Value.DocumentsRoot,
             FileNamePattern = s.GetValueOrDefault(SettingsRules.PatternKey) is { Length: > 0 } p ? p : storeOptions.Value.FileNamePattern,
             PrintEmailBodyWithoutPdf = SettingsRules.ParsePrintEmailBody(s.GetValueOrDefault(SettingsRules.PrintEmailBodyKey)),
+            ToastNotifications = FailureAlerts.ParseEnabled(s.GetValueOrDefault(FailureAlerts.SettingKey)),
         };
         SetSenderCheck(s);
     }

@@ -9,7 +9,7 @@ namespace Mailflow.Application.Agents;
 public sealed record AgentJobInfo(int Id, string PrinterName, int Copies, bool Duplex, string FileName);
 
 /// <summary>The server side of the print agent protocol: tokens, the job queue and job results.</summary>
-public sealed class AgentJobService(IAppDbContext db, IClock clock)
+public sealed class AgentJobService(IAppDbContext db, IClock clock, Processing.IFailureNotifier? notifier = null)
 {
     /// <summary>A job handed out but never reported (agent crashed or lost the network) is offered again after this.</summary>
     public static readonly TimeSpan ResendAfter = TimeSpan.FromMinutes(5);
@@ -130,6 +130,9 @@ public sealed class AgentJobService(IAppDbContext db, IClock clock)
             doc.PrintError = ok ? null : job.Error ?? "Échec de l'impression sur l'agent.";
         }
         await db.SaveChangesAsync(ct);
+        if (!ok)
+            await Processing.FailureAlerts.NotifyAsync(db, notifier ?? new Processing.NullFailureNotifier(), "Échec de l'impression",
+                $"{job.PrinterName} : {job.Error ?? "Échec de l'impression sur l'agent."}", ct);
         return true;
     }
 
