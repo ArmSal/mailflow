@@ -122,6 +122,27 @@ public class PagesTests : IDisposable
         }
     }
 
+    [Fact]
+    public async Task Mailbox_delete_detaches_print_jobs_of_its_documents()
+    {
+        var id = await CreateMailbox("pj");
+        using var db = _fx.NewDb();
+        var cat = new Category { Name = "c" };
+        var pm = new ProcessedMessage { MailboxId = id, MessageId = "m" };
+        db.AddRange(cat, pm);
+        db.SaveChanges();
+        var doc = new Document { ProcessedMessageId = pm.Id, CategoryId = cat.Id, Sha256 = "s", OriginalName = "a.pdf", StoredPath = "a.pdf" };
+        db.Documents.Add(doc);
+        db.SaveChanges();
+        var job = new PrintJob { PrintAgentId = 1, DocumentId = doc.Id };
+        db.PrintJobs.Add(job);
+        db.SaveChanges();
+
+        Assert.IsType<ContentResult>(await new MailboxIndex(db).With().OnPostDeleteAsync(id));
+
+        Assert.Null(db.PrintJobs.AsNoTracking().Single().DocumentId);
+    }
+
     [Theory]
     [InlineData("Factures", true)]
     [InlineData("Fournisseurs/Factures", true)]

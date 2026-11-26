@@ -29,6 +29,10 @@ public class IndexModel(IAppDbContext db) : PageModel
     {
         var m = await db.Mailboxes.FindAsync(id);
         if (m is null) return Content("");
+        // Print jobs reference documents without a cascade: detach them first or the delete fails on the foreign key.
+        var docIds = db.Documents.Where(d => db.ProcessedMessages.Any(p => p.Id == d.ProcessedMessageId && p.MailboxId == id)).Select(d => d.Id);
+        await db.PrintJobs.Where(j => j.DocumentId != null && docIds.Contains(j.DocumentId.Value))
+            .ExecuteUpdateAsync(s => s.SetProperty(j => j.DocumentId, (int?)null));
         db.Mailboxes.Remove(m);
         await db.SaveChangesAsync();
         return Content("");
