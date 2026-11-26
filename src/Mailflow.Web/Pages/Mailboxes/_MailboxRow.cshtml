@@ -20,7 +20,7 @@
     <td>
         <div class="row-actions row-actions-nowrap">
             <a class="btn btn-sm btn-secondary" asp-page="/Mailboxes/Edit" asp-route-id="@Model.Id">@T("Modifier")</a>
-            <form method="post" hx-post="@Url.Page("/Mailboxes/Index", "Delete", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="@T("Supprimer cette boîte mail ?")">
+            <form method="post" hx-post="@Url.Page("/Mailboxes/Index", "Delete", new { id = Model.Id })" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="@T("Supprimer cette boîte mail ? Son historique de messages et les documents associés seront aussi supprimés (les fichiers sur disque sont conservés).")">
                 <button class="btn btn-sm btn-danger" type="submit">@T("Supprimer")</button>
             </form>
         </div>

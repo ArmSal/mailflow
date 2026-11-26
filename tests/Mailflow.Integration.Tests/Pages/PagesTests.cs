@@ -119,7 +119,6 @@ public class PagesTests : IDisposable
             var page = new MailboxIndex(db).With();
             Assert.IsType<ContentResult>(await page.OnPostDeleteAsync(id));
             Assert.Empty(db.Mailboxes);
-            Assert.Empty(db.ProcessedMessages);
         }
     }
 

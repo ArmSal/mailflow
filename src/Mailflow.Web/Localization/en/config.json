@@ -146,7 +146,7 @@
   "Cliquer pour désactiver": "Click to deactivate",
   "Cliquer pour activer": "Click to activate",
   "Inactif": "Inactive",
-  "Supprimer cette boîte mail ?": "Delete this mailbox?",
+  "Supprimer cette boîte mail ? Son historique de messages et les documents associés seront aussi supprimés (les fichiers sur disque sont conservés).": "Delete this mailbox? Its message history and related document records will also be deleted (files on disk are kept).",
   "Connexion réussie : {0} message(s) dans la boîte.": "Connection successful: {0} message(s) in the mailbox.",
   "Dossiers disponibles :": "Available folders:",
   "Échec de la connexion": "Connection failed",
