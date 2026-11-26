@@ -143,7 +143,7 @@ cd mailflow
 dotnet run --project src/Mailflow.Web
 ```
 
-Ouvrez **http://127.0.0.1:5088** et définissez le mot de passe administrateur. Pour imprimer, téléchargez SumatraPDF (version portable 64 bits) et placez `SumatraPDF.exe` dans `tools/SumatraPDF/` (voir [tools/SumatraPDF/README.md](tools/SumatraPDF/README.md)).
+Ouvrez **http://127.0.0.1:5088** et définissez le mot de passe administrateur. L'impression fonctionne directement : SumatraPDF (version portable 64 bits) est fourni dans `tools/SumatraPDF/` (voir [tools/SumatraPDF/README.md](tools/SumatraPDF/README.md)).
 
 ## Configuration
 
@@ -275,7 +275,7 @@ src/
 tests/
   Mailflow.Domain.Tests/        Mailflow.Application.Tests/
   Mailflow.Integration.Tests/   Mailflow.Desktop.Tests/
-tools/SumatraPDF/            exécutable portable (non versionné)
+tools/SumatraPDF/            SumatraPDF.exe portable (GPL v3, versionné avec sa licence)
 deploy/                      construction de la version et installateur
 Docs/                        système de design
 ```
@@ -293,7 +293,7 @@ Pour construire une version depuis un poste de développement :
 .\deploy\build-release.ps1 -Version 1.0.0
 ```
 
-Le script publie une version autonome win-x64 et produit `dist\Mailflow-<version>-win-x64.zip` et `dist\Mailflow-Setup-<version>-win-x64.exe`. Placez d'abord `SumatraPDF.exe` dans `tools\SumatraPDF\` pour inclure l'impression.
+Le script publie une version autonome win-x64 et produit `dist\Mailflow-<version>-win-x64.zip` et `dist\Mailflow-Setup-<version>-win-x64.exe`. `tools\SumatraPDF\SumatraPDF.exe` est inclus dans le paquet.
 
 Pour mettre à jour, installez la nouvelle version par-dessus l'ancienne ; les migrations de base de données s'appliquent au démarrage.
 

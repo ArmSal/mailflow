@@ -11,7 +11,7 @@ Mailflow itself is licensed under the [MIT License](LICENSE). It uses the open-s
 | Microsoft Edge WebView2 loader (`WebView2Loader.dll`) | Microsoft WebView2 SDK licence | https://www.nuget.org/packages/Microsoft.Web.WebView2 |
 | SQLite (`e_sqlite3.dll`) | Public domain | https://www.sqlite.org/copyright.html |
 
-**About SumatraPDF.** It is a separate program, unmodified, started by Mailflow as an external process to print PDF files. It is not part of Mailflow and is **not** covered by Mailflow's MIT licence: it stays under the GPL v3. Its source code and licence text are available at the link above. The repository does not contain `SumatraPDF.exe`; builds that include it get it from the official download page (see `tools/SumatraPDF/README.md`).
+**About SumatraPDF.** It is a separate program, unmodified, started by Mailflow as an external process to print PDF files. It is not part of Mailflow and is **not** covered by Mailflow's MIT licence: it stays under the GPL v3. Its source code and licence text are available at the link above. The repository ships the official portable `SumatraPDF.exe` (version 3.5.2, 64-bit) in `tools/SumatraPDF/`, next to the GPL v3 licence text (`LICENSE-GPL-3.0.txt`), and it is bundled into the installers. Its complete source code is available from https://github.com/sumatrapdfreader/sumatrapdf (the official releases are listed at https://www.sumatrapdfreader.org/download-free-pdf-viewer). Anyone who wants a different build can replace the file (see `tools/SumatraPDF/README.md`).
 
 ## NuGet packages
 

@@ -492,5 +492,5 @@ dist/*
 !dist/Mailflow-Setup-*-win-x64.exe
 !dist/MailflowPrintAgent-Setup-*-win-x64.exe
 
-# portable SumatraPDF binary
-tools/SumatraPDF/*.exe
+# SumatraPDF.exe is committed (GPL v3, see tools/SumatraPDF/); it writes its own settings file next to itself when run
+tools/SumatraPDF/SumatraPDF-settings.txt

@@ -143,7 +143,7 @@ cd mailflow
 dotnet run --project src/Mailflow.Web
 ```
 
-Open **http://127.0.0.1:5088** and set the administrator password. To print, download the portable 64-bit SumatraPDF and place `SumatraPDF.exe` in `tools/SumatraPDF/` (see [tools/SumatraPDF/README.md](tools/SumatraPDF/README.md)).
+Open **http://127.0.0.1:5088** and set the administrator password. Printing works out of the box: the portable 64-bit SumatraPDF is included in `tools/SumatraPDF/` (see [tools/SumatraPDF/README.md](tools/SumatraPDF/README.md)).
 
 ## Configuration
 
@@ -275,7 +275,7 @@ src/
 tests/
   Mailflow.Domain.Tests/        Mailflow.Application.Tests/
   Mailflow.Integration.Tests/   Mailflow.Desktop.Tests/
-tools/SumatraPDF/            portable executable (not committed)
+tools/SumatraPDF/            portable SumatraPDF.exe (GPL v3, committed with its licence)
 deploy/                      release build and installer
 Docs/                        design system
 ```
@@ -293,7 +293,7 @@ To build a release from a development machine:
 .\deploy\build-release.ps1 -Version 1.0.0
 ```
 
-This publishes a self-contained win-x64 build and writes `dist\Mailflow-Setup-<version>-win-x64.exe` (FR/EN wizard, no administrator rights needed, uninstaller included) and the matching zip. Put `SumatraPDF.exe` in `tools\SumatraPDF\` first if you want printing in the package: see [tools/SumatraPDF/README.md](tools/SumatraPDF/README.md). Unattended install: `Mailflow-Setup-<version>-win-x64.exe /S /dir=C:\Mailflow /nostartup /nodesktop /noRun /lang=en` (also `/nostartmenu`, `/nowebview2`); the uninstaller takes `/S` (keeps your data) and `/removedata`.
+This publishes a self-contained win-x64 build and writes `dist\Mailflow-Setup-<version>-win-x64.exe` (FR/EN wizard, no administrator rights needed, uninstaller included) and the matching zip. `tools\SumatraPDF\SumatraPDF.exe` is included in the package (see [tools/SumatraPDF/README.md](tools/SumatraPDF/README.md) to use another version). Unattended install: `Mailflow-Setup-<version>-win-x64.exe /S /dir=C:\Mailflow /nostartup /nodesktop /noRun /lang=en` (also `/nostartmenu`, `/nowebview2`); the uninstaller takes `/S` (keeps your data) and `/removedata`.
 
 To update, install the new version over the old one; database migrations are applied at startup.
 
