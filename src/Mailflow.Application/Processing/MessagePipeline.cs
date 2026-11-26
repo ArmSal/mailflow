@@ -4,6 +4,7 @@ using Mailflow.Domain.Entities;
 using Mailflow.Domain.Enums;
 using Mailflow.Domain.Rules;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
 
 namespace Mailflow.Application.Processing;
 
@@ -74,12 +75,25 @@ public sealed class MessagePipeline(
             if (!skip)
                 foreach (var pdf in attachments)
                 {
+                    var sha = Convert.ToHexString(SHA256.HashData(pdf.Content)).ToLowerInvariant();
+                    // The hash is global (any mailbox or rule): the same PDF is stored and printed only once.
+                    var original = await db.Documents.FirstOrDefaultAsync(d => d.Sha256 == sha && d.DuplicateOfDocumentId == null, ct);
+                    if (original is not null)
+                    {
+                        var repeat = new Document
+                        {
+                            ProcessedMessageId = processed.Id, Sha256 = sha, OriginalName = pdf.FileName,
+                            StoredPath = original.StoredPath, CategoryId = original.CategoryId, DuplicateOfDocumentId = original.Id
+                        };
+                        db.Documents.Add(repeat);
+                        tracked.Add(repeat);
+                        continue;
+                    }
                     var stored = await store.SaveAsync(pdf.Content, category.LocalSubfolder, DomainOf(from), pdf.FileName, message.ReceivedAt, ct);
-                    if (stored.WasDuplicate && await db.Documents.AnyAsync(d => d.Sha256 == stored.Sha256, ct)) continue;
 
                     var doc = new Document
                     {
-                        ProcessedMessageId = processed.Id, Sha256 = stored.Sha256, OriginalName = pdf.FileName,
+                        ProcessedMessageId = processed.Id, Sha256 = sha, OriginalName = pdf.FileName,
                         StoredPath = stored.Path, CategoryId = category.Id
                     };
                     if (printAction != null && policyBlocked is not null)
@@ -122,6 +136,7 @@ public sealed class MessagePipeline(
                     }
                     db.Documents.Add(doc);
                     tracked.Add(doc);
+                    await db.SaveChangesAsync(ct); // so a repeat in the same message finds it
                     saved++;
                 }
             await db.SaveChangesAsync(ct);

@@ -26,6 +26,7 @@ public class IndexModel(
     [BindProperty(SupportsGet = true)] public int? CategoryId { get; set; }
     [BindProperty(SupportsGet = true)] public bool ErrorsOnly { get; set; }
     [BindProperty(SupportsGet = true)] public bool UnverifiedOnly { get; set; }
+    [BindProperty(SupportsGet = true)] public bool DuplicatesOnly { get; set; }
     [BindProperty(SupportsGet = true)] public int PageNumber { get; set; } = 1;
 
     public PagedResult<DocumentRow> Result { get; private set; } = new([], 0, 1, DocumentSearch.PageSize);
@@ -39,7 +40,7 @@ public class IndexModel(
         if (Supplier is { Length: > 200 }) Supplier = Supplier[..200];
         await LoadLookups(ct);
         if (!ModelState.IsValid) return;
-        Result = await search.SearchAsync(new DocumentSearchFilter(From, To, Supplier, CategoryId, ErrorsOnly, Math.Max(1, PageNumber), UnverifiedOnly), ct);
+        Result = await search.SearchAsync(new DocumentSearchFilter(From, To, Supplier, CategoryId, ErrorsOnly, Math.Max(1, PageNumber), UnverifiedOnly, DuplicatesOnly), ct);
     }
 
     public async Task<IActionResult> OnPostReprintAsync(int id, int? printerId, CancellationToken ct)

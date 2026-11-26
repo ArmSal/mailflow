@@ -1,4 +1,8 @@
 {
+  "Doublon": "Duplicate",
+  "Doublons seulement": "Duplicates only",
+  "Ce PDF a déjà été reçu : il n'est ni enregistré ni imprimé une deuxième fois.": "This PDF was already received: it is neither saved nor printed a second time.",
+  "Un doublon partage le fichier de l'original : changez la catégorie de l'original.": "A duplicate shares the original's file: change the original's category instead.",
   "Actif": "Active",
   "Action {0} : ": "Action {0}: ",
   "Actions": "Actions",

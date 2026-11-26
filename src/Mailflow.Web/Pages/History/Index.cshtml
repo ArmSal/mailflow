@@ -36,6 +36,10 @@
         <input class="form-check-input" type="checkbox" role="switch" asp-for="UnverifiedOnly" value="true" />
         <label class="form-check-label" asp-for="UnverifiedOnly">@T("Expéditeurs non vérifiés seulement")</label>
     </div>
+    <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" role="switch" asp-for="DuplicatesOnly" value="true" />
+        <label class="form-check-label" asp-for="DuplicatesOnly">@T("Doublons seulement")</label>
+    </div>
     <div class="toolbar-end"><button class="btn btn-primary" type="submit">@T("Rechercher")</button></div>
 </form>
 @if (!ViewData.ModelState.IsValid)
@@ -78,7 +82,7 @@ else
                 <li class="page-item @(i == Model.Result.Page ? "active" : "")">
                     <a class="page-link" asp-page="Index" asp-route-From="@Model.From?.ToString("yyyy-MM-dd")" asp-route-To="@Model.To?.ToString("yyyy-MM-dd")"
                        asp-route-Supplier="@Model.Supplier" asp-route-CategoryId="@Model.CategoryId"
-                       asp-route-ErrorsOnly="@(Model.ErrorsOnly ? "true" : null)" asp-route-UnverifiedOnly="@(Model.UnverifiedOnly ? "true" : null)" asp-route-PageNumber="@i" aria-current="@(i == Model.Result.Page ? "page" : null)">@i</a>
+                       asp-route-ErrorsOnly="@(Model.ErrorsOnly ? "true" : null)" asp-route-UnverifiedOnly="@(Model.UnverifiedOnly ? "true" : null)" asp-route-DuplicatesOnly="@(Model.DuplicatesOnly ? "true" : null)" asp-route-PageNumber="@i" aria-current="@(i == Model.Result.Page ? "page" : null)">@i</a>
                 </li>
             }
         </ul>

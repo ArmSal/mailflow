@@ -59,6 +59,9 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
                     b.Property<int>("CategoryId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("DuplicateOfDocumentId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("OriginalName")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -89,12 +92,15 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CategoryId");
 
+                    b.HasIndex("DuplicateOfDocumentId");
+
                     b.HasIndex("PrinterId");
 
                     b.HasIndex("ProcessedMessageId");
 
                     b.HasIndex("Sha256")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("DuplicateOfDocumentId IS NULL");
 
                     b.ToTable("Documents");
                 });
@@ -495,6 +501,11 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("Mailflow.Domain.Entities.Document", null)
+                        .WithMany()
+                        .HasForeignKey("DuplicateOfDocumentId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Mailflow.Domain.Entities.Printer", null)
                         .WithMany()

@@ -28,7 +28,7 @@ public sealed class TestDb : DbContext, IAppDbContext
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Setting>().HasKey(s => s.Key);
-        b.Entity<Document>().HasIndex(d => d.Sha256).IsUnique();
+        b.Entity<Document>().HasIndex(d => d.Sha256).IsUnique().HasFilter("DuplicateOfDocumentId IS NULL");
     }
 }
 
@@ -178,20 +178,36 @@ public class PipelineTests
     }
 
     [Fact]
-    public async Task Duplicate_pdf_already_in_database_creates_no_second_document_and_no_print()
+    public async Task Duplicate_pdf_is_recorded_as_duplicate_of_the_original_and_is_not_stored_or_printed_again()
     {
         using var f = new Fixture();
         f.Fetch(Fixture.Msg("m1"), Fixture.Msg("m2"));
-        f.Store.SaveAsync(default!, default!, default!, default!, default, default).ReturnsForAnyArgs(
-            Task.FromResult(new StoredDocument("C:/docs/a.pdf", "SAME", false)),
-            Task.FromResult(new StoredDocument("C:/docs/a.pdf", "SAME", true)));
 
         var log = await f.Processor.RunAsync(f.Mailbox, default);
 
         Assert.Equal(2, log.MessagesHandled);
-        Assert.Single(f.Db.Documents);
+        var docs = f.Db.Documents.OrderBy(d => d.Id).ToList();
+        Assert.Equal(2, docs.Count);
+        Assert.Null(docs[0].DuplicateOfDocumentId);
+        Assert.Equal(docs[0].Id, docs[1].DuplicateOfDocumentId);
+        Assert.Equal(docs[0].StoredPath, docs[1].StoredPath);
+        Assert.Null(docs[1].PrintedAt);
         Assert.Equal(1, log.Printed);
+        await f.Store.ReceivedWithAnyArgs(1).SaveAsync(default!, default!, default!, default!, default, default);
         await f.Printer.ReceivedWithAnyArgs(1).PrintAsync(default!, default!, default, default, default);
+    }
+
+    [Fact]
+    public async Task Same_pdf_twice_in_one_message_records_the_second_as_duplicate()
+    {
+        using var f = new Fixture();
+        f.Fetch(Fixture.Msg("m1", pdfs: ["a.pdf", "a.pdf"]));
+
+        await f.Processor.RunAsync(f.Mailbox, default);
+
+        var docs = f.Db.Documents.OrderBy(d => d.Id).ToList();
+        Assert.Equal(2, docs.Count);
+        Assert.Equal(docs[0].Id, docs[1].DuplicateOfDocumentId);
     }
 
     [Fact]
