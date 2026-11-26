@@ -490,6 +490,7 @@ $RECYCLE.BIN/
 # release output
 dist/*
 !dist/Mailflow-Setup-*-win-x64.exe
+!dist/MailflowPrintAgent-Setup-*-win-x64.exe
 
 # portable SumatraPDF binary
 tools/SumatraPDF/*.exe

@@ -92,3 +92,51 @@ if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed.' }
 
 Remove-Item $stage, $build -Recurse -Force
 Write-Host "Installer written to $setupExe"
+
+# 6. Print Agent (separate small program for the PC that owns a printer): <Out>\MailflowPrintAgent-<Version>-win-x64.zip
+$agentStage = Join-Path $outDir 'agent-stage'
+$agentZip = Join-Path $outDir "MailflowPrintAgent-$Version-win-x64.zip"
+Remove-Item $agentStage, $agentZip -Recurse -Force -ErrorAction SilentlyContinue
+$agentArgs = @(
+    'publish', (Join-Path $root 'src\Mailflow.PrintAgent'),
+    '-c', 'Release', '-r', 'win-x64', '--self-contained', 'true',
+    '-p:PublishSingleFile=true', '-p:EnableCompressionInSingleFile=true', '-p:PublishTrimmed=false', "-p:Version=$Version", '-m:1', '/nr:false',
+    '-o', $agentStage
+)
+if ($NoRestore) { $agentArgs += '--no-restore' }
+& dotnet @agentArgs
+if ($LASTEXITCODE -ne 0) { throw 'Print Agent publish failed.' }
+Remove-Item (Join-Path $agentStage '*.pdb') -ErrorAction SilentlyContinue
+Copy-Item (Join-Path $root 'LICENSE'), (Join-Path $root 'THIRD-PARTY-NOTICES.md'), (Join-Path $root 'src\Mailflow.PrintAgent\README.md') -Destination $agentStage
+if (Test-Path $sumatraExe) { Copy-Item $sumatraExe -Destination $agentStage }
+else { Write-Warning 'SumatraPDF.exe not found: the Print Agent zip will not contain it.' }
+[IO.Compression.ZipFile]::CreateFromDirectory($agentStage, $agentZip, [IO.Compression.CompressionLevel]::Optimal, $false)
+Write-Host "Print Agent zip written to $agentZip"
+
+# 7. Print Agent installer: <Out>\MailflowPrintAgent-Setup-<Version>-win-x64.exe (wizard + uninstaller, per user, no administrator rights).
+$agentSetupExe = Join-Path $outDir "MailflowPrintAgent-Setup-$Version-win-x64.exe"
+$agentBuild = Join-Path $outDir 'agent-obj'
+$agentPayload = Join-Path $agentBuild 'payload.zip'
+Remove-Item $agentBuild, $agentSetupExe -Recurse -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path $agentBuild -Force | Out-Null
+$agentInfo = Join-Path $agentBuild 'BuildInfo.g.cs'
+@"
+using System.Reflection;
+[assembly: AssemblyTitle("Mailflow Print Agent")]
+[assembly: AssemblyProduct("Mailflow Print Agent")]
+[assembly: AssemblyVersion("$Version.0")]
+[assembly: AssemblyFileVersion("$Version.0")]
+namespace Mailflow.AgentSetup { internal static class BuildInfo { public const string Version = "$Version"; } }
+"@ | Set-Content -Path $agentInfo -Encoding UTF8
+$agentSrc = Join-Path $root 'deploy\installer\AgentSetupProgram.cs'
+$agentRefs = @('/reference:System.Windows.Forms.dll', '/reference:System.Drawing.dll', '/reference:System.Security.dll',
+               '/reference:System.IO.Compression.dll', '/reference:System.IO.Compression.FileSystem.dll')
+& $csc /nologo /target:winexe /platform:x64 /optimize+ /define:UNINSTALL "/win32icon:$icon" @agentRefs `
+    "/out:$(Join-Path $agentStage 'Uninstall.exe')" $agentSrc $agentInfo
+if ($LASTEXITCODE -ne 0) { throw 'Print Agent uninstaller compilation failed.' }
+[IO.Compression.ZipFile]::CreateFromDirectory($agentStage, $agentPayload, [IO.Compression.CompressionLevel]::Optimal, $false)
+& $csc /nologo /target:winexe /platform:x64 /optimize+ "/win32icon:$icon" @agentRefs `
+    "/resource:$agentPayload,payload.zip" "/out:$agentSetupExe" $agentSrc $agentInfo
+if ($LASTEXITCODE -ne 0) { throw 'Print Agent installer compilation failed.' }
+Remove-Item $agentStage, $agentBuild -Recurse -Force
+Write-Host "Print Agent installer written to $agentSetupExe"
