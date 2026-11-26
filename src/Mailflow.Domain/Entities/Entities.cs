@@ -14,7 +14,10 @@ public class Mailbox
     public string EncryptedPassword { get; set; } = "";
     public string InboxFolder { get; set; } = "INBOX";
     public int CheckIntervalMinutes { get; set; } = 5;
-    public int LookbackDays { get; set; } = 3;
+    /// <summary>Only e-mails received on or after this date (UTC) are sorted.</summary>
+    public DateTime SortFromDate { get; set; } = DateTime.UtcNow.Date.AddDays(-3);
+    /// <summary>E-mails older than this many days (1 to 7) are saved but never printed.</summary>
+    public int PrintMaxDays { get; set; } = 1;
     public AfterProcessing DefaultAfterProcessing { get; set; } = AfterProcessing.Leave;
     public bool IsActive { get; set; } = true;
     public DateTime? LastCheckAt { get; set; }

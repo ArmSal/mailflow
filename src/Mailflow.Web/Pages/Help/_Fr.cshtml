@@ -32,7 +32,7 @@
     <h2>2. Le traitement d'un e-mail</h2>
     <ol class="help-flow">
         <li><strong>Relève</strong>Mailflow se connecte à chaque boîte active en IMAP.</li>
-        <li><strong>Sélection</strong>Il liste les messages du dossier surveillé reçus dans la période d'historique.</li>
+        <li><strong>Sélection</strong>Il liste les messages du dossier surveillé reçus à partir de la date « Trier à partir du ».</li>
         <li><strong>Doublons</strong>Un message déjà vu est ignoré.</li>
         <li><strong>Règles</strong>Les règles sont testées dans l'ordre.</li>
         <li><strong>Enregistrement</strong>Chaque PDF est rangé dans le dossier de sa catégorie.</li>
@@ -44,8 +44,8 @@
     <h3>Étape par étape</h3>
     <h4>1. La relève</h4>
     <p>Une tâche de fond démarre avec l'application puis se répète à intervalle régulier (toutes les minutes par défaut). À chaque passage, elle relève les boîtes <em>actives</em> dont l'intervalle est écoulé, l'une après l'autre ; une boîte en erreur ne bloque jamais les autres. Sur l'Accueil, <strong>Lancer maintenant</strong> déclenche une relève immédiate, et <strong>Pause</strong> / <strong>Reprendre</strong> arrête et relance les relèves programmées.</p>
-    <h4>2. La période d'historique</h4>
-    <p>Seuls les e-mails du dossier surveillé (par défaut la boîte de réception) reçus durant les derniers <strong>Historique (jours)</strong> sont pris en compte. Les messages plus anciens ne sont jamais touchés.</p>
+    <h4>2. Trier à partir du</h4>
+    <p>Seuls les e-mails du dossier surveillé (par défaut la boîte de réception) reçus à partir de la date <strong>Trier à partir du</strong> sont pris en compte. Les messages plus anciens ne sont jamais touchés.</p>
     <h4>3. La détection des doublons</h4>
     <p>Deux protections évitent de traiter une chose deux fois :</p>
     <ul>
@@ -67,7 +67,7 @@
     <p>Un document est imprimé quand une règle correspondante a une action <strong>Imprimer</strong> avec une imprimante, et que ces contrôles sont réussis :</p>
     <ul>
         <li>l'imprimante existe et est <strong>active</strong> ;</li>
-        <li>l'e-mail n'est pas plus ancien que l'<strong>âge maximum d'impression</strong> (24 heures par défaut ; cela évite une rafale d'anciens documents après un long arrêt) ;</li>
+        <li>l'e-mail n'est pas plus ancien que la limite <strong>Imprimer les derniers jours</strong> de la boîte (1 à 7 jours, 1 par défaut ; cela évite une rafale d'anciens documents après un long arrêt) ;</li>
         <li>en mode Stricte, l'expéditeur est <strong>vérifié</strong> (voir Paramètres et section 4).</li>
     </ul>
     <p>L'impression est silencieuse, via l'outil SumatraPDF fourni. Le nombre de copies est celui de l'action s'il est renseigné, sinon celui de l'imprimante ; le recto-verso suit l'imprimante. Si un contrôle bloque l'impression ou si l'imprimante échoue, le document est quand même enregistré et l'Historique indique la raison ; vous pouvez le réimprimer à la main.</p>
@@ -96,7 +96,8 @@
             <tr><td>Dossier à relever</td><td>Le dossier IMAP à lire (la boîte de réception par défaut).</td></tr>
             <tr><td>Après traitement</td><td>Réglage par défaut de la boîte quand aucune règle n'en décide autrement : laisser tel quel, marquer comme lu ou déplacer.</td></tr>
             <tr><td>Intervalle (min)</td><td>Fréquence de relève de cette boîte, de 1 à 1440 minutes (l'application regarde chaque minute : 1 est donc la plus fine). Utilisez Lancer maintenant sur l'Accueil pour relever toutes les boîtes tout de suite.</td></tr>
-            <tr><td>Historique (jours)</td><td>Ancienneté maximale des messages relevés.</td></tr>
+            <tr><td>Trier à partir du</td><td>Date à partir de laquelle les e-mails sont relevés et triés (par exemple 01.01.2026).</td></tr>
+            <tr><td>Imprimer les derniers jours</td><td>De 1 à 7. Un e-mail plus ancien est enregistré mais pas imprimé automatiquement.</td></tr>
             <tr><td>Actif</td><td>Une boîte inactive n'est pas relevée.</td></tr>
         </tbody>
     </table></div>
@@ -224,8 +225,7 @@
         <thead><tr><th scope="col">Paramètre</th><th scope="col">Signification</th></tr></thead>
         <tbody>
             <tr><td>Dossier des documents</td><td>Où les PDF sont archivés. Saisissez un chemin ou utilisez <strong>Parcourir...</strong> pour choisir un dossier. Les sauvegardes sont dans un sous-dossier <code>backups</code>.</td></tr>
-            <tr><td>Modèle de nom de fichier</td><td>Doit contenir <code>{OriginalName}</code>. Jetons : <code>{Category}</code>, <code>{Supplier}</code>, <code>{OriginalName}</code>, et les dates <code>{yyyy}</code>, <code>{MM}</code>, <code>{yyyy-MM-dd}</code>. Utilisez <code>/</code> pour séparer les dossiers. S'applique aux documents enregistrés à partir de maintenant.</td></tr>
-            <tr><td>Âge maximum d'impression (heures)</td><td>De 1 à 168. Un e-mail plus ancien est enregistré mais pas imprimé automatiquement.</td></tr>
+            <tr><td>Modèle de nom de fichier</td><td>Doit contenir <code>{OriginalName}</code>. Jetons : <code>{Category}</code>, <code>{Supplier}</code>, <code>{OriginalName}</code>, et les dates <code>{yyyy}</code>, <code>{MM}</code>, <code>{dd}</code>, <code>{yyyy-MM-dd}</code>, <code>{dd-MM-yyyy}</code>. Utilisez <code>/</code> pour séparer les dossiers. S'applique aux documents enregistrés à partir de maintenant.</td></tr>
             <tr><td>Imprimer le contenu de l'e-mail lorsqu'aucun PDF n'est joint</td><td>Si une règle d'impression correspond à un e-mail sans PDF, Mailflow imprime un PDF fait de son texte.</td></tr>
             <tr><td>Vérification de l'expéditeur</td><td>Désactivée, Avertir (recommandé) ou Stricte ; voir ci-dessous.</td></tr>
             <tr><td>Mot de passe administrateur</td><td>Change le mot de passe qui protège cette interface (8 caractères minimum).</td></tr>
@@ -285,7 +285,7 @@
     <ol>
         <li>Retrouvez le document dans l'Historique : la colonne Impression donne la raison.</li>
         <li>« Imprimante inactive ou introuvable » : vérifiez que l'imprimante est active et que son nom Windows est exact (utilisez Détecter les imprimantes).</li>
-        <li>« E-mail trop ancien » : l'e-mail dépasse l'âge maximum d'impression des Paramètres.</li>
+        <li>« E-mail trop ancien » : l'e-mail dépasse la limite « Imprimer les derniers jours » de la boîte.</li>
         <li>« Expéditeur non vérifié » : la vérification est Stricte ; passez à Avertir ou réimprimez à la main.</li>
         <li>Aucune raison affichée : la règle n'a probablement pas d'action Imprimer, ou ne correspond pas. Utilisez Tester cette règle.</li>
         <li>Essayez le Test d'impression de l'imprimante, et le menu Réimprimer de l'Historique.</li>
@@ -295,7 +295,7 @@
     <h4>Un document s'est retrouvé dans « A trier »</h4>
     <p>Aucune règle n'a reconnu l'e-mail. Créez ou ajustez une règle, et utilisez <strong>Changer de catégorie</strong> dans l'Historique pour déplacer le document existant.</p>
     <h4>Un e-mail n'est pas traité</h4>
-    <p>Un e-mail n'est traité qu'une fois par boîte. Il est ignoré s'il est plus ancien que la période d'historique, si la boîte est inactive, si la relève est en pause, ou si une règle Ignorer lui correspond.</p>
+    <p>Un e-mail n'est traité qu'une fois par boîte. Il est ignoré s'il est reçu avant la date « Trier à partir du », si la boîte est inactive, si la relève est en pause, ou si une règle Ignorer lui correspond.</p>
     <h4>L'application indique que le port est occupé</h4>
     <p>L'interface utilise le port 5088 sur ce PC. Si un autre programme, ou une autre instance de Mailflow, l'occupe déjà, Mailflow vérifie qui le détient : il réutilise un Mailflow déjà lancé, sinon il signale le conflit. Fermez l'autre programme puis relancez Mailflow.</p>
     <h4>La fenêtre reste vide et mentionne WebView2</h4>
@@ -310,7 +310,7 @@
         <dt>IMAP</dt><dd>Le protocole que Mailflow utilise pour lire une boîte mail. Les e-mails restent sur le serveur de messagerie.</dd>
         <dt>Mot de passe d'application</dt><dd>Un mot de passe généré dans votre compte mail pour une seule application, exigé par Gmail, iCloud et Yahoo.</dd>
         <dt>Relève</dt><dd>Un passage de Mailflow dans une boîte mail pour chercher de nouveaux e-mails.</dd>
-        <dt>Période d'historique</dt><dd>Le nombre de jours en arrière pour lesquels les e-mails sont pris en compte.</dd>
+        <dt>Trier à partir du</dt><dd>La date à partir de laquelle les e-mails sont pris en compte.</dd>
         <dt>Message-ID</dt><dd>L'identifiant unique d'un e-mail, utilisé pour ne pas le traiter deux fois.</dd>
         <dt>SHA-256</dt><dd>Une empreinte du contenu d'un fichier. Deux fichiers identiques ont la même.</dd>
         <dt>Règle</dt><dd>Des conditions plus des actions : « si l'e-mail ressemble à ceci, faire cela ».</dd>

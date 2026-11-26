@@ -38,7 +38,6 @@ public static class DbSeeder
         {
             db.Settings.AddRange(
                 new Setting { Key = "DocumentsRoot", Value = documentsRoot },
-                new Setting { Key = "PrintMaxAgeHours", Value = "24" },
                 new Setting { Key = "FileNamePattern", Value = DefaultFileNamePattern });
         }
 

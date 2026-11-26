@@ -68,7 +68,8 @@
                     <option value="@AfterProcessing.Move">@T("Déplacer")</option>
                 </select></div>
             <div class="field"><label class="form-label" asp-for="Input.CheckIntervalMinutes">@T("Intervalle (min)")</label><input type="number" class="form-control" asp-for="Input.CheckIntervalMinutes" /><span class="field-validation-error" asp-validation-for="Input.CheckIntervalMinutes"></span></div>
-            <div class="field"><label class="form-label" asp-for="Input.LookbackDays">@T("Historique (jours)")</label><input type="number" class="form-control" asp-for="Input.LookbackDays" /><span class="form-text">@T("Ancienneté maximale des messages relevés.")</span><span class="field-validation-error" asp-validation-for="Input.LookbackDays"></span></div>
+            <div class="field"><label class="form-label" asp-for="Input.SortFromDate">@T("Trier à partir du")</label><input type="date" class="form-control" asp-for="Input.SortFromDate" asp-format="{0:yyyy-MM-dd}" /><span class="form-text">@T("Seuls les messages reçus à partir de cette date sont triés.")</span><span class="field-validation-error" asp-validation-for="Input.SortFromDate"></span></div>
+            <div class="field"><label class="form-label" asp-for="Input.PrintMaxDays">@T("Imprimer les derniers jours (1 à 7)")</label><input type="number" min="1" max="7" class="form-control" asp-for="Input.PrintMaxDays" /><span class="form-text">@T("Les messages plus anciens sont enregistrés mais pas imprimés.")</span><span class="field-validation-error" asp-validation-for="Input.PrintMaxDays"></span></div>
         </div>
         <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" asp-for="Input.IsActive" /><label class="form-check-label" asp-for="Input.IsActive">@T("Actif")</label></div>
     </section>

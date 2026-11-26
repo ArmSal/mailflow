@@ -8,7 +8,7 @@ namespace Mailflow.Web.Pages.Settings;
 
 public static class SettingsRules
 {
-    public const string RootKey = "DocumentsRoot", PatternKey = "FileNamePattern", HoursKey = "PrintMaxAgeHours", SenderCheckKey = "PrintSenderCheck", PrintEmailBodyKey = "PrintEmailBodyWithoutPdf";
+    public const string RootKey = "DocumentsRoot", PatternKey = "FileNamePattern", SenderCheckKey = "PrintSenderCheck", PrintEmailBodyKey = "PrintEmailBodyWithoutPdf";
 
     private static bool HasTraversal(string s) => s.Split('/', '\\').Any(p => p == "..");
 
@@ -42,9 +42,6 @@ public static class SettingsRules
             return Loc.T("Le modèle ne doit pas être un chemin absolu.");
         return null;
     }
-
-    public static string? ValidateHours(int hours)
-        => hours is < 1 or > 168 ? Loc.T("La durée doit être comprise entre 1 et 168 heures.") : null;
 
     /// <summary>False unless explicitly enabled ("true").</summary>
     public static bool ParsePrintEmailBody(string? value)

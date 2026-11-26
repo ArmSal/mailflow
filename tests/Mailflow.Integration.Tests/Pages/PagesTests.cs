@@ -25,7 +25,7 @@ public class PagesTests : IDisposable
     private static MailboxEdit.MailboxInput MailboxForm(string? password) => new()
     {
         DisplayName = "Compta", Email = "a@b.fr", Host = "imap.b.fr", Port = 993, UseSsl = true,
-        Username = "a@b.fr", Password = password, InboxFolder = "INBOX", CheckIntervalMinutes = 5, LookbackDays = 3,
+        Username = "a@b.fr", Password = password, InboxFolder = "INBOX", CheckIntervalMinutes = 5, SortFromDate = DateTime.UtcNow.Date.AddDays(-3), PrintMaxDays = 1,
     };
 
     private async Task<int> CreateMailbox(string password)

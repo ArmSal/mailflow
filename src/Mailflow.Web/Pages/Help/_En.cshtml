@@ -32,7 +32,7 @@
     <h2>2. How an email is processed</h2>
     <ol class="help-flow">
         <li><strong>Poll</strong>Mailflow connects to each active mailbox over IMAP.</li>
-        <li><strong>Select</strong>It lists the messages of the watched folder received within the lookback period.</li>
+        <li><strong>Select</strong>It lists the messages of the watched folder received on or after the <strong>Sort from</strong> date.</li>
         <li><strong>Skip duplicates</strong>A message already seen is ignored.</li>
         <li><strong>Apply rules</strong>The rules are tested in order.</li>
         <li><strong>Save</strong>Each PDF is stored in its category folder.</li>
@@ -44,8 +44,8 @@
     <h3>Step by step</h3>
     <h4>1. Polling</h4>
     <p>A background task runs when the application starts and then repeats on a regular cycle (every minute by default). On each cycle it checks the <em>active</em> mailboxes that are due, according to their own interval, one after the other; a mailbox in error never blocks the others. On Home, <strong>Run now</strong> starts a poll immediately and <strong>Pause</strong> / <strong>Resume</strong> stops and restarts the scheduled polls.</p>
-    <h4>2. Lookback</h4>
-    <p>Only emails of the watched folder (by default the Inbox) received in the last <strong>Lookback (days)</strong> are considered. Older messages are never touched.</p>
+    <h4>2. Sort from</h4>
+    <p>Only emails of the watched folder (by default the Inbox) received on or after the <strong>Sort from</strong> date are considered. Older messages are never touched.</p>
     <h4>3. Duplicate detection</h4>
     <p>Two protections prevent processing something twice:</p>
     <ul>
@@ -67,7 +67,7 @@
     <p>A document is printed when a matching rule has a <strong>Print</strong> action with a printer, and when these checks pass:</p>
     <ul>
         <li>the printer exists and is <strong>active</strong>;</li>
-        <li>the email is not older than the <strong>maximum print age</strong> (24 hours by default; this avoids a burst of old documents after a long stop);</li>
+        <li>the email is not older than the mailbox's <strong>Print the last days</strong> limit (1 to 7 days, 1 by default; this avoids a burst of old documents after a long stop);</li>
         <li>in Strict mode, the sender is <strong>verified</strong> (see Settings and section 4).</li>
     </ul>
     <p>Printing is silent, through the bundled SumatraPDF tool. The number of copies is the one of the action if filled in, otherwise the printer's default; duplex follows the printer. If a check blocks printing or the printer fails, the document is still saved and History shows the reason; you can reprint it by hand.</p>
@@ -96,7 +96,8 @@
             <tr><td>Folder to poll</td><td>The IMAP folder to read (Inbox by default).</td></tr>
             <tr><td>After processing</td><td>Default for the mailbox when no rule says otherwise: leave as is, mark as read or move.</td></tr>
             <tr><td>Interval (min)</td><td>How often this mailbox is checked, from 1 to 1440 minutes (the app looks every minute, so 1 is the finest granularity). Use Run now on Home to check all mailboxes immediately.</td></tr>
-            <tr><td>Lookback (days)</td><td>Maximum age of the emails that are read.</td></tr>
+            <tr><td>Sort from</td><td>Date from which emails are read and sorted (for example 01.01.2026).</td></tr>
+            <tr><td>Print the last days</td><td>From 1 to 7. An email older than this is saved but not printed automatically.</td></tr>
             <tr><td>Active</td><td>An inactive mailbox is not polled.</td></tr>
         </tbody>
     </table></div>
@@ -224,8 +225,7 @@
         <thead><tr><th scope="col">Setting</th><th scope="col">Meaning</th></tr></thead>
         <tbody>
             <tr><td>Documents folder</td><td>Where PDFs are archived. Type a path or use <strong>Browse...</strong> to pick a folder. Backups go in a <code>backups</code> subfolder of it.</td></tr>
-            <tr><td>File name pattern</td><td>Must contain <code>{OriginalName}</code>. Tokens: <code>{Category}</code>, <code>{Supplier}</code>, <code>{OriginalName}</code>, and dates <code>{yyyy}</code>, <code>{MM}</code>, <code>{yyyy-MM-dd}</code>. Use <code>/</code> to separate folders. Applies to documents saved from now on.</td></tr>
-            <tr><td>Maximum print age (hours)</td><td>From 1 to 168. An email older than this is saved but not printed automatically.</td></tr>
+            <tr><td>File name pattern</td><td>Must contain <code>{OriginalName}</code>. Tokens: <code>{Category}</code>, <code>{Supplier}</code>, <code>{OriginalName}</code>, and dates <code>{yyyy}</code>, <code>{MM}</code>, <code>{dd}</code>, <code>{yyyy-MM-dd}</code>, <code>{dd-MM-yyyy}</code>. Use <code>/</code> to separate folders. Applies to documents saved from now on.</td></tr>
             <tr><td>Print the email body when no PDF is attached</td><td>If a print rule matches an email without PDF, Mailflow prints a PDF made from its text.</td></tr>
             <tr><td>Sender check</td><td>Off, Warn (recommended) or Strict; see below.</td></tr>
             <tr><td>Admin password</td><td>Change the password that protects this interface (8 characters minimum).</td></tr>
@@ -285,7 +285,7 @@
     <ol>
         <li>Find the document in History: the Printing column gives the reason.</li>
         <li>"Printer inactive or not found": check that the printer is active and that its Windows name is exact (use Detect printers).</li>
-        <li>"Email too old": the email exceeds the maximum print age in Settings.</li>
+        <li>"Email too old": the email exceeds the mailbox's Print the last days limit.</li>
         <li>"Sender not verified": the sender check is Strict; switch to Warn or reprint by hand.</li>
         <li>No reason shown: the rule probably has no Print action, or did not match. Use Test this rule.</li>
         <li>Try the printer's Print test, and the Reprint menu in History.</li>
@@ -295,7 +295,7 @@
     <h4>A document ended up in "A trier"</h4>
     <p>No rule recognised the email. Create or adjust a rule, and use <strong>Change category</strong> in History to move the existing document.</p>
     <h4>An email is not processed</h4>
-    <p>An email is processed once per mailbox. It is ignored if it is older than the lookback period, if the mailbox is inactive, if polling is paused, or if a Skip rule matched it.</p>
+    <p>An email is processed once per mailbox. It is ignored if it is received before the Sort from date, if the mailbox is inactive, if polling is paused, or if a Skip rule matched it.</p>
     <h4>The application says the port is busy</h4>
     <p>The interface uses port 5088 on this PC. If another program, or another instance of Mailflow, already holds it, Mailflow checks who owns the port: it reuses a running Mailflow, otherwise it reports the conflict. Close the other program and start Mailflow again.</p>
     <h4>The window stays empty and mentions WebView2</h4>
@@ -310,7 +310,7 @@
         <dt>IMAP</dt><dd>The protocol Mailflow uses to read a mailbox. The emails stay on the mail server.</dd>
         <dt>App password</dt><dd>A password generated in your mail account just for one application, required by Gmail, iCloud and Yahoo.</dd>
         <dt>Poll</dt><dd>One pass of Mailflow through a mailbox to look for new emails.</dd>
-        <dt>Lookback</dt><dd>How many days back emails are considered.</dd>
+        <dt>Sort from</dt><dd>The date from which emails are considered.</dd>
         <dt>Message-ID</dt><dd>The unique identifier of an email, used to avoid processing it twice.</dd>
         <dt>SHA-256</dt><dd>A fingerprint of a file's content. Two identical files have the same one.</dd>
         <dt>Rule</dt><dd>Conditions plus actions: "if the email looks like this, do that".</dd>

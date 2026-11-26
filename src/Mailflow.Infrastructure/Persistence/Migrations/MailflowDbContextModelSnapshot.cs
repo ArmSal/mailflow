@@ -145,11 +145,14 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
                     b.Property<string>("LastError")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("LookbackDays")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("Port")
                         .HasColumnType("INTEGER");
+
+                    b.Property<int>("PrintMaxDays")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("SortFromDate")
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("UseSsl")
                         .HasColumnType("INTEGER");

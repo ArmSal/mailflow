@@ -42,10 +42,6 @@ public sealed class SettingsRulesTests : IDisposable
 
     [Fact] public void Pattern_accepts_default() => Assert.Null(SettingsRules.ValidatePattern("{Category}/{yyyy}/{OriginalName}.pdf"));
 
-    [Theory]
-    [InlineData(0, false)] [InlineData(1, true)] [InlineData(168, true)] [InlineData(169, false)]
-    public void Hours_range(int h, bool ok) => Assert.Equal(ok, SettingsRules.ValidateHours(h) is null);
-
     [Fact]
     public async Task Store_uses_settings_table_then_falls_back_to_options()
     {

@@ -24,7 +24,7 @@ public sealed class MessagePipeline(
         var rules = await db.Rules.Include(r => r.Conditions).Include(r => r.Actions).ToListAsync(ct);
         var categories = await db.Categories.ToListAsync(ct);
         var printers = await db.Printers.ToListAsync(ct);
-        var maxAge = await MaxAgeHoursAsync(ct);
+        var maxAge = mailbox.PrintMaxDays * 24;
 
         var senderMode = PrintPolicy.ParseMode((await db.Settings.FirstOrDefaultAsync(x => x.Key == "PrintSenderCheck", ct))?.Value);
         var senderBlocked = PrintPolicy.SenderBlocksPrint(senderMode, message.SenderVerification);
@@ -158,12 +158,6 @@ public sealed class MessagePipeline(
             catch (Exception) { /* unreadable PDF: no text, rules fall back to other fields */ }
         }
         return string.Join("\n", parts);
-    }
-
-    async Task<int> MaxAgeHoursAsync(CancellationToken ct)
-    {
-        var s = await db.Settings.FirstOrDefaultAsync(x => x.Key == "PrintMaxAgeHours", ct);
-        return s != null && int.TryParse(s.Value, out var h) ? h : PrintPolicy.DefaultMaxAgeHours;
     }
 
     async Task<bool> PrintEmailBodyWithoutPdfAsync(CancellationToken ct)

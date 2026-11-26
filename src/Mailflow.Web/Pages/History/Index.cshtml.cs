@@ -58,7 +58,8 @@ public class IndexModel(
     {
         // The path comes from the database only, never from the request.
         var stored = await db.Documents.Where(d => d.Id == id).Select(d => d.StoredPath).FirstOrDefaultAsync(ct);
-        var root = storeOptions.Value.DocumentsRoot;
+        var saved = await db.Settings.AsNoTracking().Where(s => s.Key == "DocumentsRoot").Select(s => s.Value).FirstOrDefaultAsync(ct);
+        var root = string.IsNullOrWhiteSpace(saved) ? storeOptions.Value.DocumentsRoot : saved;
         if (string.IsNullOrWhiteSpace(stored) || string.IsNullOrWhiteSpace(root)) return NotFound();
 
         var fullRoot = Path.GetFullPath(root);

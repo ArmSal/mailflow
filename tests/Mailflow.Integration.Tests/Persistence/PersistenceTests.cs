@@ -33,7 +33,6 @@ public sealed class PersistenceTests : IDisposable
         var rule = await db.Rules.Include(r => r.Actions).SingleAsync();
         Assert.Equal(db.Categories.Single().Id, rule.Actions.Single(a => a.CategoryId != null).CategoryId);
         Assert.Equal("C:\\docs", db.Settings.Single(s => s.Key == "DocumentsRoot").Value);
-        Assert.Equal("24", db.Settings.Single(s => s.Key == "PrintMaxAgeHours").Value);
         Assert.Equal("{Category}/{yyyy}/{MM}/{yyyy-MM-dd}_{Supplier}_{OriginalName}.pdf", db.Settings.Single(s => s.Key == "FileNamePattern").Value);
     }
 
@@ -52,6 +51,8 @@ public sealed class PersistenceTests : IDisposable
         var boxes = await db.Mailboxes.OrderBy(m => m.Id).ToListAsync();
         Assert.Equal("secret", boxes[0].EncryptedPassword);
         Assert.True(boxes[0].IsActive);
+        Assert.Equal(DateTime.UtcNow.Date.AddDays(-3), boxes[0].SortFromDate.Date);
+        Assert.Equal(1, boxes[0].PrintMaxDays);
         Assert.False(boxes[1].IsActive);
         Assert.Contains("Microsoft", boxes[1].LastError);
     }

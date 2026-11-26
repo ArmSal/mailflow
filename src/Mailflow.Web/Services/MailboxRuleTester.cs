@@ -23,7 +23,7 @@ public sealed class MailboxRuleTester(
         foreach (var mb in mailboxes)
         {
             var connection = await connections.CreateAsync(mb, ct);
-            var messages = await mail.FetchSinceAsync(connection, mb.InboxFolder, clock.UtcNow.AddDays(-mb.LookbackDays), ct);
+            var messages = await mail.FetchSinceAsync(connection, mb.InboxFolder, mb.SortFromDate, ct);
             foreach (var m in messages.OrderByDescending(x => x.ReceivedAt).Take(lastEmails))
             {
                 var context = new MatchContext(MessagePipeline.ExtractAddress(m.From), MessagePipeline.ExtractRecipient(m.To),

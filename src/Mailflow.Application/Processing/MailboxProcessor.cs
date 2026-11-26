@@ -36,7 +36,7 @@ public sealed class MailboxProcessor(IAppDbContext db, IMailClient mail, IMailbo
         try
         {
             var connection = await connections.CreateAsync(mailbox, ct);
-            var messages = await mail.FetchSinceAsync(connection, mailbox.InboxFolder, started.AddDays(-mailbox.LookbackDays), ct);
+            var messages = await mail.FetchSinceAsync(connection, mailbox.InboxFolder, mailbox.SortFromDate, ct);
             foreach (var message in messages)
             {
                 try

@@ -25,7 +25,6 @@ public class IndexModel(
         public string DocumentsRoot { get; set; } = "";
         [Required(ErrorMessage = "Le modèle de nom de fichier est requis.")]
         public string FileNamePattern { get; set; } = "";
-        public int PrintMaxAgeHours { get; set; } = 24;
         public bool PrintEmailBodyWithoutPdf { get; set; }
     }
 
@@ -66,14 +65,12 @@ public class IndexModel(
         {
             ("Input.DocumentsRoot", SettingsRules.ValidateRoot(Input.DocumentsRoot)),
             ("Input.FileNamePattern", SettingsRules.ValidatePattern(Input.FileNamePattern)),
-            ("Input.PrintMaxAgeHours", SettingsRules.ValidateHours(Input.PrintMaxAgeHours)),
         };
         foreach (var (field, error) in errors.Where(e => e.Error is not null)) ModelState.AddModelError(field, error!);
         if (!ModelState.IsValid) return Page();
 
         await SettingsRules.SaveAsync(db, SettingsRules.RootKey, Input.DocumentsRoot, ct);
         await SettingsRules.SaveAsync(db, SettingsRules.PatternKey, Input.FileNamePattern, ct);
-        await SettingsRules.SaveAsync(db, SettingsRules.HoursKey, Input.PrintMaxAgeHours.ToString(), ct);
         await SettingsRules.SaveAsync(db, SettingsRules.PrintEmailBodyKey, Input.PrintEmailBodyWithoutPdf ? "true" : "false", ct);
         await db.SaveChangesAsync(ct);
         SettingsMessage = Loc.T("Paramètres enregistrés.");
@@ -131,7 +128,6 @@ public class IndexModel(
         {
             DocumentsRoot = s.GetValueOrDefault(SettingsRules.RootKey) is { Length: > 0 } r ? r : storeOptions.Value.DocumentsRoot,
             FileNamePattern = s.GetValueOrDefault(SettingsRules.PatternKey) is { Length: > 0 } p ? p : storeOptions.Value.FileNamePattern,
-            PrintMaxAgeHours = int.TryParse(s.GetValueOrDefault(SettingsRules.HoursKey), out var h) ? h : 24,
             PrintEmailBodyWithoutPdf = SettingsRules.ParsePrintEmailBody(s.GetValueOrDefault(SettingsRules.PrintEmailBodyKey)),
         };
         SetSenderCheck(s);

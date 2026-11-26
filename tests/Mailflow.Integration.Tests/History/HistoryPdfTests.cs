@@ -63,6 +63,19 @@ public sealed class HistoryPdfTests : IDisposable
     }
 
     [Fact]
+    public async Task Serves_pdf_from_the_documents_folder_saved_in_settings()
+    {
+        var file = Path.Combine(_outside, "a.pdf");
+        await File.WriteAllBytesAsync(file, "%PDF-1.4"u8.ToArray());
+        var id = AddDoc(file);
+        using var db = _fx.NewDb();
+        db.Settings.Add(new Setting { Key = "DocumentsRoot", Value = _outside });
+        db.SaveChanges();
+
+        Assert.IsType<PhysicalFileResult>(await Page(db).OnGetPdfAsync(id, default));
+    }
+
+    [Fact]
     public async Task Path_outside_root_is_404_even_if_file_exists()
     {
         var file = Path.Combine(_outside, "secret.pdf");

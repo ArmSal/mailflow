@@ -68,7 +68,7 @@ The pipeline runs every *N* minutes per mailbox, and on demand.
 ```mermaid
 flowchart TD
     A[For each active mailbox] --> B[IMAP connection over SSL]
-    B --> C[Search SINCE today - LookbackDays]
+    B --> C[Search SINCE the mailbox "Sort from" date]
     C --> D{Already in<br/>ProcessedMessage?}
     D -- yes --> C
     D -- no --> E[Parse with MimeKit<br/>BODY.PEEK, flags untouched]
@@ -165,7 +165,7 @@ $env:ASPNETCORE_URLS = "http://127.0.0.1:5099"
 
 Keep `127.0.0.1` so the dashboard stays local.
 
-**Settings page:** documents folder (with a folder picker), file-name pattern, maximum age for printing (1 to 168 hours, default 24), printing the e-mail body when there is no PDF, sender verification mode, administrator password, immediate backup.
+**Settings page:** documents folder (with a folder picker), file-name pattern, printing the e-mail body when there is no PDF, sender verification mode, administrator password, immediate backup.
 
 **Language:** use the FR | EN switch in the top bar. The choice is stored in a cookie; French is the default.
 
@@ -203,7 +203,7 @@ Comparisons ignore case and accents by default. For `PdfText` with `Contains`, t
 |---|---|
 | Dashboard access from the network or other users | Bound to `127.0.0.1`; hashed password; 30-minute session; anti-forgery tokens on every form; login rate limit (5 per minute); `AllowedHosts` limited to localhost; first-run setup only from the local machine |
 | Sender spoofing (the `From` header is forgeable) | The address is parsed strictly and ambiguous addresses are ignored. Optional check of the receiving server's DKIM/DMARC verdict (Settings): **Off**, **Warn** (default: printing unchanged, History flags unverified senders) or **Strict** (only verified senders are printed; the others are archived and can be reprinted). A missing verdict counts as unverified |
-| Unwanted printing | Nothing prints unless a rule says so, and printing is controlled by the rules alone: add an exact-sender condition to a print rule to limit it to one sender. Messages older than the age limit (default 24 h) are never printed |
+| Unwanted printing | Nothing prints unless a rule says so, and printing is controlled by the rules alone: add an exact-sender condition to a print rule to limit it to one sender. Messages older than the mailbox's "print the last N days" limit (1 to 7, default 1) are never printed |
 | Mailbox passwords | Encrypted with Windows **DPAPI** (scope: the Windows account running Mailflow); write-only in the UI |
 | Malicious PDFs | Never opened or executed: only text is read (PdfPig); SumatraPDF only prints |
 | Path traversal | Documents are opened by id, never by a browser-supplied path; folder and pattern settings reject `..` and absolute patterns |

@@ -30,8 +30,10 @@ public class EditModel(IAppDbContext db, ISecretStore secrets, IMailClient mail,
         public string InboxFolder { get; set; } = "INBOX";
         [Range(1, 1440, ErrorMessage = "Intervalle : 1 à 1440 minutes.")]
         public int CheckIntervalMinutes { get; set; } = 5;
-        [Range(1, 365, ErrorMessage = "Historique : 1 à 365 jours.")]
-        public int LookbackDays { get; set; } = 3;
+        [DataType(DataType.Date)]
+        public DateTime SortFromDate { get; set; } = DateTime.UtcNow.Date.AddDays(-3);
+        [Range(1, 7, ErrorMessage = "Impression : 1 à 7 jours.")]
+        public int PrintMaxDays { get; set; } = 1;
         public AfterProcessing DefaultAfterProcessing { get; set; } = AfterProcessing.Leave;
         public bool IsActive { get; set; } = true;
     }
@@ -47,7 +49,7 @@ public class EditModel(IAppDbContext db, ISecretStore secrets, IMailClient mail,
         {
             DisplayName = m.DisplayName, Email = m.Email, Host = m.Host, Port = m.Port, UseSsl = m.UseSsl,
             Username = m.Username, InboxFolder = m.InboxFolder, CheckIntervalMinutes = m.CheckIntervalMinutes,
-            LookbackDays = m.LookbackDays, DefaultAfterProcessing = m.DefaultAfterProcessing, IsActive = m.IsActive,
+            SortFromDate = m.SortFromDate, PrintMaxDays = m.PrintMaxDays, DefaultAfterProcessing = m.DefaultAfterProcessing, IsActive = m.IsActive,
         };
         return Page();
     }
@@ -65,7 +67,8 @@ public class EditModel(IAppDbContext db, ISecretStore secrets, IMailClient mail,
         if (Input.Username.Length == 0) Input.Username = Input.Email;
         if (Input.Port is < 1 or > 65535) ModelState.AddModelError("Input.Port", Loc.T("Port : 1 à 65535."));
         if (Input.CheckIntervalMinutes is < 1 or > 1440) ModelState.AddModelError("Input.CheckIntervalMinutes", Loc.T("Intervalle : 1 à 1440 minutes."));
-        if (Input.LookbackDays is < 1 or > 365) ModelState.AddModelError("Input.LookbackDays", Loc.T("Historique : 1 à 365 jours."));
+        if (Input.SortFromDate.Date > DateTime.UtcNow.Date) ModelState.AddModelError("Input.SortFromDate", Loc.T("La date de tri ne peut pas être dans le futur."));
+        if (Input.PrintMaxDays is < 1 or > 7) ModelState.AddModelError("Input.PrintMaxDays", Loc.T("Impression : 1 à 7 jours."));
         if (!Enum.IsDefined(Input.DefaultAfterProcessing)) ModelState.AddModelError("Input.DefaultAfterProcessing", Loc.T("Valeur invalide."));
 
         Mailbox? m = null;
@@ -89,7 +92,8 @@ public class EditModel(IAppDbContext db, ISecretStore secrets, IMailClient mail,
         m.LastError = null;
         m.InboxFolder = Input.InboxFolder;
         m.CheckIntervalMinutes = Input.CheckIntervalMinutes;
-        m.LookbackDays = Input.LookbackDays;
+        m.SortFromDate = DateTime.SpecifyKind(Input.SortFromDate.Date, DateTimeKind.Utc);
+        m.PrintMaxDays = Input.PrintMaxDays;
         m.DefaultAfterProcessing = Input.DefaultAfterProcessing;
         m.IsActive = Input.IsActive;
         await db.SaveChangesAsync();
