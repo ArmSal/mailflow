@@ -9,6 +9,22 @@
     </div>
     <div class="page-actions"><a class="btn btn-secondary" asp-page="Index">@T("Imprimantes")</a></div>
 </div>
+@if (Model.Listener.Https && Model.Listener.Fingerprint is { } fingerprint)
+{
+    <div class="alert alert-success" role="status">
+        <strong>@T("Connexion des agents : HTTPS (chiffrée).")</strong>
+        <p class="mb-1">@T("Empreinte SHA-256 du certificat de Mailflow : l'agent la vérifie à l'installation et n'accepte que ce certificat. Comparez-la avec celle affichée par l'agent.")</p>
+        <code class="text-break">@Mailflow.Web.Agent.AgentTlsCertificate.Format(fingerprint)</code>
+    </div>
+}
+else if (Model.Listener.Https)
+{
+    <div class="alert alert-success" role="status"><strong>@T("Connexion des agents : HTTPS (chiffrée), avec votre certificat.")</strong></div>
+}
+else
+{
+    <div class="alert alert-warning" role="status">@T("Connexion des agents : HTTP, non chiffré par Mailflow. À n'utiliser que sur un réseau privé comme Tailscale. Pour chiffrer, utilisez une adresse https:// (voir le README de l'agent).")</div>
+}
 @if (Model.Error is not null) { <div class="alert alert-danger" role="alert">@Model.Error</div> }
 @if (Model.Notice is not null)
 {

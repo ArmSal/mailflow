@@ -41,6 +41,23 @@ public static class MailflowHost
         });
         var dataDir = Path.Combine(AppContext.BaseDirectory, "data");
 
+        // Optional second listener for print agents (for example on the Tailscale address); it serves nothing but the agent API.
+        // With an https:// address Mailflow supplies its own self-signed certificate (agents trust its fingerprint) unless
+        // the administrator configured a certificate for that endpoint.
+        var agentPort = builder.Configuration.GetValue<int?>("Agent:Port");
+        var agentHttps = agentPort is not null
+            && (builder.Configuration["Kestrel:Endpoints:Agent:Url"] ?? "").StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+        string? agentFingerprint = null;
+        System.Security.Cryptography.X509Certificates.X509Certificate2? agentCertificate = null;
+        if (agentHttps && !builder.Configuration.GetSection("Kestrel:Endpoints:Agent:Certificate").Exists())
+        {
+            Directory.CreateDirectory(dataDir);
+            agentCertificate = Mailflow.Web.Agent.AgentTlsCertificate.LoadOrCreate(Path.Combine(dataDir, "agent-tls.dat"),
+                new Mailflow.Infrastructure.Security.DpapiSecretStore(Microsoft.Extensions.Options.Options.Create(new Mailflow.Infrastructure.Security.DpapiOptions())));
+            agentFingerprint = Mailflow.Web.Agent.AgentTlsCertificate.Fingerprint(agentCertificate);
+            builder.WebHost.ConfigureKestrel(o => o.ConfigureHttpsDefaults(h => h.ServerCertificate = agentCertificate));
+        }
+
         // Build output (dotnet run, Debug) has no copy of wwwroot: static files come from the build's runtime manifest,
         // which ASP.NET only loads by itself in Development (otherwise every asset is served empty). A published
         // release ships wwwroot next to the exe and has no such manifest, so this does nothing there.
@@ -105,6 +122,7 @@ public static class MailflowHost
         services.AddScoped<MessagePipeline>();
         services.AddScoped<Mailflow.Application.Agents.AgentJobService>();
         services.AddSingleton<AgentAuthThrottle>();
+        services.AddSingleton(new AgentListenerInfo(agentHttps, agentFingerprint));
         services.AddScoped<MailboxProcessor>();
         services.AddScoped<IRuleTester, MailboxRuleTester>();
         services.AddScoped<Mailflow.Application.Queries.DocumentSearch>();
@@ -123,6 +141,8 @@ public static class MailflowHost
         services.AddHostedService<NightlyBackupService>();
 
         var app = builder.Build();
+        // Releases the certificate's key from the user profile when Mailflow stops.
+        app.Lifetime.ApplicationStopped.Register(() => agentCertificate?.Dispose());
 
         using (var scope = app.Services.CreateScope())
         {
@@ -134,8 +154,7 @@ public static class MailflowHost
         if (!app.Environment.IsDevelopment())
             app.UseExceptionHandler("/Error");
 
-        // Optional second listener for print agents (e.g. on the Tailscale address): it serves nothing but the agent API.
-        var agentPort = builder.Configuration.GetValue<int?>("Agent:Port");
+        // Requests on the agent port may only reach the agent API.
         if (agentPort is int ap)
             app.Use(async (ctx, next) =>
             {

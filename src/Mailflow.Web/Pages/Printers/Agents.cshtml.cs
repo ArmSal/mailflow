@@ -8,8 +8,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Mailflow.Web.Pages.Printers;
 
-public class AgentsModel(IAppDbContext db, IClock clock) : PageModel
+public class AgentsModel(IAppDbContext db, IClock clock, Mailflow.Web.Agent.AgentListenerInfo listener) : PageModel
 {
+    /// <summary>Whether agents reach Mailflow over https, and the fingerprint they must be given.</summary>
+    public Mailflow.Web.Agent.AgentListenerInfo Listener => listener;
+
     public const int MinPasswordLength = 12;
 
     public List<PrintAgent> Items { get; private set; } = [];

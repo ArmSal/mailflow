@@ -16,7 +16,7 @@ public sealed class AgentsPageTests : IDisposable
     {
         var clock = Substitute.For<IClock>();
         clock.UtcNow.Returns(Now);
-        return new AgentsModel(db, clock).With();
+        return new AgentsModel(db, clock, new Mailflow.Web.Agent.AgentListenerInfo(false, null)).With();
     }
 
     private async Task<AgentsModel> Create(string name, string? password)

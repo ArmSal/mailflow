@@ -99,6 +99,28 @@ internal static class Program
         config.SetPassword(password);
         if (config.Validate() is { } problem) { Console.WriteLine(problem); return 1; }
 
+        if (config.ServerUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Write("Vérification du certificat de Mailflow... ");
+            var probe = await CertificateProbe.RunAsync(config.BaseAddress);
+            if (probe.Fingerprint is null) { Console.WriteLine("échec : " + probe.Error); return 1; }
+            var known = string.IsNullOrWhiteSpace(config.ServerCertSha256) ? null : AgentConfig.NormalizeFingerprint(config.ServerCertSha256);
+            if (known == probe.Fingerprint) Console.WriteLine("identique à l'empreinte enregistrée.");
+            else if (known is null && probe.TrustedByWindows) Console.WriteLine("certificat reconnu par Windows.");
+            else
+            {
+                Console.WriteLine();
+                Console.WriteLine(known is null
+                    ? "Le certificat de Mailflow n'est pas reconnu par Windows (normal : Mailflow crée lui-même son certificat)."
+                    : "ATTENTION : l'empreinte du certificat de Mailflow a changé depuis la dernière configuration.");
+                Console.WriteLine("Empreinte SHA-256 : " + AgentConfig.FormatFingerprint(probe.Fingerprint));
+                Console.WriteLine("Elle doit être identique à celle affichée dans Mailflow (Imprimantes > Agents d'impression).");
+                Console.Write("Faire confiance à ce certificat ? (o/n) : ");
+                if (Console.ReadLine()?.Trim().StartsWith("o", StringComparison.OrdinalIgnoreCase) != true) { Console.WriteLine("Abandon."); return 1; }
+                config.ServerCertSha256 = probe.Fingerprint;
+            }
+        }
+
         Console.Write("Test de la connexion... ");
         try
         {

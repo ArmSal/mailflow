@@ -13,6 +13,8 @@ public sealed class AgentConfig
     public string ServerUrl { get; set; } = "";
     /// <summary>The name this agent has in Mailflow (Printers > Print agents); with the password it identifies the agent.</summary>
     public string AgentName { get; set; } = "";
+    /// <summary>SHA-256 of the certificate Mailflow presents over https. When set, only that certificate is accepted (no Windows trust needed).</summary>
+    public string? ServerCertSha256 { get; set; }
     /// <summary>The password, encrypted with Windows DPAPI for the current user (written by --setup).</summary>
     public string? PasswordProtected { get; set; }
     /// <summary>Plain-text alternative for manual setups; --setup replaces it with the encrypted form.</summary>
@@ -43,6 +45,8 @@ public sealed class AgentConfig
     {
         if (!Uri.TryCreate(ServerUrl, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))
             return "ServerUrl doit être une adresse http:// ou https:// complète.";
+        if (!string.IsNullOrWhiteSpace(ServerCertSha256) && !System.Text.RegularExpressions.Regex.IsMatch(NormalizeFingerprint(ServerCertSha256), "^[0-9A-F]{64}$"))
+            return "ServerCertSha256 doit être une empreinte SHA-256 (64 caractères hexadécimaux, avec ou sans « : »).";
         if (string.IsNullOrWhiteSpace(AgentName) || AgentName.Trim().Length > 100) return "AgentName est requis (le nom de cet agent dans Mailflow, 100 caractères maximum).";
         string? password;
         try { password = ResolvedPassword; }
@@ -57,7 +61,7 @@ public sealed class AgentConfig
     /// <summary>An HTTP client for Mailflow's agent API: every request carries the agent name and password.</summary>
     public HttpClient NewHttpClient(HttpMessageHandler? handler = null)
     {
-        var http = handler is null ? new HttpClient() : new HttpClient(handler);
+        var http = handler is null ? new HttpClient(NewHandler()) : new HttpClient(handler);
         http.BaseAddress = BaseAddress;
         http.Timeout = TimeSpan.FromSeconds(60);
         http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", ResolvedPassword);
@@ -65,6 +69,28 @@ public sealed class AgentConfig
         http.DefaultRequestHeaders.Add("X-Agent-Name", Uri.EscapeDataString(AgentName.Trim()));
         return http;
     }
+
+    /// <summary>With a pin, https is accepted only for the pinned certificate (self-signed is fine); without one, Windows decides.</summary>
+    private HttpMessageHandler NewHandler()
+    {
+        var handler = new SocketsHttpHandler();
+        if (string.IsNullOrWhiteSpace(ServerCertSha256)) return handler;
+        var pin = NormalizeFingerprint(ServerCertSha256);
+        handler.SslOptions.RemoteCertificateValidationCallback = (_, cert, _, _) =>
+            cert is not null && string.Equals(Convert.ToHexString(cert.GetCertHash(HashAlgorithmName.SHA256)), pin, StringComparison.Ordinal);
+        return handler;
+    }
+
+    /// <summary>"AB:CD:..." for comparing with the fingerprint shown in Mailflow.</summary>
+    public static string FormatFingerprint(string fingerprint)
+    {
+        var f = NormalizeFingerprint(fingerprint);
+        return string.Join(":", Enumerable.Range(0, f.Length / 2).Select(i => f.Substring(i * 2, 2)));
+    }
+
+    /// <summary>Upper case, without ':', '-' or spaces, so a fingerprint can be pasted in any common format.</summary>
+    public static string NormalizeFingerprint(string fingerprint) =>
+        new string(fingerprint.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
 
     public static AgentConfig? Load(string path)
         => File.Exists(path) ? JsonSerializer.Deserialize<AgentConfig>(File.ReadAllText(path)) : null;
