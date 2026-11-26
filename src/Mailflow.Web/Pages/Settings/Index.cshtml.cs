@@ -51,7 +51,61 @@ public class IndexModel(
     public string? PasswordMessage { get; private set; }
     public bool PasswordOk { get; private set; }
 
+    [BindProperty] public string? ImportJson { get; set; }
+    [BindProperty] public bool ImportConfirm { get; set; }
+    public string? ImportError { get; private set; }
+    public string? ImportMessage { get; private set; }
+    public RulesTransfer.Analysis? ImportAnalysis { get; private set; }
+
     public async Task OnGetAsync() => await LoadAsync();
+
+    public async Task<IActionResult> OnGetExportAsync()
+        => File(System.Text.Encoding.UTF8.GetBytes(await RulesTransfer.ExportAsync(db, HttpContext.RequestAborted)), "application/json", $"mailflow-rules-{DateTime.Now:yyyy-MM-dd}.json");
+
+    public async Task<IActionResult> OnPostImportPreviewAsync(IFormFile? importFile)
+    {
+        var ct = HttpContext.RequestAborted;
+        await LoadAsync();
+        ModelState.Clear();
+        if (importFile is null || importFile.Length == 0) ImportError = Loc.T("Choisissez un fichier d'export Mailflow.");
+        else if (importFile.Length > RulesTransfer.MaxBytes) ImportError = Loc.T("Fichier trop volumineux.");
+        else
+        {
+            using var reader = new StreamReader(importFile.OpenReadStream());
+            var json = await reader.ReadToEndAsync(ct);
+            var (file, error) = RulesTransfer.Parse(json);
+            ImportError = error;
+            if (file is not null) { ImportAnalysis = await RulesTransfer.AnalyzeAsync(db, file, ct); ImportJson = json; }
+        }
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostImportApplyAsync()
+    {
+        var ct = HttpContext.RequestAborted;
+        await LoadAsync();
+        var (file, error) = RulesTransfer.Parse(ImportJson ?? "");
+        ModelState.Clear();
+        if (file is null) { ImportError = error; ImportJson = null; }
+        else if (!ImportConfirm) { ImportError = Loc.T("Cochez la case de confirmation pour importer."); ImportAnalysis = await RulesTransfer.AnalyzeAsync(db, file, ct); }
+        else
+        {
+            try
+            {
+                var a = await RulesTransfer.AnalyzeAsync(db, file, ct);
+                await RulesTransfer.ApplyAsync(db, file, ct);
+                ImportMessage = Loc.T("Import terminé : {0} règle(s) et {1} catégorie(s) importées.", a.Rules, a.Categories);
+                ImportAnalysis = a;
+                ImportJson = null;
+                await LoadAsync();
+            }
+            catch (Exception ex) when (ex is Microsoft.EntityFrameworkCore.DbUpdateException or InvalidOperationException)
+            {
+                ImportError = Loc.T("L'import a échoué ; rien n'a été modifié.");
+            }
+        }
+        return Page();
+    }
 
     public IActionResult OnGetBrowse(string? path) => Partial("_FolderBrowser", FolderBrowser.List(path));
 
