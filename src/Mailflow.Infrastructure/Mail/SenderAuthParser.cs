@@ -34,11 +34,14 @@ public static partial class SenderAuthParser
             }
             else
                 foreach (var h in authenticationResultsHeaders)
-                    if (TryParseHeader(h, out var candidate) && string.Equals(candidate.AuthenticationServiceIdentifier?.Trim(), trusted, StringComparison.OrdinalIgnoreCase))
-                    {
-                        parsed = candidate;
-                        break;
-                    }
+                {
+                    if (!string.Equals(LeadingId(h), trusted, StringComparison.OrdinalIgnoreCase)) continue;
+                    // The first header that claims the trusted id decides. If it cannot be read, nothing below it is believed:
+                    // a sender may be able to make the real header unreadable and forge a readable copy under it.
+                    if (!TryParseHeader(h, out parsed)) return SenderVerification.Unknown;
+                    if (!string.Equals(parsed.AuthenticationServiceIdentifier?.Trim(), trusted, StringComparison.OrdinalIgnoreCase)) return SenderVerification.Unknown;
+                    break;
+                }
             if (parsed is null) return SenderVerification.Unknown;
 
             bool dmarcPass = false, dmarcFail = false, dkimPass = false, dkimFail = false;
@@ -80,6 +83,30 @@ public static partial class SenderAuthParser
         {
             return SenderVerification.Unknown;
         }
+    }
+
+    /// <summary>
+    /// The authserv-id: the first token, after any leading whitespace and (nested, escaped) comments, up to whitespace, ';' or '('.
+    /// Cheap and independent of the full parse, so a header we cannot parse still tells us whose it claims to be.
+    /// </summary>
+    static string LeadingId(string? header)
+    {
+        if (header is null) return "";
+        var i = 0;
+        while (i < header.Length)
+        {
+            if (char.IsWhiteSpace(header[i])) { i++; continue; }
+            if (header[i] != '(') break;
+            for (int depth = 0; i < header.Length; i++)
+            {
+                if (header[i] == '\\') { i++; continue; }
+                if (header[i] == '(') depth++;
+                else if (header[i] == ')' && --depth == 0) { i++; break; }
+            }
+        }
+        var start = i;
+        while (i < header.Length && !char.IsWhiteSpace(header[i]) && header[i] != ';' && header[i] != '(') i++;
+        return header[start..i];
     }
 
     static bool TryParseHeader(string? header, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out AuthenticationResults? parsed)

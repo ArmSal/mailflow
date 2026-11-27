@@ -110,6 +110,15 @@ public class SenderAuthParserTests
         Assert.Equal(SenderVerification.Fail, T("mx.provider.example", "mx.provider.example; dkim=fail header.d=supplier.example", "mx.provider.example; dkim=pass header.d=supplier.example"));
     [Fact] public void Malformed_header_with_the_trusted_id_is_never_a_pass() =>
         Assert.NotEqual(SenderVerification.Pass, T("mx.provider.example", "mx.provider.example; dkim=pass header.d=supplier.example reason=\"(\"; dkim=pass header.d=supplier.example \""));
+    // The provider's own header (topmost, trusted id) is unreadable: never fall through to a lower header that
+    // claims the same id, it may be the sender's forgery.
+    const string Unreadable = "mx.provider.example; dkim=pass header.d=supplier.example reason=\"(\"; dkim=pass header.d=supplier.example \"";
+    [Fact] public void Unreadable_trusted_header_does_not_fall_through_to_a_lower_forged_one() =>
+        Assert.Equal(SenderVerification.Unknown, T("mx.provider.example", Unreadable, Genuine));
+    [Fact] public void Unreadable_header_with_another_id_is_just_skipped() =>
+        Assert.Equal(SenderVerification.Pass, T("mx.provider.example", "attacker.example; dkim=pass reason=\"(\" \"", Genuine));
+    [Fact] public void Trusted_id_after_a_comment_is_still_recognised_as_the_leading_token() =>
+        Assert.Equal(SenderVerification.Unknown, T("mx.provider.example", "(comment) mx.provider.example 1; dkim=pass reason=\"(\" \"", Genuine));
     [Fact] public void Header_without_an_id_is_not_trusted() => Assert.Equal(SenderVerification.Unknown, T("mx.provider.example", "dkim=pass header.d=supplier.example"));
     [Fact] public void Id_that_only_contains_the_trusted_one_is_not_a_match() => Assert.Equal(SenderVerification.Unknown, T("mx.provider.example", "evil-mx.provider.example; dkim=pass header.d=supplier.example"));
     [Theory]
