@@ -267,6 +267,13 @@
         <li><strong>Stricte</strong> : seuls les expéditeurs vérifiés sont imprimés. Les autres documents sont archivés sans impression et peuvent être réimprimés à la main.</li>
     </ul>
     <p>Si un serveur de messagerie ne fournit aucun verdict, l'expéditeur est « Non vérifié » : en mode Stricte, aucune impression automatique ne partirait pour cette boîte. Essayez d'abord Avertir et consultez la colonne Impression de l'Historique. Le verdict n'est fiable que dans la mesure où le serveur qui reçoit les messages l'est.</p>
+    <h4>Mode Stricte : l'identifiant du serveur de confiance (authserv-id)</h4>
+    <p>Un expéditeur peut écrire lui-même une fausse ligne <code>Authentication-Results</code> dans son message. Pour que Stricte ne s'y fie pas, chaque boîte doit indiquer l'identifiant du serveur de son fournisseur (champ « Identifiant du serveur de confiance » du formulaire de la boîte). Mailflow ne croit alors que la ligne écrite par ce serveur ; une boîte sans identifiant n'imprime rien en mode Stricte (Désactivée et Avertir ne changent pas).</p>
+    <ol>
+        <li>Ouvrez un message reçu dans cette boîte et affichez son source (« Afficher l'original » ou « Source du message »).</li>
+        <li>Repérez la ligne <code>Authentication-Results:</code> la plus haute. Le premier mot après les deux-points, avant le premier point-virgule, est l'identifiant (par exemple <code>mx.google.com</code>).</li>
+        <li>Saisissez-le dans la boîte. Si cette ligne n'existe pas, ou commence directement par <code>spf=</code> ou <code>dkim=</code> sans identifiant, ce fournisseur ne convient pas à la vérification Stricte : utilisez Avertir.</li>
+    </ol>
 </section>
 
 <section class="help-section" id="security">

@@ -30,7 +30,7 @@ public sealed class MessagePipeline(
         var maxAge = mailbox.PrintMaxDays * 24;
 
         var senderMode = PrintPolicy.ParseMode((await db.Settings.FirstOrDefaultAsync(x => x.Key == "PrintSenderCheck", ct))?.Value);
-        var senderBlocked = PrintPolicy.SenderBlocksPrint(senderMode, message.SenderVerification);
+        var senderBlocked = PrintPolicy.SenderBlocksPrint(senderMode, message.SenderVerification, message.TrustedSource);
 
         var from = ExtractAddress(message.From);
         var context = new MatchContext(from, ExtractRecipient(message.To), message.Subject, message.Body,

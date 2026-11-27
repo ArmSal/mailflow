@@ -212,7 +212,7 @@
   " : aucune vérification, impression comme avant.": ": no check, printing as before.",
   " : impression comme avant, mais l'Historique signale les expéditeurs non vérifiés.": ": printing as before, but History flags unverified senders.",
   " : seuls les expéditeurs vérifiés sont imprimés ; les autres documents sont archivés sans impression (« Réimprimer » reste possible).": ": only verified senders are printed; other documents are archived without printing (\"Reprint\" remains possible).",
-  "Un serveur de messagerie qui ne fournit pas ce verdict donne « non vérifié » : en mode Stricte, aucune impression automatique ne partirait pour ses messages. Essayez d'abord Avertir et consultez la colonne « Impression » de l'Historique. Le verdict n'est fiable que dans la mesure où le serveur qui reçoit les messages l'est.": "A mail server that does not provide this verdict results in \"unverified\": in Strict mode, no automatic printing would happen for its messages. Try Warn first and check the \"Printing\" column in History. The verdict is only as reliable as the server that receives the messages.",
+  "Un serveur de messagerie qui ne fournit pas ce verdict donne « non vérifié » : en mode Stricte, aucune impression automatique ne partirait pour ses messages. Essayez d'abord Avertir et consultez la colonne « Impression » de l'Historique. Le verdict n'est fiable que dans la mesure où le serveur qui reçoit les messages l'est. Chaque boîte doit aussi indiquer l'identifiant de son serveur (formulaire de la boîte), sinon Stricte n'imprime rien pour elle.": "A mail server that does not provide this verdict results in \"unverified\": in Strict mode, no automatic printing would happen for its messages. Try Warn first and check the \"Printing\" column in History. The verdict is only as reliable as the server that receives the messages. Each mailbox must also name its server id (mailbox form), otherwise Strict prints nothing for it.",
   "Sécurité": "Security",
   "Changer le mot de passe administrateur.": "Change the administrator password.",
   "Mot de passe actuel": "Current password",
@@ -252,5 +252,9 @@
   "Fermer": "Close",
   "Notifications": "Notifications",
   "Afficher une notification Windows après un échec définitif": "Show a Windows notification after a final failure",
-  "Connexion à une boîte mail impossible ou impression en échec, après plusieurs tentatives. L'échec reste visible dans l'Historique. Disponible dans l'application de bureau.": "Mailbox connection impossible or printing failed, after several attempts. The failure stays visible in History. Available in the desktop app."
+  "Connexion à une boîte mail impossible ou impression en échec, après plusieurs tentatives. L'échec reste visible dans l'Historique. Disponible dans l'application de bureau.": "Mailbox connection impossible or printing failed, after several attempts. The failure stays visible in History. Available in the desktop app.",
+  "Vérification de l'expéditeur": "Sender check",
+  "Identifiant du serveur de confiance (authserv-id)": "Trusted server id (authserv-id)",
+  "Le premier mot de la ligne Authentication-Results la plus haute dans le source d'un message reçu (par exemple mx.google.com). Sans lui, le mode Stricte n'imprime rien pour cette boîte ; avec lui, seuls les verdicts écrits par ce serveur sont crus.": "The first word of the topmost Authentication-Results line in the source of a received message (for example mx.google.com). Without it, Strict mode prints nothing for this mailbox; with it, only verdicts written by that server are believed.",
+  "Un nom de serveur : lettres, chiffres, points et tirets seulement.": "A server name: letters, digits, dots and hyphens only."
 }

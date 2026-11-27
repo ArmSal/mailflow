@@ -14,10 +14,12 @@ public sealed record MailMessage(
     string Subject,
     string Body,
     IReadOnlyList<MailAttachment> Pdfs,
-    Mailflow.Domain.Enums.SenderVerification SenderVerification = Mailflow.Domain.Enums.SenderVerification.Unknown);
+    Mailflow.Domain.Enums.SenderVerification SenderVerification = Mailflow.Domain.Enums.SenderVerification.Unknown,
+    /// <summary>True when the verdict was read under the mailbox's trusted authserv-id (only then can Strict mode rely on a Pass).</summary>
+    bool TrustedSource = false);
 
 /// <summary>Everything the IMAP client needs to connect to a mailbox.</summary>
-public sealed record MailboxConnection(string Host, int Port, bool UseSsl, string Username, string Password);
+public sealed record MailboxConnection(string Host, int Port, bool UseSsl, string Username, string Password, string? TrustedAuthservId = null);
 
 /// <summary>Builds the connection for a stored mailbox (decrypts the password).</summary>
 public interface IMailboxConnectionFactory

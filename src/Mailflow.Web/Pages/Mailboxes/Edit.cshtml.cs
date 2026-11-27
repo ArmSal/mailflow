@@ -36,6 +36,8 @@ public class EditModel(IAppDbContext db, ISecretStore secrets, IMailClient mail,
         public int PrintMaxDays { get; set; } = 1;
         public AfterProcessing DefaultAfterProcessing { get; set; } = AfterProcessing.Leave;
         public bool IsActive { get; set; } = true;
+        [StringLength(255)]
+        public string? TrustedAuthservId { get; set; }
     }
 
     [BindProperty] public MailboxInput Input { get; set; } = new();
@@ -50,6 +52,7 @@ public class EditModel(IAppDbContext db, ISecretStore secrets, IMailClient mail,
             DisplayName = m.DisplayName, Email = m.Email, Host = m.Host, Port = m.Port, UseSsl = m.UseSsl,
             Username = m.Username, InboxFolder = m.InboxFolder, CheckIntervalMinutes = m.CheckIntervalMinutes,
             SortFromDate = m.SortFromDate, PrintMaxDays = m.PrintMaxDays, DefaultAfterProcessing = m.DefaultAfterProcessing, IsActive = m.IsActive,
+            TrustedAuthservId = m.TrustedAuthservId,
         };
         return Page();
     }
@@ -70,6 +73,9 @@ public class EditModel(IAppDbContext db, ISecretStore secrets, IMailClient mail,
         if (Input.SortFromDate.Date > DateTime.UtcNow.Date) ModelState.AddModelError("Input.SortFromDate", Loc.T("La date de tri ne peut pas être dans le futur."));
         if (Input.PrintMaxDays is < 1 or > 7) ModelState.AddModelError("Input.PrintMaxDays", Loc.T("Impression : 1 à 7 jours."));
         if (!Enum.IsDefined(Input.DefaultAfterProcessing)) ModelState.AddModelError("Input.DefaultAfterProcessing", Loc.T("Valeur invalide."));
+        Input.TrustedAuthservId = string.IsNullOrWhiteSpace(Input.TrustedAuthservId) ? null : Input.TrustedAuthservId.Trim();
+        if (Input.TrustedAuthservId is { } authserv && !System.Text.RegularExpressions.Regex.IsMatch(authserv, @"^[A-Za-z0-9._-]+$"))
+            ModelState.AddModelError("Input.TrustedAuthservId", Loc.T("Un nom de serveur : lettres, chiffres, points et tirets seulement."));
 
         Mailbox? m = null;
         if (id is not null)
@@ -96,6 +102,7 @@ public class EditModel(IAppDbContext db, ISecretStore secrets, IMailClient mail,
         m.PrintMaxDays = Input.PrintMaxDays;
         m.DefaultAfterProcessing = Input.DefaultAfterProcessing;
         m.IsActive = Input.IsActive;
+        m.TrustedAuthservId = Input.TrustedAuthservId;
         await db.SaveChangesAsync();
         return RedirectToPage("Index");
     }

@@ -13,21 +13,33 @@ namespace Mailflow.Infrastructure.Mail;
 /// </summary>
 public static partial class SenderAuthParser
 {
-    public static SenderVerification Parse(IReadOnlyList<string>? authenticationResultsHeaders, string? fromAddress)
+    /// <param name="trustedAuthservId">
+    /// The authserv-id the mailbox's provider puts first in its own header. When set, the topmost header with exactly that id
+    /// is the only one believed (a sender can forge any header, but not the provider's id once the provider strips copies of it).
+    /// When not set, the topmost header is read as before and the caller must not rely on a Pass (see PrintPolicy).
+    /// </param>
+    public static SenderVerification Parse(IReadOnlyList<string>? authenticationResultsHeaders, string? fromAddress, string? trustedAuthservId = null)
     {
         try
         {
             var fromDomain = DomainOf(fromAddress);
-            if (fromDomain.Length == 0 || authenticationResultsHeaders is not { Count: > 0 } || authenticationResultsHeaders[0] is not { } header)
-                return SenderVerification.Unknown;
+            if (fromDomain.Length == 0 || authenticationResultsHeaders is not { Count: > 0 }) return SenderVerification.Unknown;
 
-            // The header value reaches us already decoded (RFC 2047 encoded words are expanded), so what we parse could differ
-            // from the raw bytes. Real verdicts are plain ASCII: refuse anything else instead of guessing.
-            if (header.Any(c => c > 127) || header.Contains("=?", StringComparison.Ordinal)) return SenderVerification.Unknown;
-
-            // MimeKit's RFC 8601 parser understands quoted strings, escapes and comments. A hand-written split on ';'
-            // can be fooled by values copied from the message (e.g. a quoted envelope sender) into seeing fake clauses.
-            if (!AuthenticationResults.TryParse(System.Text.Encoding.UTF8.GetBytes(header), out var parsed)) return SenderVerification.Unknown;
+            AuthenticationResults? parsed = null;
+            var trusted = trustedAuthservId?.Trim();
+            if (string.IsNullOrEmpty(trusted))
+            {
+                // A failed parse can still leave a half-filled result behind: a malformed header must never be read.
+                if (!TryParseHeader(authenticationResultsHeaders[0], out parsed)) return SenderVerification.Unknown;
+            }
+            else
+                foreach (var h in authenticationResultsHeaders)
+                    if (TryParseHeader(h, out var candidate) && string.Equals(candidate.AuthenticationServiceIdentifier?.Trim(), trusted, StringComparison.OrdinalIgnoreCase))
+                    {
+                        parsed = candidate;
+                        break;
+                    }
+            if (parsed is null) return SenderVerification.Unknown;
 
             bool dmarcPass = false, dmarcFail = false, dkimPass = false, dkimFail = false;
             foreach (var clause in parsed.Results)
@@ -68,6 +80,18 @@ public static partial class SenderAuthParser
         {
             return SenderVerification.Unknown;
         }
+    }
+
+    static bool TryParseHeader(string? header, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out AuthenticationResults? parsed)
+    {
+        parsed = null;
+        if (header is null) return false;
+        // The header value reaches us already decoded (RFC 2047 encoded words are expanded), so what we parse could differ
+        // from the raw bytes. Real verdicts are plain ASCII: refuse anything else instead of guessing.
+        if (header.Any(c => c > 127) || header.Contains("=?", StringComparison.Ordinal)) return false;
+        // MimeKit's RFC 8601 parser understands quoted strings, escapes and comments. A hand-written split on ';'
+        // can be fooled by values copied from the message (e.g. a quoted envelope sender) into seeing fake clauses.
+        return AuthenticationResults.TryParse(System.Text.Encoding.UTF8.GetBytes(header), out parsed);
     }
 
     /// <summary>Relaxed alignment: equal, or one is a subdomain of the other.</summary>

@@ -267,6 +267,13 @@
         <li><strong>Strict</strong>: only verified senders are printed. The others are saved without printing and can be reprinted by hand.</li>
     </ul>
     <p>If a mail server gives no verdict, the sender is "Not verified": in Strict mode nothing would print automatically for that mailbox. Start with Warn and look at the Printing column of History. The verdict is only as reliable as the server that received the email.</p>
+    <h4>Strict mode: the trusted server id (authserv-id)</h4>
+    <p>A sender can write a fake <code>Authentication-Results</code> line into their own message. So that Strict does not trust it, each mailbox must name its provider's server id (the "Trusted server id" field on the mailbox form). Mailflow then only believes the line written by that server; a mailbox without an id prints nothing in Strict mode (Off and Warn are unchanged).</p>
+    <ol>
+        <li>Open a message received in that mailbox and show its source ("Show original" or "Message source").</li>
+        <li>Find the topmost <code>Authentication-Results:</code> line. The first word after the colon, before the first semicolon, is the id (for example <code>mx.google.com</code>).</li>
+        <li>Enter it in the mailbox. If that line does not exist, or starts straight with <code>spf=</code> or <code>dkim=</code> with no id, that provider cannot be used with Strict: use Warn.</li>
+    </ol>
 </section>
 
 <section class="help-section" id="security">

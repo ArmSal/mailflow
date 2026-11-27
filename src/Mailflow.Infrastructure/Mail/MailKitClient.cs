@@ -68,7 +68,8 @@ public sealed partial class MailKitClient : IMailClient
                 m.Subject ?? "",
                 ExtractBody(m.TextBody, m.HtmlBody),
                 pdfs,
-                SenderAuthParser.Parse(authHeaders, fromAddress)));
+                SenderAuthParser.Parse(authHeaders, fromAddress, c.TrustedAuthservId),
+                !string.IsNullOrWhiteSpace(c.TrustedAuthservId)));
         }
         await client.DisconnectAsync(true, ct);
         return result;

@@ -25,7 +25,7 @@ public static class PrintPolicy
     public static SenderCheckMode ParseMode(string? value) =>
         Enum.TryParse<SenderCheckMode>(value?.Trim(), true, out var m) && Enum.IsDefined(m) ? m : SenderCheckMode.Warn;
 
-    /// <summary>Strict blocks printing unless the receiving server verified the sender; Off and Warn never block.</summary>
-    public static bool SenderBlocksPrint(SenderCheckMode mode, SenderVerification verification) =>
-        mode == SenderCheckMode.Strict && verification != SenderVerification.Pass;
+    /// <summary>Strict blocks printing unless the verdict is a Pass that came from the mailbox's trusted server id; Off and Warn never block.</summary>
+    public static bool SenderBlocksPrint(SenderCheckMode mode, SenderVerification verification, bool trustedSource) =>
+        mode == SenderCheckMode.Strict && (verification != SenderVerification.Pass || !trustedSource);
 }

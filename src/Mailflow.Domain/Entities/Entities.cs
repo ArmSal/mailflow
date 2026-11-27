@@ -22,6 +22,11 @@ public class Mailbox
     public bool IsActive { get; set; } = true;
     public DateTime? LastCheckAt { get; set; }
     public string? LastError { get; set; }
+    /// <summary>
+    /// The authserv-id this mailbox's provider writes first in its Authentication-Results header (e.g. mx.google.com).
+    /// Only headers with this id are believed; without it the sender check can never be relied on (Strict blocks printing).
+    /// </summary>
+    public string? TrustedAuthservId { get; set; }
 }
 
 public class Printer

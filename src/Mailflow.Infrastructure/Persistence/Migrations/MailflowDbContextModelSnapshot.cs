@@ -160,6 +160,9 @@ namespace Mailflow.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("SortFromDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("TrustedAuthservId")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("UseSsl")
                         .HasColumnType("INTEGER");
 

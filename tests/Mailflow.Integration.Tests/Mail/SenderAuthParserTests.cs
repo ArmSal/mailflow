@@ -95,4 +95,26 @@ public class SenderAuthParserTests
     [InlineData("no-at-sign")]
     [InlineData("user@")]
     public void Missing_from_domain_is_unknown(string? from) => Assert.Equal(SenderVerification.Unknown, P(GmailLike, from));
+
+    // Trusted authserv-id: only a header written by the mailbox's own provider counts. A header forged by the sender
+    // carries whatever id the sender likes, so with an id configured anything else is ignored.
+    static SenderVerification T(string? trusted, params string[] headers) => SenderAuthParser.Parse(headers, From, trusted);
+    const string Genuine = "mx.provider.example; dkim=pass header.d=supplier.example";
+    const string Forged = "attacker.example; dkim=pass header.d=supplier.example";
+
+    [Fact] public void Trusted_id_matching_the_header_passes() => Assert.Equal(SenderVerification.Pass, T("mx.provider.example", Genuine));
+    [Fact] public void Trusted_id_comparison_ignores_case() => Assert.Equal(SenderVerification.Pass, T("MX.Provider.EXAMPLE", Genuine));
+    [Fact] public void Forged_header_with_another_id_is_ignored() => Assert.Equal(SenderVerification.Unknown, T("mx.provider.example", Forged));
+    [Fact] public void Forged_header_above_the_genuine_one_is_skipped() => Assert.Equal(SenderVerification.Pass, T("mx.provider.example", Forged, Genuine));
+    [Fact] public void Genuine_fail_is_not_overridden_by_a_forged_pass_below_it() =>
+        Assert.Equal(SenderVerification.Fail, T("mx.provider.example", "mx.provider.example; dkim=fail header.d=supplier.example", "mx.provider.example; dkim=pass header.d=supplier.example"));
+    [Fact] public void Malformed_header_with_the_trusted_id_is_never_a_pass() =>
+        Assert.NotEqual(SenderVerification.Pass, T("mx.provider.example", "mx.provider.example; dkim=pass header.d=supplier.example reason=\"(\"; dkim=pass header.d=supplier.example \""));
+    [Fact] public void Header_without_an_id_is_not_trusted() => Assert.Equal(SenderVerification.Unknown, T("mx.provider.example", "dkim=pass header.d=supplier.example"));
+    [Fact] public void Id_that_only_contains_the_trusted_one_is_not_a_match() => Assert.Equal(SenderVerification.Unknown, T("mx.provider.example", "evil-mx.provider.example; dkim=pass header.d=supplier.example"));
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("  ")]
+    public void No_trusted_id_keeps_reading_the_topmost_header(string? trusted) => Assert.Equal(SenderVerification.Pass, T(trusted, Forged));
 }

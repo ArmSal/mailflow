@@ -357,12 +357,12 @@ public class SenderCheckTests
 {
     const string Blocked = "Impression bloquée : expéditeur non vérifié (DKIM/DMARC).";
 
-    static Fixture Setup(string? mode, SenderVerification v)
+    static Fixture Setup(string? mode, SenderVerification v, bool trusted = true)
     {
         var f = new Fixture();
         if (mode != null) f.Db.Settings.Add(new Setting { Key = "PrintSenderCheck", Value = mode });
         f.Db.SaveChanges();
-        f.Fetch(Fixture.Msg() with { SenderVerification = v });
+        f.Fetch(Fixture.Msg() with { SenderVerification = v, TrustedSource = trusted });
         return f;
     }
 
@@ -426,11 +426,26 @@ public class SenderCheckTests
     [Fact] public void ParseMode_is_case_insensitive() => Assert.Equal(SenderCheckMode.Strict, PrintPolicy.ParseMode(" strict "));
 
     [Fact]
-    public void Only_strict_without_pass_blocks()
+    public void Only_strict_without_a_trusted_pass_blocks()
     {
         foreach (var m in Enum.GetValues<SenderCheckMode>())
             foreach (var v in Enum.GetValues<SenderVerification>())
-                Assert.Equal(m == SenderCheckMode.Strict && v != SenderVerification.Pass, PrintPolicy.SenderBlocksPrint(m, v));
+                foreach (var trusted in new[] { true, false })
+                    Assert.Equal(m == SenderCheckMode.Strict && (v != SenderVerification.Pass || !trusted), PrintPolicy.SenderBlocksPrint(m, v, trusted));
+    }
+
+    [Theory]
+    [InlineData("Off", true)]
+    [InlineData("Warn", true)]
+    [InlineData("Strict", false)]
+    public async Task A_pass_from_a_mailbox_without_a_trusted_id_only_prints_unless_strict(string mode, bool prints)
+    {
+        using var f = Setup(mode, SenderVerification.Pass, trusted: false);
+
+        var log = await f.Processor.RunAsync(f.Mailbox, default);
+
+        Assert.Equal(prints ? 1 : 0, log.Printed);
+        if (!prints) Assert.Equal(Blocked, Assert.Single(f.Db.Documents).PrintError);
     }
 }
 

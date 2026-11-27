@@ -73,6 +73,15 @@
         </div>
         <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" asp-for="Input.IsActive" /><label class="form-check-label" asp-for="Input.IsActive">@T("Actif")</label></div>
     </section>
+    <section class="form-section">
+        <h2 class="form-section-title">@T("Vérification de l'expéditeur")</h2>
+        <div class="field">
+            <label class="form-label" asp-for="Input.TrustedAuthservId">@T("Identifiant du serveur de confiance (authserv-id)")</label>
+            <input class="form-control" asp-for="Input.TrustedAuthservId" placeholder="mx.google.com" autocomplete="off" />
+            <span class="form-text">@T("Le premier mot de la ligne Authentication-Results la plus haute dans le source d'un message reçu (par exemple mx.google.com). Sans lui, le mode Stricte n'imprime rien pour cette boîte ; avec lui, seuls les verdicts écrits par ce serveur sont crus.")</span>
+            <span class="field-validation-error" asp-validation-for="Input.TrustedAuthservId"></span>
+        </div>
+    </section>
     <div class="form-actions form-actions-sticky"><button class="btn btn-primary" type="submit">@T("Enregistrer")</button><a class="btn btn-ghost" asp-page="Index">@T("Annuler")</a></div>
 </form>
 @section Scripts {
