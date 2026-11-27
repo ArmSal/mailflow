@@ -21,14 +21,9 @@ internal sealed class MainForm : Form
 
     public static Icon AppIcon { get; } = LoadIcon();
 
-    private readonly PortGuard.Cache _portGuard;
-
     public MainForm(Uri origin)
     {
         _origin = origin;
-        _portGuard = new PortGuard.Cache(
-            () => PortGuard.Decide(PortOwner.FindListenerPid(origin.Port), PortOwner.GetImagePath, Environment.ProcessPath),
-            () => DateTime.UtcNow, TimeSpan.FromSeconds(1));
         Text = "Mailflow";
         Icon = AppIcon;
         MinimumSize = new Size(1000, 640);
@@ -99,7 +94,7 @@ internal sealed class MainForm : Form
         core.AddWebResourceRequestedFilter($"{_origin.Scheme}://{_origin.Authority}/*", CoreWebView2WebResourceContext.All);
         core.WebResourceRequested += (_, e) =>
         {
-            if (_portGuard.Current() != PortVerdict.Impostor) return;
+            if (PortGuard.Check(() => PortGuard.Decide(PortOwner.FindListenerPid(_origin.Port), PortOwner.GetImagePath, Environment.ProcessPath)) != PortVerdict.Impostor) return;
             var body = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(BlockedPage(_origin.Port)));
             e.Response = core.Environment.CreateWebResourceResponse(body, 403, "Forbidden", "Content-Type: text/html; charset=utf-8");
         };

@@ -21,23 +21,6 @@ public class PortGuardTests
     public void Any_other_or_unreadable_owner_is_an_impostor(string? ownerPath)
         => Assert.Equal(PortVerdict.Impostor, PortGuard.Decide(42, _ => ownerPath, Me));
 
-    [Fact]
-    public void Verdict_is_reused_for_a_second_then_checked_again()
-    {
-        var now = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
-        var calls = 0;
-        var cache = new PortGuard.Cache(() => { calls++; return calls == 1 ? PortVerdict.Genuine : PortVerdict.Impostor; }, () => now, TimeSpan.FromSeconds(1));
-
-        Assert.Equal(PortVerdict.Genuine, cache.Current());
-        now = now.AddMilliseconds(900);
-        Assert.Equal(PortVerdict.Genuine, cache.Current());
-        Assert.Equal(1, calls);
-
-        now = now.AddMilliseconds(200);
-        Assert.Equal(PortVerdict.Impostor, cache.Current());
-        Assert.Equal(2, calls);
-    }
-
     private static PortVerdict Real(int port)
         => PortGuard.Decide(PortOwner.FindListenerPid(port), PortOwner.GetImagePath, Environment.ProcessPath);
 
@@ -70,8 +53,28 @@ public class PortGuardTests
 
     [Fact]
     public void A_check_that_throws_counts_as_an_impostor()
+        => Assert.Equal(PortVerdict.Impostor, PortGuard.Check(() => throw new InvalidOperationException()));
+
+    [Fact]
+    public void A_check_that_answers_is_passed_through()
+        => Assert.Equal(PortVerdict.Genuine, PortGuard.Check(() => PortVerdict.Genuine));
+}
+
+public class PortGuardCostTests
+{
+    [Fact]
+    public void A_real_check_is_cheap_enough_to_run_before_every_request()
     {
-        var cache = new PortGuard.Cache(() => throw new InvalidOperationException(), () => DateTime.UtcNow, TimeSpan.FromSeconds(1));
-        Assert.Equal(PortVerdict.Impostor, cache.Current());
+        var l = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0); l.Start();
+        try
+        {
+            var port = ((System.Net.IPEndPoint)l.LocalEndpoint).Port;
+            PortGuard.Decide(PortOwner.FindListenerPid(port), PortOwner.GetImagePath, Environment.ProcessPath);   // warm up
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            for (var i = 0; i < 200; i++)
+                Assert.Equal(PortVerdict.Genuine, PortGuard.Decide(PortOwner.FindListenerPid(port), PortOwner.GetImagePath, Environment.ProcessPath));
+            Assert.True(sw.Elapsed.TotalMilliseconds / 200 < 5, $"{sw.Elapsed.TotalMilliseconds / 200:F2} ms per check");
+        }
+        finally { l.Stop(); }
     }
 }

@@ -4,7 +4,9 @@ public enum PortVerdict { NoListener, Genuine, Impostor }
 
 /// <summary>
 /// Startup only proves who owns the port at that moment. While the window stays open the genuine server could die and
-/// another local program bind the port, so the window re-checks before each request it makes to the dashboard.
+/// another local program bind the port, so the window re-checks before EACH request it makes to the dashboard (no caching:
+/// a check costs about 0.1 ms). What remains is the instant between the check and the connection, which an ownership check
+/// cannot close; a single-user PC with a local attacker who must time the real server's exit is the accepted residual risk.
 /// </summary>
 public static class PortGuard
 {
@@ -13,20 +15,10 @@ public static class PortGuard
         => listenerPid == 0 ? PortVerdict.NoListener
          : AttachOrStart.SamePath(imagePath(listenerPid), currentExePath) ? PortVerdict.Genuine : PortVerdict.Impostor;
 
-    /// <summary>Keeps the last verdict for a short time so a page with many resources does not scan the TCP table each time.</summary>
-    public sealed class Cache(Func<PortVerdict> check, Func<DateTime> utcNow, TimeSpan ttl)
+    /// <summary>Runs a check; if it cannot tell, the answer is Impostor (fail closed).</summary>
+    public static PortVerdict Check(Func<PortVerdict> check)
     {
-        private PortVerdict _verdict;
-        private DateTime _checkedAt = DateTime.MinValue;
-
-        public PortVerdict Current()
-        {
-            var now = utcNow();
-            if (_checkedAt != DateTime.MinValue && now - _checkedAt < ttl) return _verdict;
-            try { _verdict = check(); }
-            catch (Exception) { _verdict = PortVerdict.Impostor; }   // cannot tell: fail closed
-            _checkedAt = now;
-            return _verdict;
-        }
+        try { return check(); }
+        catch (Exception) { return PortVerdict.Impostor; }
     }
 }
