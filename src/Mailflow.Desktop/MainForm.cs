@@ -21,9 +21,14 @@ internal sealed class MainForm : Form
 
     public static Icon AppIcon { get; } = LoadIcon();
 
+    private readonly PortGuard.Cache _portGuard;
+
     public MainForm(Uri origin)
     {
         _origin = origin;
+        _portGuard = new PortGuard.Cache(
+            () => PortGuard.Decide(PortOwner.FindListenerPid(origin.Port), PortOwner.GetImagePath, Environment.ProcessPath),
+            () => DateTime.UtcNow, TimeSpan.FromSeconds(1));
         Text = "Mailflow";
         Icon = AppIcon;
         MinimumSize = new Size(1000, 640);
@@ -89,6 +94,15 @@ internal sealed class MainForm : Form
         // the app's own origin is blocked separately, so shortcuts like view-source cannot leave the app.
 #endif
         core.Settings.IsStatusBarEnabled = false;
+        // Startup checked who owns the port once. If the real server later dies and another program takes the port, nothing
+        // from it may reach the window (pages, background requests or form posts): answer in its place.
+        core.AddWebResourceRequestedFilter($"{_origin.Scheme}://{_origin.Authority}/*", CoreWebView2WebResourceContext.All);
+        core.WebResourceRequested += (_, e) =>
+        {
+            if (_portGuard.Current() != PortVerdict.Impostor) return;
+            var body = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(BlockedPage(_origin.Port)));
+            e.Response = core.Environment.CreateWebResourceResponse(body, 403, "Forbidden", "Content-Type: text/html; charset=utf-8");
+        };
         core.NavigationStarting += (_, e) =>
         {
             if (NavigationPolicy.IsAllowed(e.Uri, _origin)) return;
@@ -125,6 +139,14 @@ internal sealed class MainForm : Form
         try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
         catch (Exception) { /* no browser available */ }
     }
+
+    private static string BlockedPage(int port) => $$"""
+        <!doctype html><html lang="fr"><meta charset="utf-8"><body style="font-family:Segoe UI,sans-serif;text-align:center;margin-top:20vh;color:#374151">
+        <h2>Page bloquée pour votre sécurité</h2>
+        <p>Le port {{port}} n'est plus utilisé par Mailflow mais par un autre programme. Rien n'est chargé pour protéger votre mot de passe.</p>
+        <p>Fermez Mailflow (icône de la zone de notification &gt; Quitter), fermez l'autre programme, puis relancez Mailflow.</p>
+        </body></html>
+        """;
 
     private static string HttpErrorPage(int status) => $$"""
         <!doctype html><html lang="fr"><meta charset="utf-8"><body style="font-family:Segoe UI,sans-serif;text-align:center;margin-top:20vh;color:#374151">

@@ -334,7 +334,7 @@
     <h4>An email is not processed</h4>
     <p>An email is processed once per mailbox. It is ignored if it is received before the Sort from date, if the mailbox is inactive, if polling is paused, or if a Skip rule matched it.</p>
     <h4>The application says the port is busy</h4>
-    <p>The interface uses port 5088 on this PC. If another program, or another instance of Mailflow, already holds it, Mailflow checks who owns the port: it reuses a running Mailflow, otherwise it reports the conflict. Close the other program and start Mailflow again.</p>
+    <p>The interface uses port 5088 on this PC. If another program, or another instance of Mailflow, already holds it, Mailflow checks who owns the port: it reuses a running Mailflow, otherwise it reports the conflict. Close the other program and start Mailflow again. The window checks this again before every page and request: if the port is taken over by another program while the window is open, it shows a "Page blocked" message instead of loading anything.</p>
     <h4>The window stays empty and mentions WebView2</h4>
     <p>The window uses the Microsoft Edge WebView2 component. If it is missing, install the "WebView2 Runtime" from Microsoft, then restart Mailflow.</p>
     <h4>A remote printer does not print</h4>
