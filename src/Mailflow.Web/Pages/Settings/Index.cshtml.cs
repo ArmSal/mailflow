@@ -30,7 +30,7 @@ public class IndexModel(
         public bool PrintEmailBodyWithoutPdf { get; set; }
         public bool ToastNotifications { get; set; } = true;
         public bool UpdateCheck { get; set; } = true;
-        public bool UpdateInstall { get; set; }
+        public string UpdateMode { get; set; } = "Notify";
     }
 
     public class PasswordInput
@@ -138,9 +138,10 @@ public class IndexModel(
         await SettingsRules.SaveAsync(db, SettingsRules.PrintEmailBodyKey, Input.PrintEmailBodyWithoutPdf ? "true" : "false", ct);
         await SettingsRules.SaveAsync(db, FailureAlerts.SettingKey, Input.ToastNotifications ? "true" : "false", ct);
         await SettingsRules.SaveAsync(db, Mailflow.Web.Updates.UpdateChecker.SettingKey, Input.UpdateCheck ? "true" : "false", ct);
-        await SettingsRules.SaveAsync(db, Mailflow.Web.Updates.UpdateChecker.ModeKey, Input.UpdateInstall ? "Manual" : "Notify", ct);
+        var updateMode = Mailflow.Web.Updates.UpdateChecker.ParseMode(Input.UpdateMode);
+        await SettingsRules.SaveAsync(db, Mailflow.Web.Updates.UpdateChecker.ModeKey, updateMode.ToString(), ct);
         await db.SaveChangesAsync(ct);
-        if (updates is not null) updates.InstallEnabled = Input.UpdateInstall;
+        if (updates is not null) updates.Mode = updateMode;
         SettingsMessage = Loc.T("Paramètres enregistrés.");
         return Page();
     }
@@ -199,7 +200,7 @@ public class IndexModel(
             PrintEmailBodyWithoutPdf = SettingsRules.ParsePrintEmailBody(s.GetValueOrDefault(SettingsRules.PrintEmailBodyKey)),
             ToastNotifications = FailureAlerts.ParseEnabled(s.GetValueOrDefault(FailureAlerts.SettingKey)),
             UpdateCheck = Mailflow.Web.Updates.UpdateChecker.ParseEnabled(s.GetValueOrDefault(Mailflow.Web.Updates.UpdateChecker.SettingKey)),
-            UpdateInstall = Mailflow.Web.Updates.UpdateChecker.ParseManual(s.GetValueOrDefault(Mailflow.Web.Updates.UpdateChecker.ModeKey)),
+            UpdateMode = Mailflow.Web.Updates.UpdateChecker.ParseMode(s.GetValueOrDefault(Mailflow.Web.Updates.UpdateChecker.ModeKey)).ToString(),
         };
         SetSenderCheck(s);
     }

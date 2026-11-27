@@ -266,8 +266,9 @@ namespace Mailflow.Setup
         }
 
         /// <summary>Closes (gracefully, then kills) only the Mailflow.exe running from this install folder.</summary>
-        public static void StopInstance(string dir)
+        public static bool StopInstance(string dir)
         {
+            bool stopped = false;
             string exe = Path.Combine(dir, "Mailflow.exe");
             foreach (Process p in Process.GetProcessesByName("Mailflow"))
             {
@@ -276,6 +277,7 @@ namespace Mailflow.Setup
                     string path = null;
                     try { path = p.MainModule.FileName; } catch (Exception) { }
                     if (path == null || !SameFile(path, exe)) continue;
+                    stopped = true;
                     try { p.CloseMainWindow(); } catch (Exception) { }
                     if (!p.WaitForExit(4000))
                     {
@@ -286,6 +288,7 @@ namespace Mailflow.Setup
                 catch (Exception ex) { Log("StopInstance: " + ex.Message); }
                 finally { p.Dispose(); }
             }
+            return stopped;
         }
 
         public static void ComSet(object o, string prop, object v) { o.GetType().InvokeMember(prop, BindingFlags.SetProperty, null, o, new object[] { v }); }
@@ -506,8 +509,16 @@ namespace Mailflow.Setup
             if (!File.Exists(Path.Combine(stage, "Mailflow.exe"))) { DeleteTree(stage); throw new SetupException(L.T("eNoExe")); }
 
             report(72, L.T("pStop"));
-            Sys.StopInstance(dir);
-            Swap(dir, stage, old);
+            bool wasRunning = Sys.StopInstance(dir);
+            try { Swap(dir, stage, old); }
+            catch (Exception)
+            {
+                // Swap put the old program back; restart it so a failed update does not leave Mailflow closed.
+                string oldExe = Path.Combine(dir, "Mailflow.exe");
+                if (wasRunning && File.Exists(oldExe))
+                    try { Process.Start(new ProcessStartInfo(oldExe, "--minimized") { WorkingDirectory = dir, UseShellExecute = true }); } catch (Exception) { }
+                throw;
+            }
             string exe = Path.Combine(dir, "Mailflow.exe");
             string uninst = Path.Combine(dir, "Uninstall.exe");
             if (!File.Exists(exe)) throw new SetupException(L.T("eNoExe"));

@@ -84,6 +84,14 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="@T("Fermer")"></button>
                     </div>
                 }
+                @if (Updates.FailedTag is { } failedTag)
+                {
+                    <div class="alert alert-warning alert-dismissible m-3 mb-0" role="alert" data-update-failed="@failedTag">
+                        @T("La mise à jour vers {0} n'a pas abouti. Mailflow continue avec la version actuelle.", failedTag)
+                        <a class="alert-link" href="https://github.com/ArmSal/mailflow/releases/tag/@failedTag" target="_blank" rel="noopener noreferrer">@T("Installer à la main")</a>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="@T("Fermer")"></button>
+                    </div>
+                }
                 <main id="main" class="page" tabindex="-1">
                     @RenderBody()
                 </main>

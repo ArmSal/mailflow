@@ -28,7 +28,7 @@ public class UpdateModel(UpdateChecker checker, UpdateInstaller installer) : Pag
         }
         // Launch once the answer is sent: Setup stops this process.
         var path = r.InstallerPath!;
-        Response.OnCompleted(() => { UpdateInstaller.Launch(path); return Task.CompletedTask; });
+        Response.OnCompleted(() => { installer.Launch(path, release.Tag); return Task.CompletedTask; });
         Started = true;
         return Page();
     }

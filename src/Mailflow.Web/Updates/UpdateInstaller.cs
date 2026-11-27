@@ -6,9 +6,27 @@ using Microsoft.Win32;
 namespace Mailflow.Web.Updates;
 
 /// <summary>Backs up, downloads and verifies the new Setup.exe, then runs it silently over this installation.</summary>
-public sealed class UpdateInstaller(HttpClient http, BackupService backup)
+public sealed class UpdateInstaller(HttpClient http, BackupService backup, UpdateChecker checker)
 {
     public static string WorkDir => Path.Combine(AppContext.BaseDirectory, "data", "updates");
+    private static string AttemptPath => Path.Combine(WorkDir, "attempt.txt");
+
+    /// <summary>The tag of the last install that was started, or null.</summary>
+    public static string? ReadAttempt()
+    {
+        try { return File.Exists(AttemptPath) ? File.ReadAllText(AttemptPath).Trim() : null; }
+        catch (IOException) { return null; }
+    }
+
+    /// <summary>At startup: an attempt for a version we now run succeeded (forget it); one for a newer version did not (returned).</summary>
+    public static string? Reconcile(Version current)
+    {
+        var tag = ReadAttempt();
+        if (tag is null) return null;
+        if (UpdateChecker.IsNewer(tag, current)) return tag;
+        try { File.Delete(AttemptPath); } catch (IOException) { }
+        return null;
+    }
 
     /// <summary>One-click install only makes sense for a copy put there by Setup.exe (same folder as the Add/Remove entry).</summary>
     public static bool IsSetupInstall()
@@ -35,6 +53,11 @@ public sealed class UpdateInstaller(HttpClient http, BackupService backup)
     }
 
     /// <summary>Setup stops this process, replaces the files (data\ is kept) and starts the new version minimized.</summary>
-    public static void Launch(string installerPath)
-        => Process.Start(new ProcessStartInfo(installerPath, "/S /minimized") { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(installerPath)! })?.Dispose();
+    public void Launch(string installerPath, string tag)
+    {
+        Directory.CreateDirectory(WorkDir);
+        File.WriteAllText(AttemptPath, tag);
+        checker.WatchAttempt(tag);
+        Process.Start(new ProcessStartInfo(installerPath, "/S /minimized") { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(installerPath)! })?.Dispose();
+    }
 }
