@@ -98,8 +98,8 @@ namespace Mailflow.Setup
             A("eGeneric", "Erreur : {0}", "Error: {0}");
             A("eBadPath", "Chemin d'archive refusé : {0}", "Archive path rejected: {0}");
             A("eNoExe", "Mailflow.exe est introuvable après la copie.", "Mailflow.exe was not found after copying.");
-            A("eUsage", "Option inconnue : {0}\r\n\r\nOptions : /S ou /silent, /dir=CHEMIN, /nostartup, /nodesktop, /nostartmenu, /noRun, /nowebview2, /lang=fr|en",
-              "Unknown option: {0}\r\n\r\nOptions: /S or /silent, /dir=PATH, /nostartup, /nodesktop, /nostartmenu, /noRun, /nowebview2, /lang=fr|en");
+            A("eUsage", "Option inconnue : {0}\r\n\r\nOptions : /S ou /silent, /dir=CHEMIN, /nostartup, /nodesktop, /nostartmenu, /noRun, /minimized, /nowebview2, /lang=fr|en",
+              "Unknown option: {0}\r\n\r\nOptions: /S or /silent, /dir=PATH, /nostartup, /nodesktop, /nostartmenu, /noRun, /minimized, /nowebview2, /lang=fr|en");
             A("uQ", "Voulez-vous désinstaller Mailflow ?\r\n\r\n{0}", "Do you want to uninstall Mailflow?\r\n\r\n{0}");
             A("uData", "Voulez-vous aussi supprimer vos données (base de données, réglages des documents, journaux, sauvegardes) ?\r\n\r\nChoisissez Non pour les conserver (recommandé) : une réinstallation les retrouvera.",
               "Do you also want to delete your data (database, document settings, logs, backups)?\r\n\r\nChoose No to keep them (recommended): a reinstall will find them again.");
@@ -137,6 +137,7 @@ namespace Mailflow.Setup
         public bool Launch = true;
         public bool InstallWebView2 = true;
         public bool Silent;
+        public bool Minimized;
         public bool RemoveData;
         public bool Stage2;
         public bool LangGiven;
@@ -167,6 +168,7 @@ namespace Mailflow.Setup
                     case "nodesktop": o.Desktop = false; break;
                     case "nostartmenu": o.StartMenu = false; break;
                     case "norun": o.Launch = false; break;
+                    case "minimized": o.Minimized = true; break;
                     case "nowebview2": o.InstallWebView2 = false; break;
                     case "removedata": o.RemoveData = true; break;
                     case "_stage2": o.Stage2 = true; break;
@@ -429,6 +431,43 @@ namespace Mailflow.Setup
             return dir;
         }
 
+        private static void DeleteTree(string d)
+        {
+            try { if (Directory.Exists(d)) Directory.Delete(d, true); } catch (Exception) { }
+        }
+
+        private static void MoveEntry(string from, string to)
+        {
+            if (Directory.Exists(from)) Directory.Move(from, to); else File.Move(from, to);
+        }
+
+        /// <summary>Moves the current program files (not data\) to <paramref name="old"/> and the new ones in; puts the old ones back on failure.</summary>
+        private static void Swap(string dir, string stage, string old)
+        {
+            string dataDir = Path.Combine(dir, "data");
+            Directory.CreateDirectory(old);
+            bool newFilesMoving = false;
+            try
+            {
+                foreach (string e in Directory.GetFileSystemEntries(dir))
+                    if (!Sys.SameFile(e, dataDir)) MoveEntry(e, Path.Combine(old, Path.GetFileName(e)));
+                newFilesMoving = true; // from here dir holds only data\ and new files
+                foreach (string e in Directory.GetFileSystemEntries(stage))
+                    MoveEntry(e, Path.Combine(dir, Path.GetFileName(e)));
+            }
+            catch (Exception)
+            {
+                if (newFilesMoving)
+                    foreach (string e in Directory.GetFileSystemEntries(dir))
+                        if (!Sys.SameFile(e, dataDir)) { try { if (Directory.Exists(e)) Directory.Delete(e, true); else File.Delete(e); } catch (Exception) { } }
+                foreach (string e in Directory.GetFileSystemEntries(old))
+                    { try { MoveEntry(e, Path.Combine(dir, Path.GetFileName(e))); } catch (Exception) { } }
+                DeleteTree(stage); DeleteTree(old);
+                throw;
+            }
+            DeleteTree(stage); DeleteTree(old);
+        }
+
         public static void Install(Options o, Action<int, string> report, out bool wv2Missing)
         {
             wv2Missing = false;
@@ -440,20 +479,13 @@ namespace Mailflow.Setup
 
         private static void DoInstall(Options o, string dir, Action<int, string> report, out bool wv2Missing)
         {
-            report(2, L.T("pStop"));
-            Sys.StopInstance(dir);
-
+            // The new program is unpacked next to the install folder first, so a failure leaves the current install untouched.
+            string stage = dir + ".new", old = dir + ".old";
             report(6, L.T("pClean"));
             Directory.CreateDirectory(dir);
-            string dataDir = Path.Combine(dir, "data");
-            if (File.Exists(Path.Combine(dir, "Mailflow.exe")))
-            {
-                // upgrade in place: replace the program, never touch data\
-                foreach (string f in Directory.GetFiles(dir)) File.Delete(f);
-                foreach (string d in Directory.GetDirectories(dir)) if (!Sys.SameFile(d, dataDir)) Directory.Delete(d, true);
-            }
+            DeleteTree(stage); DeleteTree(old);
 
-            string prefix = dir + "\\";
+            string prefix = stage + "\\";
             using (ZipArchive zip = new ZipArchive(Payload(), ZipArchiveMode.Read))
             {
                 int total = zip.Entries.Count, done = 0;
@@ -461,16 +493,21 @@ namespace Mailflow.Setup
                 {
                     done++;
                     string rel = e.FullName.Replace('/', '\\');
-                    string dest = Path.GetFullPath(Path.Combine(dir, rel));
+                    string dest = Path.GetFullPath(Path.Combine(stage, rel));
                     if (!dest.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) throw new SetupException(L.T("eBadPath", e.FullName));
                     if (e.Name.Length == 0) { Directory.CreateDirectory(dest); continue; }
                     Directory.CreateDirectory(Path.GetDirectoryName(dest));
                     using (Stream src = e.Open())
                     using (FileStream dst = new FileStream(dest, FileMode.Create, FileAccess.Write, FileShare.None))
                         src.CopyTo(dst);
-                    if (done % 5 == 0 || done == total) report(10 + (int)(done * 70L / total), L.T("pCopy", done, total));
+                    if (done % 5 == 0 || done == total) report(10 + (int)(done * 60L / total), L.T("pCopy", done, total));
                 }
             }
+            if (!File.Exists(Path.Combine(stage, "Mailflow.exe"))) { DeleteTree(stage); throw new SetupException(L.T("eNoExe")); }
+
+            report(72, L.T("pStop"));
+            Sys.StopInstance(dir);
+            Swap(dir, stage, old);
             string exe = Path.Combine(dir, "Mailflow.exe");
             string uninst = Path.Combine(dir, "Uninstall.exe");
             if (!File.Exists(exe)) throw new SetupException(L.T("eNoExe"));
@@ -519,7 +556,7 @@ namespace Mailflow.Setup
             if (o.Launch && !wv2Missing)
             {
                 report(98, L.T("pLaunch"));
-                Process.Start(new ProcessStartInfo(exe) { WorkingDirectory = dir, UseShellExecute = true });
+                Process.Start(new ProcessStartInfo(exe, o.Minimized ? "--minimized" : "") { WorkingDirectory = dir, UseShellExecute = true });
             }
             report(100, L.T("pDone"));
         }

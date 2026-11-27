@@ -146,6 +146,11 @@ public static class MailflowHost
             c.DefaultRequestHeaders.UserAgent.ParseAdd("update-check");
             c.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
         });
+        services.AddHttpClient<Mailflow.Web.Updates.UpdateInstaller>(c =>
+        {
+            c.Timeout = TimeSpan.FromMinutes(15);
+            c.DefaultRequestHeaders.UserAgent.ParseAdd("update-check");
+        });
         services.AddSingleton<Mailflow.Web.Updates.UpdateChecker>();
         services.AddHostedService<Mailflow.Web.Updates.UpdateCheckService>();
 

@@ -295,7 +295,7 @@ Pour construire une version depuis un poste de développement :
 
 Le script publie une version autonome win-x64 et produit `dist\Mailflow-<version>-win-x64.zip` et `dist\Mailflow-Setup-<version>-win-x64.exe`. `tools\SumatraPDF\SumatraPDF.exe` est inclus dans le paquet.
 
-Pour mettre à jour, installez la nouvelle version par-dessus l'ancienne ; les migrations de base de données s'appliquent au démarrage.
+Pour mettre à jour, installez la nouvelle version par-dessus l'ancienne ; les migrations de base de données s'appliquent au démarrage. Vous pouvez aussi activer « Proposer Mettre à jour maintenant dans le bandeau » dans Paramètres : l'application télécharge alors l'installateur, vérifie une signature faite avec la clé hors ligne de l'auteur (`deploy/sign-release.ps1`), sauvegarde la base de données et l'installe silencieusement. Une version non signée n'est jamais installée ainsi.
 
 ## Impression à distance (agent d'impression)
 

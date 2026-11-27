@@ -49,6 +49,9 @@ Setup deletes the old files before copying the new ones, so a failure halfway le
 
 ## Progress
 - Phase 1 done: `Application/Updates/UpdateManifest.cs` + `UpdateKeys.cs` (verifier, public key embedded), `deploy/sign-release.ps1` (tested on v1.3.3 with `-NoUpload`), 10 unit tests. The verifier is plain BCL so it can be linked into the Print Agent.
+- Phase 2 done (Mailflow): `UpdateDownloader` (Application, shared), `UpdateInstaller` + `/Update` page + banner button, Settings checkbox (`UpdateMode` = Notify | Manual), Setup `/minimized` and safe swap (`<dir>.new` / `<dir>.old`, rollback on failure), Help FR+EN, README. Verified with a real silent install/upgrade/locked-file run in a scratch folder. NOT verified: the button against a real signed release (none exists yet), the `/Update` page in the real window.
+- Print Agent done: `AgentUpdater` (daily check; `UpdateMode` in agent.json = Notify (log only) | Auto), shared verifier linked in, agent Setup restarts the old agent if the install fails. No installer swap for the agent (small, config kept). NOT verified end to end.
+- Phase 3 left: an `Auto` mode for Mailflow itself (install when idle) and a failed-update message in the UI.
 - Releases before the first signed one have no manifest: clients simply keep showing the banner.
 - Release routine becomes: push tag, CI publishes, owner checks the assets, runs `./deploy/sign-release.ps1 -Tag vX.Y.Z`.
 

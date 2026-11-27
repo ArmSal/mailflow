@@ -59,6 +59,11 @@
             <label class="form-check-label" asp-for="Input.UpdateCheck">@T("Vérifier les nouvelles versions")</label>
             <div class="form-text">@T("Une fois par jour, Mailflow demande à GitHub si une version plus récente existe et l'indique par un bandeau. Aucune donnée personnelle n'est envoyée ; rien n'est installé automatiquement.")</div>
         </div>
+        <div class="form-check form-switch mt-3">
+            <input class="form-check-input" type="checkbox" role="switch" asp-for="Input.UpdateInstall" />
+            <label class="form-check-label" asp-for="Input.UpdateInstall">@T("Proposer « Mettre à jour maintenant » dans le bandeau")</label>
+            <div class="form-text">@T("Un clic télécharge la nouvelle version, vérifie sa signature, sauvegarde la base de données puis l'installe en conservant vos données. Seules les versions signées par l'auteur sont acceptées. Disponible pour les installations faites avec l'installateur.")</div>
+        </div>
     </section>
     <div class="form-actions mb-4"><button class="btn btn-primary" type="submit">@T("Enregistrer")</button></div>
 </form>

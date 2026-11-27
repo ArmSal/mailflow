@@ -207,6 +207,20 @@ namespace Mailflow.AgentSetup
             Directory.CreateDirectory(dir);
             Sys.StopAgent(dir);
 
+            try { ExtractPayload(dir); }
+            catch (Exception)
+            {
+                // The agent was stopped above: bring the previous one back rather than leave the printer PC without an agent.
+                string oldExe = Path.Combine(dir, Sys.ExeName);
+                if (File.Exists(oldExe) && File.Exists(Path.Combine(dir, "agent.json")))
+                    try { Process.Start(new ProcessStartInfo(oldExe, "--run") { WorkingDirectory = dir, UseShellExecute = false, CreateNoWindow = true }); } catch (Exception) { }
+                throw;
+            }
+            InstallRest(o, dir);
+        }
+
+        private static void ExtractPayload(string dir)
+        {
             Assembly asm = Assembly.GetExecutingAssembly();
             using (Stream payload = asm.GetManifestResourceStream("payload.zip"))
             {
@@ -224,7 +238,10 @@ namespace Mailflow.AgentSetup
                     }
                 }
             }
+        }
 
+        private static void InstallRest(Options o, string dir)
+        {
             string exe = Path.Combine(dir, Sys.ExeName);
             if (!File.Exists(exe)) throw new FileNotFoundException(Sys.ExeName);
             string uninst = Path.Combine(dir, "Uninstall.exe");

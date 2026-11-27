@@ -75,6 +75,12 @@
                     <div class="alert alert-info alert-dismissible m-3 mb-0" role="status" data-update-banner="@update.Tag">
                         @T("Une nouvelle version de Mailflow est disponible ({0}).", update.Tag)
                         <a class="alert-link" href="@update.Url" target="_blank" rel="noopener noreferrer">@T("Voir la version")</a>
+                        @if (Updates.InstallEnabled && Mailflow.Web.Updates.UpdateInstaller.IsSetupInstall())
+                        {
+                            <form method="post" asp-page="/Update" class="d-inline ms-2">
+                                <button type="submit" class="btn btn-sm btn-primary">@T("Mettre à jour maintenant")</button>
+                            </form>
+                        }
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="@T("Fermer")"></button>
                     </div>
                 }

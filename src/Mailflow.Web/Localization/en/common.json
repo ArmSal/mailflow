@@ -23,5 +23,17 @@
   "Vérifier les nouvelles versions": "Check for new versions",
   "Une fois par jour, Mailflow demande à GitHub si une version plus récente existe et l'indique par un bandeau. Aucune donnée personnelle n'est envoyée ; rien n'est installé automatiquement.": "Once a day, Mailflow asks GitHub whether a newer version exists and shows a banner. No personal data is sent; nothing is installed automatically.",
   "Une nouvelle version de Mailflow est disponible ({0}).": "A new version of Mailflow is available ({0}).",
-  "Voir la version": "View the release"
+  "Voir la version": "View the release",
+  "Mettre à jour maintenant": "Update now",
+  "Mise à jour": "Update",
+  "Retour": "Back",
+  "Proposer « Mettre à jour maintenant » dans le bandeau": "Offer \"Update now\" in the banner",
+  "Un clic télécharge la nouvelle version, vérifie sa signature, sauvegarde la base de données puis l'installe en conservant vos données. Seules les versions signées par l'auteur sont acceptées. Disponible pour les installations faites avec l'installateur.": "One click downloads the new version, checks its signature, backs up the database and installs it, keeping your data. Only releases signed by the author are accepted. Available for installations made with the installer.",
+  "L'installation en un clic n'est pas disponible pour cette installation.": "One-click install is not available for this installation.",
+  "Cette version n'est pas encore signée : réessayez plus tard ou installez-la à la main depuis la page de la version.": "This release is not signed yet: try again later or install it by hand from the release page.",
+  "La vérification de la signature a échoué : la mise à jour est refusée. Installez-la à la main depuis la page de la version.": "The signature check failed: the update was refused. Install it by hand from the release page.",
+  "Vous utilisez déjà cette version ou une version plus récente.": "You already run this version or a newer one.",
+  "La sauvegarde de la base de données a échoué : la mise à jour n'a pas été lancée.": "The database backup failed: the update was not started.",
+  "Le téléchargement a échoué. Vérifiez la connexion Internet et réessayez.": "The download failed. Check the Internet connection and try again.",
+  "Mise à jour lancée. Mailflow va se fermer puis redémarrer dans la zone de notification ; rouvrez-le dans une minute.": "Update started. Mailflow will close and restart in the notification area; reopen it in a minute."
 }

@@ -16,6 +16,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Same signed-update verification as Mailflow (BCL only), compiled into the agent. -->
+    <Compile Include="..\Mailflow.Application\Updates\UpdateKeys.cs;..\Mailflow.Application\Updates\UpdateManifest.cs;..\Mailflow.Application\Updates\UpdateDownloader.cs" LinkBase="Updates" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Mailflow.Integration.Tests" />
   </ItemGroup>
 

@@ -44,6 +44,14 @@ public sealed class UpdateChecker(IReleaseSource source)
     public static bool ParseEnabled(string? value)
         => !string.Equals(value?.Trim(), "false", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>"Notify" (default: banner only) or "Manual" (the banner also offers to install).</summary>
+    public const string ModeKey = "UpdateMode";
+
+    public static bool ParseManual(string? value) => string.Equals(value?.Trim(), "Manual", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>True when the owner allowed one-click installs.</summary>
+    public bool InstallEnabled { get; set; }
+
     public static Version Current { get; } = Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(0, 0);
 
     public ReleaseInfo? Available { get; private set; }
@@ -73,6 +81,8 @@ public sealed class UpdateCheckService(IServiceScopeFactory scopes, UpdateChecke
                 using var scope = scopes.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
                 var value = await db.Settings.Where(s => s.Key == UpdateChecker.SettingKey).Select(s => s.Value).FirstOrDefaultAsync(stoppingToken);
+                var mode = await db.Settings.Where(s => s.Key == UpdateChecker.ModeKey).Select(s => s.Value).FirstOrDefaultAsync(stoppingToken);
+                checker.InstallEnabled = UpdateChecker.ParseManual(mode);
                 await checker.CheckAsync(UpdateChecker.ParseEnabled(value), UpdateChecker.Current, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }

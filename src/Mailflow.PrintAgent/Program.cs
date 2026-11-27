@@ -47,11 +47,21 @@ internal static class Program
         Console.CancelKeyPress += (_, e) => { e.Cancel = true; stop.Cancel(); };
         Log($"Agent « {config.AgentName} » démarré, serveur {config.ServerUrl}.");
 
+        using var updateHttp = new HttpClient { Timeout = TimeSpan.FromMinutes(15) };
+        updateHttp.DefaultRequestHeaders.UserAgent.ParseAdd("update-check");
+        var updater = new AgentUpdater(updateHttp, config.UpdateMode, Log);
+        var nextUpdateCheck = DateTime.MinValue;
+
         var failures = 0;
         while (!stop.IsCancellationRequested)
         {
             try
             {
+                if (DateTime.UtcNow >= nextUpdateCheck)
+                {
+                    nextUpdateCheck = DateTime.UtcNow.AddHours(24);
+                    if (await updater.CheckAsync(stop.Token)) { await Task.Delay(TimeSpan.FromMinutes(2), stop.Token); continue; }
+                }
                 if (DateTime.UtcNow >= nextPrinterReport)
                 {
                     await worker.ReportPrintersAsync(printers.List(), stop.Token);

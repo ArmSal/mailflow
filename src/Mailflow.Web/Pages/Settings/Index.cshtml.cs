@@ -18,7 +18,8 @@ public class IndexModel(
     IAdminPasswordStore passwords,
     IPasswordHasher<object> hasher,
     BackupService backup,
-    IOptions<DocumentStoreOptions> storeOptions) : PageModel
+    IOptions<DocumentStoreOptions> storeOptions,
+    Mailflow.Web.Updates.UpdateChecker? updates = null) : PageModel
 {
     public class SettingsInput
     {
@@ -29,6 +30,7 @@ public class IndexModel(
         public bool PrintEmailBodyWithoutPdf { get; set; }
         public bool ToastNotifications { get; set; } = true;
         public bool UpdateCheck { get; set; } = true;
+        public bool UpdateInstall { get; set; }
     }
 
     public class PasswordInput
@@ -136,7 +138,9 @@ public class IndexModel(
         await SettingsRules.SaveAsync(db, SettingsRules.PrintEmailBodyKey, Input.PrintEmailBodyWithoutPdf ? "true" : "false", ct);
         await SettingsRules.SaveAsync(db, FailureAlerts.SettingKey, Input.ToastNotifications ? "true" : "false", ct);
         await SettingsRules.SaveAsync(db, Mailflow.Web.Updates.UpdateChecker.SettingKey, Input.UpdateCheck ? "true" : "false", ct);
+        await SettingsRules.SaveAsync(db, Mailflow.Web.Updates.UpdateChecker.ModeKey, Input.UpdateInstall ? "Manual" : "Notify", ct);
         await db.SaveChangesAsync(ct);
+        if (updates is not null) updates.InstallEnabled = Input.UpdateInstall;
         SettingsMessage = Loc.T("Paramètres enregistrés.");
         return Page();
     }
@@ -195,6 +199,7 @@ public class IndexModel(
             PrintEmailBodyWithoutPdf = SettingsRules.ParsePrintEmailBody(s.GetValueOrDefault(SettingsRules.PrintEmailBodyKey)),
             ToastNotifications = FailureAlerts.ParseEnabled(s.GetValueOrDefault(FailureAlerts.SettingKey)),
             UpdateCheck = Mailflow.Web.Updates.UpdateChecker.ParseEnabled(s.GetValueOrDefault(Mailflow.Web.Updates.UpdateChecker.SettingKey)),
+            UpdateInstall = Mailflow.Web.Updates.UpdateChecker.ParseManual(s.GetValueOrDefault(Mailflow.Web.Updates.UpdateChecker.ModeKey)),
         };
         SetSenderCheck(s);
     }

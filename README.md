@@ -295,7 +295,7 @@ To build a release from a development machine:
 
 This publishes a self-contained win-x64 build and writes `dist\Mailflow-Setup-<version>-win-x64.exe` (FR/EN wizard, no administrator rights needed, uninstaller included) and the matching zip. `tools\SumatraPDF\SumatraPDF.exe` is included in the package (see [tools/SumatraPDF/README.md](tools/SumatraPDF/README.md) to use another version). Unattended install: `Mailflow-Setup-<version>-win-x64.exe /S /dir=C:\Mailflow /nostartup /nodesktop /noRun /lang=en` (also `/nostartmenu`, `/nowebview2`); the uninstaller takes `/S` (keeps your data) and `/removedata`.
 
-To update, install the new version over the old one; database migrations are applied at startup.
+To update, install the new version over the old one; database migrations are applied at startup. Or turn on "Offer Update now in the banner" in Settings: the app then downloads the installer, verifies a signature made with the author's offline key (`deploy/sign-release.ps1`), backs up the database and installs it silently. Unsigned releases are never installed that way.
 
 ## Remote printing (Print Agent)
 

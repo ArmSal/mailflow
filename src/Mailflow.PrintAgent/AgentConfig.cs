@@ -21,6 +21,8 @@ public sealed class AgentConfig
     public string? Password { get; set; }
     public string SumatraPath { get; set; } = "SumatraPDF.exe";
     public int PollSeconds { get; set; } = 5;
+    /// <summary>"Notify" (default: new versions are only written to agent.log) or "Auto" (signed releases are installed between two jobs).</summary>
+    public string UpdateMode { get; set; } = "Notify";
 
     public static string DefaultPath => Path.Combine(AppContext.BaseDirectory, "agent.json");
 
